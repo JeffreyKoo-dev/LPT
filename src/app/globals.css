@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * 컬러 시스템: 거의 무채색에 가까운 다크 배경 + 강조색 2개(fate, growth)로만 구성한다.
+ * 여러 색을 섞어 화려하게 만들기보다, 절제된 팔레트로 정보 위계를 분명히 하는 쪽을 택했다.
+ */
+:root {
+  --bg: #0a0a0c;
+  --surface: #131316;
+  --surface-2: #1c1c20;
+  --border: #26262b;
+  --text: #ededef;
+  --muted: #8b8b93;
+
+  /* 주 강조색 — 인터랙션(버튼, 링크, 포커스, 진행률) */
+  --fate: #5b5bd6;
+  --fate-soft: rgba(91, 91, 214, 0.12);
+
+  /* 보조 강조색 — 보상/성취(XP, 레벨, 뱃지)에만 한정해서 사용 */
+  --growth: #b8863d;
+  --growth-soft: rgba(184, 134, 61, 0.12);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans), -apple-system, sans-serif;
+}
+
+/* 숫자(레벨, XP, 스탯)는 자릿수가 흔들리지 않도록 표 형태 숫자를 사용한다 */
+.font-numeral {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+:focus-visible {
+  outline: 2px solid var(--fate);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
