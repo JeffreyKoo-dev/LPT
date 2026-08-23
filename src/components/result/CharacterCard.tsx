@@ -1,4 +1,5 @@
 import { Card } from "@/components/common/Card";
+import { ElementIcon } from "@/components/common/ElementIcon";
 import { LptTypeMeta, FantasyClassMeta } from "@/types/lpt";
 import { Element } from "@/types/saju";
 import { cn } from "@/lib/utils";
@@ -26,16 +27,26 @@ interface CharacterCardProps {
 }
 
 export function CharacterCard({ nickname, typeMeta, fantasyClass }: CharacterCardProps) {
+  const element = fantasyClass.accentElement;
   return (
     <Card className="relative overflow-hidden border-t-2 border-t-fate">
       <div className="flex flex-col items-center text-center">
-        <span
+        <div
           className={cn(
-            "inline-flex items-center rounded-full border px-3 py-1 text-xs",
-            ELEMENT_COLOR[fantasyClass.accentElement]
+            "flex h-14 w-14 items-center justify-center rounded-2xl border",
+            ELEMENT_COLOR[element]
           )}
         >
-          {ELEMENT_LABEL[fantasyClass.accentElement]} 기운
+          <ElementIcon element={element} size={26} />
+        </div>
+
+        <span
+          className={cn(
+            "mt-3 inline-flex items-center rounded-full border px-3 py-1 text-xs",
+            ELEMENT_COLOR[element]
+          )}
+        >
+          {ELEMENT_LABEL[element]} 기운
         </span>
 
         <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-foreground">

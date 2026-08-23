@@ -1,7 +1,13 @@
 import { LptTypeMeta, FantasyClassMeta } from "@/types/lpt";
 import { BadgeMeta } from "@/types/badge";
+import { Element } from "@/types/saju";
 
 export type ShareKind = "character" | "level" | "badge";
+
+export type ShareCardIcon =
+  | { kind: "element"; element: Element }
+  | { kind: "level" }
+  | { kind: "badge" };
 
 /**
  * 공유 카드에 노출할 데이터만 골라 담는다.
@@ -13,6 +19,7 @@ export interface ShareCardData {
   subheading: string;
   badge: string; // 카드 상단 작은 라벨
   nickname: string;
+  icon: ShareCardIcon;
 }
 
 export function buildCharacterShareData(
@@ -26,6 +33,7 @@ export function buildCharacterShareData(
     subheading: typeMeta.tagline,
     badge: fantasyClass.className,
     nickname,
+    icon: { kind: "element", element: fantasyClass.accentElement },
   };
 }
 
@@ -36,6 +44,7 @@ export function buildLevelShareData(nickname: string, level: number): ShareCardD
     subheading: "꾸준한 성장 퀘스트로 여기까지 왔어요.",
     badge: "레벨업",
     nickname,
+    icon: { kind: "level" },
   };
 }
 
@@ -46,6 +55,7 @@ export function buildBadgeShareData(nickname: string, badgeMeta: BadgeMeta): Sha
     subheading: badgeMeta.description,
     badge: "뱃지 획득",
     nickname,
+    icon: { kind: "badge" },
   };
 }
 

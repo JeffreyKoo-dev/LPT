@@ -20,6 +20,7 @@ export default function StartPage() {
   const [birthDate, setBirthDate] = useState("");
   const [birthTime, setBirthTime] = useState<string | null>(null);
   const [birthTimeUnknown, setBirthTimeUnknown] = useState(false);
+  const [applyLocalMeanTime, setApplyLocalMeanTime] = useState(false);
   const [calendarType, setCalendarType] = useState<CalendarType>("solar");
   const [gender, setGender] = useState<Gender>("male");
   const [errors, setErrors] = useState<FormErrors>({});
@@ -49,6 +50,7 @@ export default function StartPage() {
       birthTimeUnknown,
       calendarType,
       gender,
+      applyLocalMeanTime: birthTimeUnknown ? false : applyLocalMeanTime,
       createdAt: new Date().toISOString(),
     };
     getStorage().set(STORAGE_KEYS.basicInfo, basicInfo);
@@ -112,6 +114,20 @@ export default function StartPage() {
                 onChange={(e) => setBirthTimeUnknown(e.target.checked)}
               />
             </div>
+            {!birthTimeUnknown && (
+              <div className="mt-3 rounded-xl border border-border bg-surface-2/60 p-3">
+                <Checkbox
+                  label="진태양시(정밀 시간) 보정 적용"
+                  checked={applyLocalMeanTime}
+                  onChange={(e) => setApplyLocalMeanTime(e.target.checked)}
+                />
+                <p className="mt-1.5 pl-6 text-xs text-muted">
+                  표준시(동경 135도)와 실제 태양 위치의 차이만큼(최대 약 32분) 시간을
+                  보정합니다. 서울 기준 근사치이며, 켜지 않으면 시계에 나온 시간
+                  그대로 계산합니다.
+                </p>
+              </div>
+            )}
           </div>
 
           <SegmentedControl<Gender>
