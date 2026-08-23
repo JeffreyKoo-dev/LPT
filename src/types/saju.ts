@@ -1,7 +1,5 @@
 /**
  * 사주팔자(四柱八字) 관련 타입.
- * MVP NOTICE: 아래 타입을 채우는 실제 계산 로직(lib/saju.ts)은 간략 구현이며,
- * 정식 서비스 전환 전 검증된 만세력 데이터로 교체가 필요하다.
  */
 
 export type Element = "wood" | "fire" | "earth" | "metal" | "water";
@@ -30,8 +28,8 @@ export interface Pillar {
 
 /**
  * 십성(十星). 일간(日干)을 기준으로 다른 간지와의 오행 생극 관계를 나타낸다.
- * MVP에서는 년/월/시의 "천간"에 대해서만 계산하고, 지지 및 지장간 기반 십성은
- * 다음 단계에서 정교화한다.
+ * 천간(天干)과 지지(地支) 모두에 대해 계산한다 — 실제 사주 해석에서는 지지 십성도
+ * 천간 십성만큼 비중 있게 다뤄지므로 함께 제공한다.
  */
 export type TenGod =
   | "비견"
@@ -44,6 +42,12 @@ export type TenGod =
   | "정관"
   | "편인"
   | "정인";
+
+/** 한 기둥(주)의 천간·지지 십성. 일주(日柱)는 천간이 일간 자신이라 지지만 갖는다. */
+export interface PillarTenGods {
+  stem: TenGod;
+  branch: TenGod;
+}
 
 export interface SajuChart {
   year: Pillar;
@@ -58,8 +62,10 @@ export interface SajuChart {
   /** 오행 중 가장 비중이 높은 원소 */
   dominantElement: Element;
   tenGods: {
-    year: TenGod;
-    month: TenGod;
-    hour: TenGod | null;
+    year: PillarTenGods;
+    month: PillarTenGods;
+    /** 일지(日支) — 일간 본인은 십성이 없으므로 지지만 갖는다 */
+    day: { branch: TenGod };
+    hour: PillarTenGods | null;
   };
 }

@@ -1,5 +1,6 @@
 import { CardTitle, CardDescription } from "@/components/common/Card";
 import { SajuChart, TenGod } from "@/types/saju";
+import { objectParticle } from "@/lib/korean";
 
 const TEN_GOD_HINT: Record<TenGod, string> = {
   비견: "동료·자립",
@@ -14,38 +15,56 @@ const TEN_GOD_HINT: Record<TenGod, string> = {
   정인: "지지·신뢰",
 };
 
+function TenGodChip({ label, god }: { label: string; god: TenGod }) {
+  return (
+    <span className="inline-flex items-baseline gap-1 rounded-lg border border-border bg-surface px-2.5 py-1">
+      <span className="text-[11px] text-muted">{label}</span>
+      <span className="font-numeral text-sm text-foreground">{god}</span>
+      <span className="text-[11px] text-muted">{TEN_GOD_HINT[god]}</span>
+    </span>
+  );
+}
+
 interface TenGodsPanelProps {
   sajuChart: SajuChart;
 }
 
 export function TenGodsPanel({ sajuChart }: TenGodsPanelProps) {
-  const rows: { label: string; god: TenGod | null }[] = [
-    { label: "년주 (뿌리)", god: sajuChart.tenGods.year },
-    { label: "월주 (사회적 자아)", god: sajuChart.tenGods.month },
-    { label: "시주 (미래·확장)", god: sajuChart.tenGods.hour },
+  const { year, month, day, hour } = sajuChart.tenGods;
+
+  const rows: { key: string; label: string; stem: TenGod | null; branch: TenGod | null }[] = [
+    { key: "year", label: "년주 (뿌리)", stem: year.stem, branch: year.branch },
+    { key: "month", label: "월주 (사회적 자아)", stem: month.stem, branch: month.branch },
+    { key: "day", label: "일주 (나 자신)", stem: null, branch: day.branch },
+    {
+      key: "hour",
+      label: "시주 (미래·확장)",
+      stem: hour?.stem ?? null,
+      branch: hour?.branch ?? null,
+    },
   ];
 
   return (
     <div>
       <CardTitle>십성으로 보는 기질</CardTitle>
       <CardDescription className="mt-1">
-        일간(日干) {sajuChart.dayMaster.hangul}을 기준으로 다른 기둥과의 관계를
-        살펴본 결과입니다.
+        일간(日干) {sajuChart.dayMaster.hangul}{objectParticle(sajuChart.dayMaster.hangul)} 기준으로
+        각 기둥의 천간(天干)·지지(地支)와의 관계를 함께 살펴본 결과입니다.
       </CardDescription>
       <div className="mt-4 flex flex-col gap-3">
         {rows.map((row) => (
           <div
-            key={row.label}
-            className="flex items-center justify-between rounded-xl border border-border bg-surface-2 px-4 py-3"
+            key={row.key}
+            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-surface-2 px-4 py-3"
           >
             <span className="text-sm text-muted">{row.label}</span>
-            {row.god ? (
-              <span className="text-right">
-                <span className="font-numeral text-sm text-foreground">{row.god}</span>
-                <span className="ml-2 text-xs text-muted">{TEN_GOD_HINT[row.god]}</span>
-              </span>
-            ) : (
+            {row.key === "hour" && !hour ? (
               <span className="text-xs text-muted">출생시간 미입력</span>
+            ) : (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {row.stem && <TenGodChip label="천간" god={row.stem} />}
+                {row.branch && <TenGodChip label="지지" god={row.branch} />}
+              </div>
             )}
           </div>
         ))}

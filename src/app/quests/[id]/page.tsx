@@ -10,6 +10,7 @@ import { useGrowthSession } from "@/lib/useGrowthSession";
 import { completeQuest, isQuestCompleted } from "@/lib/quest";
 import { getQuestById } from "@/data/quests";
 import { getLevelProgress } from "@/lib/growth";
+import { objectParticle } from "@/lib/korean";
 import type { CompleteQuestResult } from "@/lib/quest";
 
 export default function QuestDetailPage() {
@@ -93,8 +94,8 @@ export default function QuestDetailPage() {
         <Card className="mt-6 border-growth/40 bg-growth-soft text-center">
           <CardTitle>퀘스트 완료!</CardTitle>
           <CardDescription className="mt-2">
-            {quest.title}을(를) 완료해 {quest.xpReward} XP와 {quest.focusStat}{" "}
-            {quest.statReward}을 얻었어요.
+            {quest.title}{objectParticle(quest.title)} 완료해 {quest.xpReward} XP와{" "}
+            {quest.focusStat} {quest.statReward}만큼 얻었어요.
           </CardDescription>
 
           {result.leveledUp && (

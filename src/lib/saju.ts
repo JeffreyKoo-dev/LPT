@@ -212,9 +212,12 @@ export function calculateSaju(basicInfo: BasicInfo): SajuChart {
     elementCounts,
     dominantElement,
     tenGods: {
-      year: result.tenGods.year.stem as TenGod,
-      month: result.tenGods.month.stem as TenGod,
-      hour: hasTime ? (result.tenGods.hour.stem as TenGod) : null,
+      year: { stem: result.tenGods.year.stem as TenGod, branch: result.tenGods.year.branch as TenGod },
+      month: { stem: result.tenGods.month.stem as TenGod, branch: result.tenGods.month.branch as TenGod },
+      day: { branch: result.tenGods.day.branch as TenGod },
+      hour: hasTime
+        ? { stem: result.tenGods.hour.stem as TenGod, branch: result.tenGods.hour.branch as TenGod }
+        : null,
     },
   };
 }
