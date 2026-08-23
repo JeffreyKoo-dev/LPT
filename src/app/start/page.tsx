@@ -6,6 +6,7 @@ import { Button } from "@/components/common/Button";
 import { Card, CardDescription } from "@/components/common/Card";
 import { TextField } from "@/components/form/TextField";
 import { BirthDateField } from "@/components/form/BirthDateField";
+import { BirthTimeField } from "@/components/form/BirthTimeField";
 import { SegmentedControl } from "@/components/form/SegmentedControl";
 import { Checkbox } from "@/components/form/Checkbox";
 import { BasicInfo, CalendarType, Gender } from "@/types/user";
@@ -17,7 +18,7 @@ export default function StartPage() {
   const router = useRouter();
   const [nickname, setNickname] = useState("");
   const [birthDate, setBirthDate] = useState("");
-  const [birthTime, setBirthTime] = useState("");
+  const [birthTime, setBirthTime] = useState<string | null>(null);
   const [birthTimeUnknown, setBirthTimeUnknown] = useState(false);
   const [calendarType, setCalendarType] = useState<CalendarType>("solar");
   const [gender, setGender] = useState<Gender>("male");
@@ -50,7 +51,6 @@ export default function StartPage() {
       gender,
       createdAt: new Date().toISOString(),
     };
-
     getStorage().set(STORAGE_KEYS.basicInfo, basicInfo);
     router.push("/survey");
   }
@@ -97,14 +97,12 @@ export default function StartPage() {
           />
 
           <div>
-            <TextField
+            <BirthTimeField
               label="출생시간"
-              name="birthTime"
-              type="time"
               value={birthTime}
-              onChange={(e) => setBirthTime(e.target.value)}
+              onChange={setBirthTime}
               disabled={birthTimeUnknown}
-              hint="정확한 사주 계산을 위해 가능하면 입력해주세요."
+              hint="정확한 사주 계산을 위해 가능하면 입력해주세요. (24시간제)"
               error={errors.birthTime}
             />
             <div className="mt-2">
