@@ -27,7 +27,7 @@
  *   - 음력 입력 시 윤달 여부는 항상 평달로 간주 (윤달 입력 UI 미제공)
  */
 
-import { calculateSaju as ssajuCalculateSaju, lunarToSolar } from "ssaju";
+import { calculateSaju as ssajuCalculateSaju, lunarToSolar } from "@/lib/saju-engine/calculate";
 import { BasicInfo } from "@/types/user";
 import { Element, EarthlyBranch, HeavenlyStem, Pillar, SajuChart, TenGod } from "@/types/saju";
 
