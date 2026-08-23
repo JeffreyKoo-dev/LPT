@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/common/Button";
 import { Card, CardDescription } from "@/components/common/Card";
 import { TextField } from "@/components/form/TextField";
+import { BirthDateField } from "@/components/form/BirthDateField";
 import { SegmentedControl } from "@/components/form/SegmentedControl";
 import { Checkbox } from "@/components/form/Checkbox";
 import { BasicInfo, CalendarType, Gender } from "@/types/user";
@@ -25,7 +26,9 @@ export default function StartPage() {
   function validate(): FormErrors {
     const next: FormErrors = {};
     if (!nickname.trim()) next.nickname = "닉네임을 입력해주세요.";
-    if (!birthDate) next.birthDate = "생년월일을 입력해주세요.";
+    if (!birthDate || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+      next.birthDate = "생년월일을 정확히 입력해주세요.";
+    }
     if (!birthTimeUnknown && !birthTime) {
       next.birthTime = "출생시간을 입력하거나 '시간을 모름'을 선택해주세요.";
     }
@@ -86,12 +89,10 @@ export default function StartPage() {
             ]}
           />
 
-          <TextField
+          <BirthDateField
             label="생년월일"
-            name="birthDate"
-            type="date"
             value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
+            onChange={setBirthDate}
             error={errors.birthDate}
           />
 

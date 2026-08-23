@@ -198,10 +198,18 @@ function getTenGod(dayMaster: HeavenlyStem, target: HeavenlyStem): TenGod {
  * 음력 입력은 아직 변환 테이블이 없어 양력으로 간주해 계산한다 (MVP 한계).
  */
 export function calculateSaju(basicInfo: BasicInfo): SajuChart {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(basicInfo.birthDate)) {
+    throw new Error(`calculateSaju: 올바르지 않은 생년월일 형식입니다 (${basicInfo.birthDate})`);
+  }
+
   const [yStr, mStr, dStr] = basicInfo.birthDate.split("-");
   const year = Number(yStr);
   const month = Number(mStr);
   const day = Number(dStr);
+
+  if (month < 1 || month > 12 || day < 1 || day > 31) {
+    throw new Error(`calculateSaju: 유효 범위를 벗어난 날짜입니다 (${basicInfo.birthDate})`);
+  }
 
   const sajuYear = getSajuYear(basicInfo.birthDate);
   const yearPillar = getYearPillar(sajuYear);

@@ -140,21 +140,26 @@ export default function SurveyPage() {
 
 function SurveyComplete({ onReset }: { onReset: () => void }) {
   const router = useRouter();
-  const [status, setStatus] = useState<"idle" | "no-basic-info" | "done">("idle");
+  const [status, setStatus] = useState<"idle" | "no-basic-info" | "error" | "done">("idle");
   const [typeName, setTypeName] = useState<string | null>(null);
   const [fantasyClassName, setFantasyClassName] = useState<string | null>(null);
 
   useEffect(() => {
     const basicInfo = getStorage().get<BasicInfo>(STORAGE_KEYS.basicInfo);
-    if (!basicInfo || !basicInfo.birthDate) {
+    if (!basicInfo || !/^\d{4}-\d{2}-\d{2}$/.test(basicInfo.birthDate ?? "")) {
       setStatus("no-basic-info");
       return;
     }
-    const report = generateAndSaveAnalysisReport(basicInfo);
-    const meta = getLptTypeMeta(report.lptType.typeId);
-    setTypeName(meta?.name ?? null);
-    setFantasyClassName(getFantasyClass(report.lptType.typeId)?.className ?? null);
-    setStatus("done");
+    try {
+      const report = generateAndSaveAnalysisReport(basicInfo);
+      const meta = getLptTypeMeta(report.lptType.typeId);
+      setTypeName(meta?.name ?? null);
+      setFantasyClassName(getFantasyClass(report.lptType.typeId)?.className ?? null);
+      setStatus("done");
+    } catch (error) {
+      console.error("[survey] 분석 리포트 생성 실패", error);
+      setStatus("error");
+    }
   }, []);
 
   return (
@@ -168,11 +173,24 @@ function SurveyComplete({ onReset }: { onReset: () => void }) {
         <Card className="mt-8 text-left">
           <CardTitle>기본 정보가 필요해요</CardTitle>
           <CardDescription className="mt-2">
-            생년월일시를 아직 입력하지 않아 사주 기반 유형 분석을 진행할 수 없습니다.
-            기본 정보 입력 후 다시 시도해주세요.
+            생년월일시를 아직 입력하지 않았거나 형식이 올바르지 않아 사주 기반 유형
+            분석을 진행할 수 없습니다. 기본 정보를 다시 입력해주세요.
           </CardDescription>
           <Button className="mt-4" onClick={() => router.push("/start")}>
             기본 정보 입력하러 가기
+          </Button>
+        </Card>
+      )}
+
+      {status === "error" && (
+        <Card className="mt-8 text-left">
+          <CardTitle>분석 중 문제가 발생했어요</CardTitle>
+          <CardDescription className="mt-2">
+            입력하신 생년월일 정보로 사주 분석을 계산하는 중 오류가 발생했습니다.
+            기본 정보를 다시 확인해주세요.
+          </CardDescription>
+          <Button className="mt-4" onClick={() => router.push("/start")}>
+            기본 정보 다시 입력하기
           </Button>
         </Card>
       )}

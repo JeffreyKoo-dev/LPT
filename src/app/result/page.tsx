@@ -30,7 +30,7 @@ export default function ResultPage() {
 
   useEffect(() => {
     const basicInfo = getStorage().get<BasicInfo>(STORAGE_KEYS.basicInfo);
-    if (!basicInfo || !basicInfo.birthDate) {
+    if (!basicInfo || !/^\d{4}-\d{2}-\d{2}$/.test(basicInfo.birthDate ?? "")) {
       setState("missing-basic-info");
       return;
     }
