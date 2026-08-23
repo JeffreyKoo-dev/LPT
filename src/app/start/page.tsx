@@ -20,7 +20,7 @@ export default function StartPage() {
   const [birthDate, setBirthDate] = useState("");
   const [birthTime, setBirthTime] = useState<string | null>(null);
   const [birthTimeUnknown, setBirthTimeUnknown] = useState(false);
-  const [applyLocalMeanTime, setApplyLocalMeanTime] = useState(false);
+  const [applyLocalMeanTime, setApplyLocalMeanTime] = useState(true);
   const [calendarType, setCalendarType] = useState<CalendarType>("solar");
   const [gender, setGender] = useState<Gender>("male");
   const [errors, setErrors] = useState<FormErrors>({});
@@ -123,8 +123,9 @@ export default function StartPage() {
                 />
                 <p className="mt-1.5 pl-6 text-xs text-muted">
                   표준시(동경 135도)와 실제 태양 위치의 차이만큼(최대 약 32분) 시간을
-                  보정합니다. 서울 기준 근사치이며, 켜지 않으면 시계에 나온 시간
-                  그대로 계산합니다.
+                  보정합니다. 서울 경도 기준 근사치이며, 대부분의 만세력이 이 방식을
+                  사용해 기본으로 켜져 있습니다. 시계에 나온 시간 그대로 계산하려면
+                  꺼주세요.
                 </p>
               </div>
             )}

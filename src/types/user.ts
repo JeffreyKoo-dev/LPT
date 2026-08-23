@@ -13,10 +13,10 @@ export interface BasicInfo {
   calendarType: CalendarType;
   gender: Gender;
   /**
-   * 진태양시(true solar time) 보정 적용 여부. 기본값 false(미적용).
+   * 진태양시(true solar time) 보정 적용 여부. 기본값 true(적용).
    * 표준 경도(동경 135도)와 실제 출생지 경도의 차이만큼(대한민국 기준 최대 약 -32분)
-   * 시간을 보정한다. 전통 만세력 다수가 기본적으로 적용하지 않는 방식과 동일하게
-   * 기본은 꺼둔 채로, 원하는 사용자만 켤 수 있는 옵션으로 제공한다.
+   * 시간을 보정한다. 원광만세력 등 주요 만세력과 대조 검증한 결과 이 보정을 적용해야
+   * 일치하는 것을 확인해 기본값을 켜진 상태로 변경했다 (원치 않는 사용자는 끌 수 있음).
    */
   applyLocalMeanTime: boolean;
   createdAt: string; // ISO timestamp
@@ -29,6 +29,6 @@ export const EMPTY_BASIC_INFO: BasicInfo = {
   birthTimeUnknown: false,
   calendarType: "solar",
   gender: "male",
-  applyLocalMeanTime: false,
+  applyLocalMeanTime: true,
   createdAt: "",
 };
