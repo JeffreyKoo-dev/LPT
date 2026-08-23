@@ -89,8 +89,8 @@ export function BirthDateField({ label, value, onChange, error }: BirthDateField
   return (
     <div className="w-full">
       <label className="mb-2 block text-sm font-medium text-foreground">{label}</label>
-      <div className="grid grid-cols-[1.3fr_1fr_1fr] gap-2">
-        <div className="relative">
+      <div className="flex items-start gap-2">
+        <div className="relative w-24">
           <input
             type="text"
             inputMode="numeric"
@@ -99,13 +99,13 @@ export function BirthDateField({ label, value, onChange, error }: BirthDateField
             onChange={(e) => handleYearChange(e.target.value)}
             maxLength={4}
             aria-label="출생 연도"
-            className={cn(inputClass, "pr-7", error && "border-red-400/70")}
+            className={cn(inputClass, "w-full pr-7", error && "border-red-400/70")}
           />
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">
             년
           </span>
         </div>
-        <div className="relative">
+        <div className="relative w-16">
           <input
             type="text"
             inputMode="numeric"
@@ -114,13 +114,13 @@ export function BirthDateField({ label, value, onChange, error }: BirthDateField
             onChange={(e) => handleMonthChange(e.target.value)}
             maxLength={2}
             aria-label="출생 월"
-            className={cn(inputClass, "pr-6", error && "border-red-400/70")}
+            className={cn(inputClass, "w-full pr-6", error && "border-red-400/70")}
           />
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">
             월
           </span>
         </div>
-        <div className="relative">
+        <div className="relative w-16">
           <input
             type="text"
             inputMode="numeric"
@@ -129,7 +129,7 @@ export function BirthDateField({ label, value, onChange, error }: BirthDateField
             onChange={(e) => handleDayChange(e.target.value)}
             maxLength={2}
             aria-label="출생 일"
-            className={cn(inputClass, "pr-6", error && "border-red-400/70")}
+            className={cn(inputClass, "w-full pr-6", error && "border-red-400/70")}
           />
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">
             일
