@@ -3,6 +3,7 @@ import { Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/common/SiteHeader";
 import { SiteFooter } from "@/components/common/SiteFooter";
+import { AuthSync } from "@/components/common/AuthSync";
 
 /**
  * 타이포그래피는 단일 서체(Noto Sans KR) + 굵기 스케일로만 위계를 만든다.
@@ -29,6 +30,7 @@ export default function RootLayout({
   return (
     <html lang="ko" className={sans.variable}>
       <body className="min-h-screen flex flex-col font-sans antialiased">
+        <AuthSync />
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />

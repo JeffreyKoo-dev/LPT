@@ -2,6 +2,7 @@ import { LEVEL_THRESHOLDS, MAX_LEVEL } from "@/data/levels";
 import { createEmptyStats, GrowthProfile, StatKey } from "@/types/growth";
 import { LptTypeId } from "@/types/lpt";
 import { getStorage, STORAGE_KEYS } from "@/lib/storage";
+import { pushGrowthProfileToCloud } from "@/lib/supabase/sync";
 
 export interface LevelProgress {
   level: number;
@@ -57,7 +58,9 @@ export function loadGrowthProfile(typeId: LptTypeId): GrowthProfile {
 }
 
 export function saveGrowthProfile(profile: GrowthProfile): void {
-  getStorage().set(STORAGE_KEYS.growthProfile, { ...profile, updatedAt: new Date().toISOString() });
+  const updated = { ...profile, updatedAt: new Date().toISOString() };
+  getStorage().set(STORAGE_KEYS.growthProfile, updated);
+  pushGrowthProfileToCloud(updated); // 로그인 상태가 아니면 내부에서 조용히 무시됨
 }
 
 export interface ApplyRewardResult {

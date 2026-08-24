@@ -1,5 +1,6 @@
 import { EMPTY_SURVEY_STATE, SurveyAnswer, SurveyState, TOTAL_QUESTIONS } from "@/types/survey";
 import { getStorage, STORAGE_KEYS } from "@/lib/storage";
+import { pushSurveyToCloud } from "@/lib/supabase/sync";
 
 /**
  * 설문 진행/저장 로직 (Sprint 1 범위: 응답 저장·진행률만 담당).
@@ -14,6 +15,10 @@ export function loadSurveyState(): SurveyState {
 
 export function saveSurveyState(state: SurveyState): void {
   getStorage().set(STORAGE_KEYS.survey, state);
+  // 매 문항 응답마다가 아니라, 설문이 완료된 시점에만 클라우드로 올린다
+  if (state.completedAt) {
+    pushSurveyToCloud(state);
+  }
 }
 
 export function upsertAnswer(state: SurveyState, answer: SurveyAnswer): SurveyState {

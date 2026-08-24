@@ -12,6 +12,7 @@ create table if not exists user_profiles (
   xp integer not null default 0,
   stats jsonb not null default '{}'::jsonb,
   badges text[] not null default '{}',
+  quest_log jsonb not null default '[]'::jsonb,  -- [{questId, completedAt}, ...]
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

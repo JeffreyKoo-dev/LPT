@@ -34,6 +34,7 @@ const AXIS_LABEL: Record<string, string> = {
 export default function SurveyPage() {
   const [state, setState] = useState<SurveyState | null>(null);
   const [index, setIndex] = useState(0);
+  const [skippedNotice, setSkippedNotice] = useState(false);
 
   useEffect(() => {
     const loaded = loadSurveyState();
@@ -71,27 +72,46 @@ export default function SurveyPage() {
     saveSurveyState(nextState);
   }
 
+  /** 응답하지 않은 문항 중 첫 번째 인덱스를 찾는다. 전부 응답했으면 -1 */
+  function findFirstUnansweredIndex(s: SurveyState): number {
+    return QUESTIONS.findIndex((q) => getAnswerFor(s, q.id) === null);
+  }
+
   function handleAnswer(value: number) {
     if (!state) return;
+    setSkippedNotice(false);
     const updated = upsertAnswer(state, { questionId: question.id, value });
     persist(updated);
 
-    // 마지막 문항이면 완료 처리, 아니면 다음 문항으로 자동 이동
     if (index === QUESTIONS.length - 1) {
-      persist(markCompleted(updated));
+      // 마지막 문항까지 왔어도 중간에 빠뜨린 문항이 있을 수 있으니 먼저 확인한다
+      const unansweredIndex = findFirstUnansweredIndex(updated);
+      if (unansweredIndex === -1) {
+        persist(markCompleted(updated));
+      } else {
+        setSkippedNotice(true);
+        setIndex(unansweredIndex);
+      }
     } else {
       window.setTimeout(() => setIndex((i) => Math.min(i + 1, QUESTIONS.length - 1)), 180);
     }
   }
 
   function goPrev() {
+    setSkippedNotice(false);
     setIndex((i) => Math.max(0, i - 1));
   }
 
   function goNext() {
     if (currentAnswer === null) return;
     if (index === QUESTIONS.length - 1 && state) {
-      persist(markCompleted(state));
+      const unansweredIndex = findFirstUnansweredIndex(state);
+      if (unansweredIndex === -1) {
+        persist(markCompleted(state));
+      } else {
+        setSkippedNotice(true);
+        setIndex(unansweredIndex);
+      }
       return;
     }
     setIndex((i) => Math.min(QUESTIONS.length - 1, i + 1));
@@ -115,6 +135,11 @@ export default function SurveyPage() {
       </div>
 
       <Card key={question.id} className="animate-rise">
+        {skippedNotice && (
+          <p className="mb-3 rounded-lg border border-fate/30 bg-fate-soft px-3 py-2 text-xs text-fate">
+            답변하지 않은 문항이 있어 이 문항으로 이동했어요.
+          </p>
+        )}
         <CardTitle className="text-xl leading-relaxed">{question.text}</CardTitle>
         <div className="mt-8">
           <LikertScale
