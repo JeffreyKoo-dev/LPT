@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useSupabaseSession } from "@/lib/useSupabaseSession";
 
 export function SiteHeader() {
+  const session = useSupabaseSession();
+
   return (
     <header className="sticky top-0 z-20 border-b border-border/60 bg-bg/70 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5">
@@ -14,6 +17,9 @@ export function SiteHeader() {
         <nav className="flex items-center gap-1 text-sm">
           <NavLink href="/dashboard">대시보드</NavLink>
           <NavLink href="/start">시작하기</NavLink>
+          {session.configured && (
+            <NavLink href="/login">{session.user ? "내 계정" : "로그인"}</NavLink>
+          )}
         </nav>
       </div>
     </header>

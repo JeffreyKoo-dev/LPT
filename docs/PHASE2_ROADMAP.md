@@ -183,3 +183,44 @@ create table birth_stats (
 
 **남은 것 (Phase 2b~2d)**: 회원 관리, 서버 저장, 지인 연동 궁합·같은 성향 리스트,
 만세력 기반 오늘의 추천, 쇼핑 추천(PPL) — Supabase 프로젝트 생성 이후 진행.
+
+---
+
+## 8. Phase 2b 세팅 가이드 (Supabase 연결)
+
+### 8.1 스키마 적용
+1. Supabase 대시보드 → 프로젝트 → **SQL Editor**
+2. `supabase/schema.sql` 파일 내용을 그대로 붙여넣고 실행 (테이블 3개 + RLS 정책 생성)
+
+### 8.2 환경변수 설정
+1. `.env.local.example`을 복사해 `.env.local` 생성
+2. Supabase 대시보드 → **Project Settings → API**에서 `Project URL`과 `anon public` 키 확인
+3. `.env.local`에 채워넣기:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+   ```
+4. **EC2 서버에도 동일하게** `~/lpt/.env.local` 파일을 직접 만들어야 함 (git에는 안 올라가므로 로컬에서 파일 내용을 복사해서 서버에 붙여넣기)
+5. 값을 바꾼 뒤에는 반드시 `npm run build`를 다시 해야 반영됨 (Next.js는 `NEXT_PUBLIC_*` 값을 빌드 시점에 번들에 굽는다)
+
+### 8.3 이메일 로그인
+- Supabase는 기본 내장 이메일 발송 기능이 있어 별도 설정 없이 바로 동작 (다만 발신자가 Supabase 도메인이라 스팸함으로 갈 수 있음 — 실 서비스 전환 시 커스텀 SMTP 연결 권장)
+
+### 8.4 카카오 로그인 설정
+1. [Kakao Developers](https://developers.kakao.com) → 애플리케이션 추가
+2. **제품 설정 → 카카오 로그인** 활성화
+3. **Redirect URI**에 Supabase 콜백 주소 등록: `https://<프로젝트ref>.supabase.co/auth/v1/callback`
+4. 앱 설정에서 **REST API 키**, **Client Secret**(보안 → Client Secret 발급) 확인
+5. Supabase 대시보드 → **Authentication → Providers → Kakao** 활성화 후 위 REST API 키(Client ID)와 Client Secret 입력
+6. Supabase 대시보드 → **Authentication → URL Configuration**에서 `Site URL`을 실제 서비스 주소(`http://3.36.50.191` 또는 도메인)로 설정
+
+### 8.5 새로 추가된 코드
+- `src/lib/supabase/client.ts` — 브라우저 Supabase 클라이언트 (환경변수 없으면 안전하게 비활성화됨)
+- `src/lib/useSupabaseSession.ts` — 로그인 상태 구독 훅
+- `src/app/login/page.tsx` — 이메일 OTP + 카카오 로그인 화면
+- `supabase/schema.sql` — DB 스키마 (user_profiles, survey_responses, birth_stats)
+- 헤더에 로그인 상태 표시 (환경변수 미설정 시 자동으로 숨김)
+
+**아직 안 된 것**: 실제 로그인 후 LocalStorage 데이터를 Supabase로 저장하는 연동
+(`lib/storage.ts`의 Supabase 어댑터), `birth_stats` 익명 통계 저장 로직. 환경변수
+연결과 로그인 테스트가 끝나면 이어서 진행.
