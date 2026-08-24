@@ -5,7 +5,7 @@ import { AnalysisReport } from "@/types/report";
 import { BasicInfo } from "@/types/user";
 import { GrowthProfile } from "@/types/growth";
 import { LptTypeMeta, FantasyClassMeta } from "@/types/lpt";
-import { loadAnalysisReport } from "@/lib/report";
+import { loadAnalysisReport, generateAndSaveAnalysisReport } from "@/lib/report";
 import { getStorage, STORAGE_KEYS } from "@/lib/storage";
 import { getLptTypeMeta } from "@/data/lptTypes";
 import { getFantasyClass } from "@/data/fantasyClasses";
@@ -36,7 +36,17 @@ export function useGrowthSession(): GrowthSession {
 
   useEffect(() => {
     const basicInfo = getStorage().get<BasicInfo>(STORAGE_KEYS.basicInfo);
-    const existingReport = loadAnalysisReport();
+    let existingReport = loadAnalysisReport();
+
+    // 리포트가 없거나(예: 스키마 버전 불일치로 무효화됨) 기본 정보는 남아있는 경우,
+    // 설문을 다시 시키지 않고 조용히 재계산을 시도한다.
+    if (!existingReport && basicInfo && /^\d{4}-\d{2}-\d{2}$/.test(basicInfo.birthDate ?? "")) {
+      try {
+        existingReport = generateAndSaveAnalysisReport(basicInfo);
+      } catch {
+        existingReport = null;
+      }
+    }
 
     if (!basicInfo || !existingReport) {
       setStatus("missing-analysis");
