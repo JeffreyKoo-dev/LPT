@@ -22,7 +22,7 @@
 - [개발 명세서](docs/DEVELOPMENT_SPEC.md) — 아키텍처, 데이터 모델, 계산 파이프라인, 저장소 구조
 - [설치 가이드](docs/INSTALL_GUIDE.md) — 요구 사항, 설치/실행 방법, 문제 해결
 - [사용법 가이드](docs/USAGE_GUIDE.md) — 화면별 사용 방법 (홈 → 설문 → 결과 → 성장 → 공유)
-- [Phase 2 로드맵](docs/PHASE2_ROADMAP.md) — 회원 관리·궁합·공유·추천 등 후속 기능 설계도
+- [Phase 2 로드맵](docs/PHASE2_ROADMAP.md) — 회원 관리·궁합·공유·추천 등 후속 기능 설계도 (Phase 2a 구현 완료)
 
 ## 표현 원칙 (전체 화면 공통 적용)
 

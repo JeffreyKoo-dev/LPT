@@ -19,6 +19,9 @@ import { getStorage, STORAGE_KEYS } from "@/lib/storage";
 import { getLptTypeMeta } from "@/data/lptTypes";
 import { getFantasyClass } from "@/data/fantasyClasses";
 import { computeLifestyleIndicator } from "@/lib/indicator";
+import { getLunarDate, LunarDate } from "@/lib/saju";
+import { getRelatedTypes } from "@/lib/compatibility";
+import { RelatedTypesPanel } from "@/components/result/RelatedTypesPanel";
 
 type LoadState = "loading" | "missing-basic-info" | "missing-survey" | "ready";
 
@@ -26,6 +29,7 @@ export default function ResultPage() {
   const router = useRouter();
   const [report, setReport] = useState<AnalysisReport | null>(null);
   const [nickname, setNickname] = useState("");
+  const [lunarDate, setLunarDate] = useState<LunarDate | null>(null);
   const [state, setState] = useState<LoadState>("loading");
 
   useEffect(() => {
@@ -35,6 +39,7 @@ export default function ResultPage() {
       return;
     }
     setNickname(basicInfo.nickname);
+    setLunarDate(getLunarDate(basicInfo));
 
     let existing = loadAnalysisReport();
     if (!existing) {
@@ -117,6 +122,12 @@ export default function ResultPage() {
 
       <section className="mx-auto grid max-w-lg gap-5 px-5 pb-24">
         <CharacterCard nickname={nickname} typeMeta={typeMeta} fantasyClass={fantasyClass} />
+        {lunarDate && (
+          <p className="-mt-2 text-center text-xs text-muted">
+            음력 {lunarDate.year}년 {lunarDate.month}월 {lunarDate.day}일생
+            {lunarDate.isLeapMonth ? " (윤달)" : ""}
+          </p>
+        )}
 
         <DailyCardWidget quadrant={report.lptType.quadrant} />
 
@@ -140,6 +151,10 @@ export default function ResultPage() {
           <SynergyPanel typeMeta={typeMeta} />
         </Card>
 
+        <Card>
+          <RelatedTypesPanel related={getRelatedTypes(report.lptType.quadrant)} />
+        </Card>
+
         <Card className="text-center">
           <CardTitle>{typeMeta.description}</CardTitle>
         </Card>
@@ -148,10 +163,13 @@ export default function ResultPage() {
           <Button className="w-full" onClick={() => router.push("/dashboard")}>
             성장 대시보드로 이동
           </Button>
-          <Button variant="secondary" className="w-full" onClick={() => router.push("/")}>
-            홈으로
+          <Button variant="secondary" className="w-full" onClick={() => router.push("/compatibility")}>
+            지인과 궁합 보기
           </Button>
         </div>
+        <Button variant="ghost" className="w-full" onClick={() => router.push("/")}>
+          홈으로
+        </Button>
       </section>
     </div>
   );

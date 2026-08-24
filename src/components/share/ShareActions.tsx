@@ -1,17 +1,31 @@
 "use client";
 
-import { RefObject, useState } from "react";
-import { toPng } from "html-to-image";
+import { RefObject, useEffect, useState } from "react";
+import { toPng, toBlob } from "html-to-image";
 import { Button } from "@/components/common/Button";
 
 interface ShareActionsProps {
   targetRef: RefObject<HTMLDivElement>;
   fileName: string;
+  shareTitle?: string;
+  shareText?: string;
 }
 
-export function ShareActions({ targetRef, fileName }: ShareActionsProps) {
+export function ShareActions({
+  targetRef,
+  fileName,
+  shareTitle = "LPT — Life Pattern Type",
+  shareText = "내 라이프 패턴 결과를 확인해보세요",
+}: ShareActionsProps) {
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
+  const [shareStatus, setShareStatus] = useState<"idle" | "sharing">("idle");
+  const [canUseWebShare, setCanUseWebShare] = useState(false);
+
+  // navigator는 서버 렌더링 시 없으므로 마운트 이후에만 기능 지원 여부를 확인한다
+  useEffect(() => {
+    setCanUseWebShare(typeof navigator !== "undefined" && typeof navigator.share === "function");
+  }, []);
 
   async function handleSavePng() {
     if (!targetRef.current) return;
@@ -39,14 +53,61 @@ export function ShareActions({ targetRef, fileName }: ShareActionsProps) {
     }
   }
 
+  /**
+   * OS 기본 공유시트를 연다. 카카오톡·인스타그램·페이스북·문자 등 기기에 설치된
+   * 앱이 시트에 자동으로 뜬다 (플랫폼별 SDK·앱키 불필요). 이미지 공유가 가능한
+   * 환경이면 카드 이미지를, 아니면 링크만 공유한다.
+   */
+  async function handleShare() {
+    setShareStatus("sharing");
+    try {
+      let file: File | undefined;
+      if (targetRef.current) {
+        try {
+          const blob = await toBlob(targetRef.current, { pixelRatio: 2 });
+          if (blob) file = new File([blob], `${fileName}.png`, { type: "image/png" });
+        } catch {
+          // 이미지 변환 실패 시 링크 공유로 자연스럽게 폴백
+        }
+      }
+
+      const canShareFiles = file && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] });
+
+      if (canShareFiles && file) {
+        await navigator.share({ title: shareTitle, text: shareText, files: [file] });
+      } else {
+        await navigator.share({ title: shareTitle, text: shareText, url: window.location.href });
+      }
+    } catch (error) {
+      // 사용자가 공유시트를 취소한 경우(AbortError)는 정상 흐름이라 에러로 취급하지 않는다
+      if ((error as Error).name !== "AbortError") {
+        console.error("[share] 공유 실패", error);
+      }
+    } finally {
+      setShareStatus("idle");
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-3 sm:flex-row">
-      <Button className="w-full" onClick={handleSavePng} disabled={status === "saving"}>
-        {status === "saving" ? "저장 중…" : status === "saved" ? "다시 저장하기" : "PNG로 저장하기"}
-      </Button>
-      <Button variant="secondary" className="w-full" onClick={handleCopyLink}>
-        {copyStatus === "copied" ? "링크 복사됨!" : "링크 복사하기"}
-      </Button>
+    <div className="flex flex-col gap-3">
+      {canUseWebShare && (
+        <Button className="w-full" onClick={handleShare} disabled={shareStatus === "sharing"}>
+          {shareStatus === "sharing" ? "공유 준비 중…" : "카카오톡·인스타그램 등으로 공유하기"}
+        </Button>
+      )}
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <Button
+          variant={canUseWebShare ? "secondary" : "primary"}
+          className="w-full"
+          onClick={handleSavePng}
+          disabled={status === "saving"}
+        >
+          {status === "saving" ? "저장 중…" : status === "saved" ? "다시 저장하기" : "PNG로 저장하기"}
+        </Button>
+        <Button variant="secondary" className="w-full" onClick={handleCopyLink}>
+          {copyStatus === "copied" ? "링크 복사됨!" : "링크 복사하기"}
+        </Button>
+      </div>
     </div>
   );
 }

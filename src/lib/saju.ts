@@ -27,7 +27,7 @@
  *   - 음력 입력 시 윤달 여부는 항상 평달로 간주 (윤달 입력 UI 미제공)
  */
 
-import { calculateSaju as ssajuCalculateSaju, lunarToSolar } from "@/lib/saju-engine/calculate";
+import { calculateSaju as ssajuCalculateSaju, lunarToSolar, solarToLunar } from "@/lib/saju-engine/calculate";
 import { BasicInfo } from "@/types/user";
 import { Element, EarthlyBranch, HeavenlyStem, Pillar, SajuChart, TenGod } from "@/types/saju";
 
@@ -220,4 +220,33 @@ export function calculateSaju(basicInfo: BasicInfo): SajuChart {
         : null,
     },
   };
+}
+
+export interface LunarDate {
+  year: number;
+  month: number;
+  day: number;
+  isLeapMonth: boolean;
+}
+
+/**
+ * BasicInfo의 생년월일을 음력으로 변환해 표시용으로 반환한다.
+ * 입력이 이미 음력이면 그대로, 양력이면 음력으로 변환한다.
+ */
+export function getLunarDate(basicInfo: BasicInfo): LunarDate | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(basicInfo.birthDate)) return null;
+  const [yStr, mStr, dStr] = basicInfo.birthDate.split("-");
+  const year = Number(yStr);
+  const month = Number(mStr);
+  const day = Number(dStr);
+
+  if (basicInfo.calendarType === "lunar") {
+    return { year, month, day, isLeapMonth: false };
+  }
+
+  try {
+    return solarToLunar(year, month, day);
+  } catch {
+    return null;
+  }
 }
