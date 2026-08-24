@@ -1,5 +1,4 @@
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { getCachedUserId } from "@/lib/supabase/authState";
 import { getStorage, STORAGE_KEYS } from "@/lib/storage";
 import { GrowthProfile } from "@/types/growth";
 import { SurveyState } from "@/types/survey";
@@ -36,11 +35,16 @@ function getLocalNickname(): string {
 
 /** 로그인 상태가 아니면 아무 것도 하지 않고 조용히 반환한다 (일반 사용자 흐름에 영향 없음) */
 export async function pushGrowthProfileToCloud(profile: GrowthProfile): Promise<void> {
-  const userId = getCachedUserId();
-  if (!userId || !isSupabaseConfigured()) return;
+  if (!isSupabaseConfigured()) return;
 
   try {
     const supabase = getSupabaseClient();
+    // 캐싱된 값 대신 매번 실제 세션을 확인한다 — 캐시는 비동기로 채워지는 값이라
+    // 페이지 로드 직후 첫 호출 시 아직 채워지기 전이면 로그인 상태를 놓칠 수 있다.
+    const { data } = await supabase.auth.getUser();
+    const userId = data.user?.id;
+    if (!userId) return;
+
     await supabase.from("user_profiles").upsert({
       user_id: userId,
       nickname: getLocalNickname() || "익명",
@@ -56,11 +60,14 @@ export async function pushGrowthProfileToCloud(profile: GrowthProfile): Promise<
 }
 
 export async function pushSurveyToCloud(state: SurveyState): Promise<void> {
-  const userId = getCachedUserId();
-  if (!userId || !isSupabaseConfigured() || state.answers.length === 0) return;
+  if (!isSupabaseConfigured() || state.answers.length === 0) return;
 
   try {
     const supabase = getSupabaseClient();
+    const { data } = await supabase.auth.getUser();
+    const userId = data.user?.id;
+    if (!userId) return;
+
     await supabase.from("survey_responses").upsert({
       user_id: userId,
       answers: state.answers,
