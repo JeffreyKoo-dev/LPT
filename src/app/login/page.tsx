@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/common/Button";
 import { Card, CardDescription, CardTitle } from "@/components/common/Card";
 import { GuardScreen } from "@/components/common/GuardScreen";
@@ -9,13 +10,41 @@ import { TextField } from "@/components/form/TextField";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { useSupabaseSession } from "@/lib/useSupabaseSession";
 
-type Status = "idle" | "sending" | "sent" | "error";
+type Status = "idle" | "sending" | "sent" | "verifying" | "error";
+
+/** redirect 쿼리로 전달된 경로가 우리 앱 안의 안전한 경로인지 확인한다 (open redirect 방지) */
+function getSafeRedirectPath(raw: string | null): string {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
+  return raw;
+}
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-md px-5 py-24 text-center text-sm text-muted">불러오는 중…</div>}>
+      <LoginPageInner />
+    </Suspense>
+  );
+}
+
+function LoginPageInner() {
   const session = useSupabaseSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectPath = getSafeRedirectPath(searchParams.get("redirect"));
   const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // 다른 탭에서 로그인을 완료해 이 탭이 방금 감지한 경우, 확인 화면을 잠깐
+  // 보여줄 필요 없이 바로 원래 가려던 페이지로 이어서 이동한다.
+  // (모든 훅은 조건 분기보다 앞서 호출되어야 하므로 최상단에 둔다)
+  useEffect(() => {
+    if (session.user) {
+      router.push(redirectPath);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session.user]);
 
   if (!session.configured) {
     return (
@@ -32,12 +61,12 @@ export default function LoginPage() {
     return (
       <div className="mx-auto max-w-md px-5 py-24 text-center">
         <Card>
-          <CardTitle>이미 로그인되어 있어요</CardTitle>
-          <CardDescription className="mt-2">{session.user.email ?? "카카오 계정"}으로 로그인된 상태입니다.</CardDescription>
+          <CardTitle>로그인됐어요</CardTitle>
+          <CardDescription className="mt-2">이어서 이동하는 중입니다…</CardDescription>
           <div className="mt-5 flex flex-col gap-3">
-            <Link href="/dashboard">
-              <Button className="w-full">대시보드로 이동</Button>
-            </Link>
+            <Button className="w-full" onClick={() => router.push(redirectPath)}>
+              이어서 진행하기
+            </Button>
             <Button variant="ghost" onClick={session.signOut}>
               로그아웃
             </Button>
@@ -54,16 +83,40 @@ export default function LoginPage() {
     setErrorMessage(null);
     try {
       const supabase = getSupabaseClient();
+      // 링크를 누르면 새 탭에서 로그인이 완료되는 문제를 피하기 위해, 링크
+      // 대신 이메일에 함께 발급되는 6자리 코드를 같은 탭에서 입력받는다.
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
-        options: { emailRedirectTo: window.location.origin + "/dashboard" },
+        options: { shouldCreateUser: true },
       });
       if (error) throw error;
       setStatus("sent");
     } catch (error) {
-      console.error("[login] 이메일 OTP 요청 실패", error);
-      setErrorMessage("로그인 링크 발송에 실패했어요. 이메일 주소를 확인해주세요.");
+      console.error("[login] 이메일 코드 요청 실패", error);
+      setErrorMessage("로그인 코드 발송에 실패했어요. 이메일 주소를 확인해주세요.");
       setStatus("error");
+    }
+  }
+
+  async function handleVerifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    if (!code.trim()) return;
+    setStatus("verifying");
+    setErrorMessage(null);
+    try {
+      const supabase = getSupabaseClient();
+      const { error } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: code.trim(),
+        type: "email",
+      });
+      if (error) throw error;
+      // 성공하면 onAuthStateChange가 세션을 갱신하고, 위쪽 useEffect가 자동으로
+      // redirectPath로 이동시킨다.
+    } catch (error) {
+      console.error("[login] 코드 확인 실패", error);
+      setErrorMessage("코드가 올바르지 않거나 만료됐어요. 다시 시도해주세요.");
+      setStatus("sent");
     }
   }
 
@@ -72,7 +125,7 @@ export default function LoginPage() {
       const supabase = getSupabaseClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "kakao",
-        options: { redirectTo: window.location.origin + "/dashboard" },
+        options: { redirectTo: window.location.origin + redirectPath },
       });
       if (error) throw error;
     } catch (error) {
@@ -89,8 +142,8 @@ export default function LoginPage() {
           계정으로 기록을 이어가세요
         </h1>
         <p className="mt-2 text-xs text-muted">
-          로그인 없이도 이 기기에서 계속 체험할 수 있어요. 계정을 만들면 다른
-          기기에서도 성장 기록을 이어볼 수 있습니다.
+          성장 대시보드·퀘스트·뱃지는 로그인 후 이용할 수 있어요. 결과 리포트는
+          로그인 없이도 계속 확인할 수 있습니다.
         </p>
       </div>
 
@@ -113,19 +166,54 @@ export default function LoginPage() {
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={status === "sent" || status === "verifying"}
           />
-          <Button type="submit" disabled={status === "sending"}>
-            {status === "sending" ? "발송 중…" : "이메일로 로그인 링크 받기"}
-          </Button>
+          {status !== "sent" && status !== "verifying" && (
+            <Button type="submit" disabled={status === "sending"}>
+              {status === "sending" ? "발송 중…" : "이메일로 로그인 코드 받기"}
+            </Button>
+          )}
         </form>
 
-        {status === "sent" && (
-          <p className="mt-4 rounded-lg border border-growth/30 bg-growth-soft px-3 py-2 text-sm text-foreground">
-            {email}로 로그인 링크를 보냈어요. 메일함을 확인해주세요.
-          </p>
+        {(status === "sent" || status === "verifying") && (
+          <form onSubmit={handleVerifyCode} className="mt-4 flex flex-col gap-3">
+            <p className="rounded-lg border border-growth/30 bg-growth-soft px-3 py-2 text-sm text-foreground">
+              {email}로 6자리 코드를 보냈어요. 아래에 입력해주세요.
+            </p>
+            <TextField
+              label="인증 코드"
+              name="code"
+              inputMode="numeric"
+              placeholder="123456"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+            />
+            <Button type="submit" disabled={status === "verifying" || code.length < 6}>
+              {status === "verifying" ? "확인 중…" : "로그인하기"}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setStatus("idle");
+                setCode("");
+                setErrorMessage(null);
+              }}
+            >
+              다른 이메일로 다시 시도
+            </Button>
+          </form>
         )}
+
         {errorMessage && <p className="mt-4 text-sm text-red-400">{errorMessage}</p>}
       </Card>
+
+      <p className="mt-6 text-center text-xs text-muted">
+        <Link href="/" className="underline underline-offset-2">
+          홈으로 돌아가기
+        </Link>
+      </p>
     </div>
   );
 }

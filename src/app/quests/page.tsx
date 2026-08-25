@@ -4,11 +4,21 @@ import { useRouter } from "next/navigation";
 import { GuardScreen } from "@/components/common/GuardScreen";
 import { QuestCard } from "@/components/quest/QuestCard";
 import { useGrowthSession } from "@/lib/useGrowthSession";
+import { useRequireLogin } from "@/lib/useRequireLogin";
 import { getRecommendedQuests, isQuestCompleted } from "@/lib/quest";
 
 export default function QuestsPage() {
   const router = useRouter();
+  const authGate = useRequireLogin();
   const session = useGrowthSession();
+
+  if (authGate.configured && (authGate.loading || authGate.redirecting)) {
+    return (
+      <div className="mx-auto max-w-xl px-5 py-24 text-center text-sm text-muted">
+        로그인 확인 중입니다…
+      </div>
+    );
+  }
 
   if (session.status === "loading") {
     return (

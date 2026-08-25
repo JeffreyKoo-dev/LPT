@@ -8,12 +8,22 @@ import { GuardScreen } from "@/components/common/GuardScreen";
 import { StatGrid } from "@/components/growth/StatGrid";
 import { LevelPanel } from "@/components/growth/LevelPanel";
 import { useGrowthSession } from "@/lib/useGrowthSession";
+import { useRequireLogin } from "@/lib/useRequireLogin";
 import { getLevelProgress } from "@/lib/growth";
 import { BADGES } from "@/data/badges";
 
 export default function DashboardPage() {
   const router = useRouter();
+  const authGate = useRequireLogin();
   const session = useGrowthSession();
+
+  if (authGate.configured && (authGate.loading || authGate.redirecting)) {
+    return (
+      <div className="mx-auto max-w-xl px-5 py-24 text-center text-sm text-muted">
+        로그인 확인 중입니다…
+      </div>
+    );
+  }
 
   if (session.status === "loading") {
     return (
