@@ -7,22 +7,12 @@ import { Card, CardDescription, CardTitle } from "@/components/common/Card";
 import { GuardScreen } from "@/components/common/GuardScreen";
 import { GrowthTimeline } from "@/components/growth/GrowthTimeline";
 import { useGrowthSession } from "@/lib/useGrowthSession";
-import { useRequireLogin } from "@/lib/useRequireLogin";
 import { buildGrowthHistory } from "@/lib/growthHistory";
 import { getLevelProgress } from "@/lib/growth";
 
 export default function GrowthHistoryPage() {
   const router = useRouter();
-  const authGate = useRequireLogin();
   const session = useGrowthSession();
-
-  if (authGate.configured && (authGate.loading || authGate.redirecting)) {
-    return (
-      <div className="mx-auto max-w-xl px-5 py-24 text-center text-sm text-muted">
-        로그인 확인 중입니다…
-      </div>
-    );
-  }
 
   if (session.status === "loading") {
     return (
