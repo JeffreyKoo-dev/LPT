@@ -4,12 +4,22 @@ import { useRouter } from "next/navigation";
 import { GuardScreen } from "@/components/common/GuardScreen";
 import { BadgeCard } from "@/components/badge/BadgeCard";
 import { useGrowthSession } from "@/lib/useGrowthSession";
+import { useRequireLogin } from "@/lib/useRequireLogin";
 import { BADGES } from "@/data/badges";
 import { getBadgeEarnedAt } from "@/lib/badge";
 
 export default function BadgesPage() {
   const router = useRouter();
+  const authGate = useRequireLogin();
   const session = useGrowthSession();
+
+  if (authGate.configured && (authGate.loading || authGate.redirecting)) {
+    return (
+      <div className="mx-auto max-w-xl px-5 py-24 text-center text-sm text-muted">
+        로그인 확인 중입니다…
+      </div>
+    );
+  }
 
   if (session.status === "loading") {
     return (

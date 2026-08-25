@@ -7,6 +7,7 @@ import { Button } from "@/components/common/Button";
 import { Card, CardDescription, CardTitle } from "@/components/common/Card";
 import { GuardScreen } from "@/components/common/GuardScreen";
 import { useGrowthSession } from "@/lib/useGrowthSession";
+import { useRequireLogin } from "@/lib/useRequireLogin";
 import { completeQuest, isQuestCompleted } from "@/lib/quest";
 import { getQuestById } from "@/data/quests";
 import { getLevelProgress } from "@/lib/growth";
@@ -16,8 +17,17 @@ import type { CompleteQuestResult } from "@/lib/quest";
 export default function QuestDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const authGate = useRequireLogin();
   const session = useGrowthSession();
   const [result, setResult] = useState<CompleteQuestResult | null>(null);
+
+  if (authGate.configured && (authGate.loading || authGate.redirecting)) {
+    return (
+      <div className="mx-auto max-w-xl px-5 py-24 text-center text-sm text-muted">
+        로그인 확인 중입니다…
+      </div>
+    );
+  }
 
   if (session.status === "loading") {
     return (

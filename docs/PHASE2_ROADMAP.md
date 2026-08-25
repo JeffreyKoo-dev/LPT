@@ -266,3 +266,25 @@ create table birth_stats (
 **남은 것**: `birth_stats` 익명 통계 저장 로직 (동의 UI 포함), `/quests/[id]`
 페이지가 퀘스트 완료 시 호출하는 `completeQuest()`는 이미 내부적으로
 `saveGrowthProfile()`을 거치므로 별도 수정 없이 자동으로 클라우드 동기화된다.
+
+---
+
+## 10. 성장 기능 로그인 필수화
+
+**결정**: `/start`, `/survey`, `/result`(분석 체험)는 비로그인으로도 계속
+가능하지만, `/dashboard`, `/quests`, `/quests/[id]`, `/badges`, `/growth`
+(성장 기록·퀘스트 진행)는 **로그인이 필수**로 바뀌었다. 로그인 안 된 상태로
+접근하면 `/login?redirect=<원래경로>`로 자동 이동하고, 로그인 완료 후 원래
+가려던 페이지로 돌아간다.
+
+**구현**: `src/lib/useRequireLogin.ts` — `useSupabaseSession()`을 감싸서,
+Supabase가 설정되어 있는데 로그인 상태가 아니면 리다이렉트한다. Supabase 자체가
+설정 안 된 환경(로컬 개발 등)에서는 막지 않고 기존처럼 통과시켜, 로그인 기능
+없이 개발/테스트하던 흐름을 깨지 않는다. `useGrowthSession()`을 쓰는 5개
+페이지 각각에 이 훅을 추가했다 (공유 카드 `/share/[id]`와 `/compatibility`는
+비로그인으로도 계속 열람 가능하도록 의도적으로 제외).
+
+**로그인 페이지 개선**: `?redirect=` 쿼리 파라미터를 지원해, 로그인 방식(이메일
+OTP·카카오 OAuth) 모두 로그인 완료 후 원래 페이지로 정확히 돌아가도록 했다.
+안전하지 않은 리다이렉트 경로(외부 URL 등)는 `/dashboard`로 기본 처리해
+open redirect를 방지했다.
