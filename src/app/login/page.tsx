@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/common/Button";
@@ -36,11 +36,21 @@ function LoginPageInner() {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // 다른 탭에서 로그인을 완료해 이 탭이 방금 감지한 경우, 확인 화면을 잠깐
-  // 보여줄 필요 없이 바로 원래 가려던 페이지로 이어서 이동한다.
-  // (모든 훅은 조건 분기보다 앞서 호출되어야 하므로 최상단에 둔다)
+  // "방금 이 화면에서 로그인을 완료한 경우"에만 자동으로 이동시키고, 이미
+  // 로그인된 상태로 이 페이지에 들어온 경우(예: 헤더의 "내 계정" 클릭)는
+  // 자동으로 튕기지 않고 계정 화면(로그아웃 포함)을 그대로 보여준다.
+  const initialCheckDone = useRef(false);
+  const wasLoggedInOnLoad = useRef(false);
+
   useEffect(() => {
-    if (session.user) {
+    if (session.loading || initialCheckDone.current) return;
+    wasLoggedInOnLoad.current = !!session.user;
+    initialCheckDone.current = true;
+  }, [session.loading, session.user]);
+
+  useEffect(() => {
+    if (!initialCheckDone.current) return;
+    if (session.user && !wasLoggedInOnLoad.current) {
       router.push(redirectPath);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -61,11 +71,13 @@ function LoginPageInner() {
     return (
       <div className="mx-auto max-w-md px-5 py-24 text-center">
         <Card>
-          <CardTitle>로그인됐어요</CardTitle>
-          <CardDescription className="mt-2">이어서 이동하는 중입니다…</CardDescription>
+          <CardTitle>이미 로그인되어 있어요</CardTitle>
+          <CardDescription className="mt-2">
+            {session.user.email ?? "카카오 계정"}으로 로그인된 상태입니다.
+          </CardDescription>
           <div className="mt-5 flex flex-col gap-3">
             <Button className="w-full" onClick={() => router.push(redirectPath)}>
-              이어서 진행하기
+              대시보드로 이동
             </Button>
             <Button variant="ghost" onClick={session.signOut}>
               로그아웃
