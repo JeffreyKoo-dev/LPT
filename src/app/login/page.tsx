@@ -190,18 +190,18 @@ function LoginPageInner() {
         {(status === "sent" || status === "verifying") && (
           <form onSubmit={handleVerifyCode} className="mt-4 flex flex-col gap-3">
             <p className="rounded-lg border border-growth/30 bg-growth-soft px-3 py-2 text-sm text-foreground">
-              {email}로 6자리 코드를 보냈어요. 아래에 입력해주세요.
+              {email}로 코드를 보냈어요. 메일에 적힌 코드를 그대로 입력해주세요.
             </p>
             <TextField
               label="인증 코드"
               name="code"
               inputMode="numeric"
-              placeholder="123456"
-              maxLength={6}
+              placeholder="이메일에 적힌 코드"
+              maxLength={12}
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
             />
-            <Button type="submit" disabled={status === "verifying" || code.length < 6}>
+            <Button type="submit" disabled={status === "verifying" || code.length < 4}>
               {status === "verifying" ? "확인 중…" : "로그인하기"}
             </Button>
             <Button
