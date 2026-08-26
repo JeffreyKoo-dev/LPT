@@ -87,3 +87,45 @@ $$ language plpgsql;
 create trigger user_profiles_updated_at
   before update on user_profiles
   for each row execute function set_updated_at();
+
+-- ============================================================
+-- 4. friendships: 초대 링크 방식 친구 관계 (Phase 2c)
+--    검색으로 다른 사용자를 찾을 수 없다. 초대 링크를 공유하고 상대방이
+--    로그인한 상태로 열어 수락해야만 친구가 된다.
+-- ============================================================
+create extension if not exists pgcrypto;
+
+create table if not exists friendships (
+  id bigint generated always as identity primary key,
+  requester_id uuid not null references auth.users(id) on delete cascade,
+  addressee_id uuid references auth.users(id) on delete cascade,
+  invite_code text not null unique default encode(gen_random_bytes(6), 'hex'),
+  status text not null default 'pending' check (status in ('pending', 'accepted')),
+  created_at timestamptz not null default now(),
+  accepted_at timestamptz
+);
+
+alter table friendships enable row level security;
+
+create policy "본인 관련 친구관계만 조회" on friendships
+  for select using (auth.uid() = requester_id or auth.uid() = addressee_id);
+
+create policy "본인 초대만 생성" on friendships
+  for insert with check (auth.uid() = requester_id);
+
+create policy "초대 수락" on friendships
+  for update
+  using (status = 'pending' and addressee_id is null and auth.uid() <> requester_id)
+  with check (auth.uid() = addressee_id and status = 'accepted');
+
+create policy "친구의 프로필 조회 허용" on user_profiles
+  for select using (
+    exists (
+      select 1 from friendships f
+      where f.status = 'accepted'
+        and (
+          (f.requester_id = auth.uid() and f.addressee_id = user_profiles.user_id)
+          or (f.addressee_id = auth.uid() and f.requester_id = user_profiles.user_id)
+        )
+    )
+  );

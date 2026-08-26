@@ -167,6 +167,9 @@ export default function ResultPage() {
             지인과 궁합 보기
           </Button>
         </div>
+        <Button variant="ghost" className="w-full" onClick={() => router.push("/friends")}>
+          친구 초대하고 성향 비교하기
+        </Button>
         <Button variant="ghost" className="w-full" onClick={() => router.push("/")}>
           홈으로
         </Button>

@@ -161,3 +161,44 @@ export function getRelatedTypes(quadrant: BehaviorQuadrant): RelatedTypeGroup[] 
 export function getTypeIdList(): LptTypeId[] {
   return LPT_TYPES.map((t) => t.id);
 }
+
+/**
+ * 유형 ID만으로(원본 사주 없이) 계산하는 간이 관계 적합도.
+ * 서버에는 사주 원본이 아니라 계산된 LPT 유형만 저장되므로(개인정보 정책),
+ * 친구 목록에서의 궁합은 두 사람의 행동 스타일(quadrant)·에너지 그룹만으로
+ * 계산한다. `/compatibility`의 오행 기반 정밀 계산보다는 근사치다.
+ */
+export interface TypeCompatibilityResult {
+  score: number;
+  quadrantRelation: QuadrantRelationType;
+  sameEnergyGroup: boolean;
+  headline: string;
+  description: string;
+}
+
+export function computeTypeCompatibility(
+  typeIdA: LptTypeId,
+  typeIdB: LptTypeId
+): TypeCompatibilityResult | null {
+  const metaA = LPT_TYPES.find((t) => t.id === typeIdA);
+  const metaB = LPT_TYPES.find((t) => t.id === typeIdB);
+  if (!metaA || !metaB) return null;
+
+  const quadrantRelation = getQuadrantRelation(metaA.quadrant, metaB.quadrant);
+  const sameEnergyGroup = metaA.energyGroup === metaB.energyGroup;
+
+  const quadrantScore: Record<QuadrantRelationType, number> = { 보완형: 80, 동형: 68, 대각형: 60 };
+  const score = Math.min(96, quadrantScore[quadrantRelation] + (sameEnergyGroup ? 0 : 8));
+
+  const qDesc = QUADRANT_RELATION_DESC[quadrantRelation];
+
+  return {
+    score,
+    quadrantRelation,
+    sameEnergyGroup,
+    headline: qDesc.title,
+    description: sameEnergyGroup
+      ? `${qDesc.desc} 에너지 결도 비슷해 생활 리듬이 잘 맞을 수 있어요.`
+      : `${qDesc.desc} 에너지 결이 달라 서로 다른 자극을 줄 수 있어요.`,
+  };
+}

@@ -312,3 +312,35 @@ open redirect를 방지했다.
 **Phase 2b 전체 완료**: Supabase 연동, 로그인(이메일 코드·카카오), 클라우드
 동기화, 성장 기능 로그인 필수화, 익명 통계 저장까지 모두 마무리됐다. 다음은
 Phase 2c(지인 연동 궁합, 같은 성향 리스트)로 이어간다.
+
+---
+
+## 12. Phase 2c — 지인 연동 궁합·같은 성향 리스트 완료
+
+**설계**: 검색으로 다른 사용자를 찾는 기능은 넣지 않았다. 본인이 초대
+링크를 만들어 공유하고, 상대방이 로그인 상태로 그 링크를 열어 수락해야만
+친구가 되는 방식이다 (`friendships` 테이블, `supabase/migrations/002_friendships.sql`).
+
+**궁합 계산 방식**: 서버에는 생년월일시 원본이 아니라 계산된 LPT 유형만
+저장되어 있으므로, 친구 목록에서의 궁합은 `lib/compatibility.ts`의
+`computeTypeCompatibility()`로 두 사람의 **행동 스타일(quadrant)과 에너지
+그룹만으로** 계산한다 — `/compatibility`의 오행 기반 정밀 계산보다는 근사치이며,
+정밀한 결과를 원하면 여전히 `/compatibility`에서 생년월일시를 직접 입력해야
+한다 (친구 카드에 안내 링크 포함). 144가지 유형 조합 전수 계산을 직접
+실행해 검증했다.
+
+**같은 성향 표시**: 친구 목록에서 나와 LPT 유형이 같은 친구에게 "같은 성향"
+배지를 표시한다.
+
+**새로 추가된 것**
+- `supabase/migrations/002_friendships.sql` — `friendships` 테이블 + RLS.
+  친구 사이에는 서로의 `user_profiles`(닉네임·유형·성장기록)를 조회할 수
+  있도록 정책을 추가했다 (기존 "본인만 조회" 정책에 OR로 합쳐짐)
+- `lib/friends.ts` — 초대 생성/조회/수락, 친구 목록 조회
+- `/friends` — 친구 목록 + 초대 링크 생성(Web Share API 연동)
+- `/friends/accept/[code]` — 초대 수락 화면 (로그인 필수)
+- `components/friends/FriendCard.tsx` — 친구별 유형·궁합 요약 카드
+
+**Phase 2 전체 요약**: 2a(음력·궁합·공유·정적유형궁합) → 2b(Supabase·로그인·
+클라우드동기화·로그인필수화·익명통계) → 2c(친구·지인궁합·같은성향) 순서로
+모두 완료됐다.

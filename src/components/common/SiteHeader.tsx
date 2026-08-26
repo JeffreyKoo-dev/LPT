@@ -16,6 +16,7 @@ export function SiteHeader() {
         </Link>
         <nav className="flex items-center gap-1 text-sm">
           <NavLink href="/dashboard">대시보드</NavLink>
+          {session.configured && session.user && <NavLink href="/friends">친구</NavLink>}
           <NavLink href="/start">시작하기</NavLink>
           {session.configured && (
             <NavLink href="/login">{session.user ? "내 계정" : "로그인"}</NavLink>
