@@ -23,6 +23,7 @@ export default function StartPage() {
   const [applyLocalMeanTime, setApplyLocalMeanTime] = useState(true);
   const [calendarType, setCalendarType] = useState<CalendarType>("solar");
   const [gender, setGender] = useState<Gender>("male");
+  const [consentToAnonymousStats, setConsentToAnonymousStats] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
   function validate(): FormErrors {
@@ -51,6 +52,7 @@ export default function StartPage() {
       calendarType,
       gender,
       applyLocalMeanTime: birthTimeUnknown ? false : applyLocalMeanTime,
+      consentToAnonymousStats,
       createdAt: new Date().toISOString(),
     };
     getStorage().set(STORAGE_KEYS.basicInfo, basicInfo);
@@ -144,6 +146,20 @@ export default function StartPage() {
           <Button type="submit" size="lg" className="mt-2 w-full">
             성향 설문으로 이동하기
           </Button>
+
+          <div className="rounded-xl border border-border bg-surface-2/60 p-3">
+            <Checkbox
+              label="익명 통계 목적으로 결과 데이터 제공에 동의합니다"
+              checked={consentToAnonymousStats}
+              onChange={(e) => setConsentToAnonymousStats(e.target.checked)}
+            />
+            <p className="mt-1.5 pl-6 text-xs text-muted">
+              동의하시면 계정과 전혀 연결되지 않는 별도 저장소에 생년월일시·성별과
+              계산된 유형만 저장됩니다. 닉네임이나 계정 정보는 포함되지 않으며,
+              서비스 통계 개선 목적 외에는 사용되지 않습니다. 선택 사항이며,
+              동의하지 않아도 서비스 이용에는 아무 영향이 없습니다.
+            </p>
+          </div>
         </form>
       </Card>
 

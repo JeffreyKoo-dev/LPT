@@ -3,6 +3,7 @@ import { getStorage, STORAGE_KEYS } from "@/lib/storage";
 import { GrowthProfile } from "@/types/growth";
 import { SurveyState } from "@/types/survey";
 import { BasicInfo } from "@/types/user";
+import { LptTypeId } from "@/types/lpt";
 
 /**
  * 로그인한 사용자의 데이터를 Supabase와 동기화한다.
@@ -75,6 +76,33 @@ export async function pushSurveyToCloud(state: SurveyState): Promise<void> {
     });
   } catch (error) {
     console.error("[sync] 설문 응답 업로드 실패", error);
+  }
+}
+
+/**
+ * 사용자가 동의한 경우에만, 계정(로그인 여부와 무관)과 전혀 연결되지 않는
+ * birth_stats 테이블에 생년월일시·성별·계산된 유형만 저장한다. user_id나
+ * 닉네임 등 식별 가능한 정보는 절대 포함하지 않는다 — 로그인 상태를 확인하는
+ * 로직조차 없다 (의도적으로 계정과 완전히 분리).
+ */
+export async function pushAnonymousBirthStats(
+  basicInfo: BasicInfo,
+  lptTypeId: LptTypeId
+): Promise<void> {
+  if (!isSupabaseConfigured() || !basicInfo.consentToAnonymousStats) return;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(basicInfo.birthDate)) return;
+
+  try {
+    const supabase = getSupabaseClient();
+    await supabase.from("birth_stats").insert({
+      birth_date: basicInfo.birthDate,
+      birth_time: basicInfo.birthTimeUnknown ? null : basicInfo.birthTime,
+      gender: basicInfo.gender,
+      calendar_type: basicInfo.calendarType,
+      lpt_type_id: lptTypeId,
+    });
+  } catch (error) {
+    console.error("[sync] 익명 통계 저장 실패", error);
   }
 }
 

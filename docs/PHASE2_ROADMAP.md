@@ -288,3 +288,27 @@ Supabase가 설정되어 있는데 로그인 상태가 아니면 리다이렉트
 OTP·카카오 OAuth) 모두 로그인 완료 후 원래 페이지로 정확히 돌아가도록 했다.
 안전하지 않은 리다이렉트 경로(외부 URL 등)는 `/dashboard`로 기본 처리해
 open redirect를 방지했다.
+
+---
+
+## 11. birth_stats 익명 통계 저장 완료 (Phase 2b 마무리)
+
+**구현**: `/start` 페이지 맨 아래에 기본 비동의(옵트인) 체크박스 추가 —
+"익명 통계 목적으로 결과 데이터 제공에 동의합니다". 동의한 경우에만
+`generateAndSaveAnalysisReport()`가 실행될 때(설문 완료 시점) `lib/supabase/sync.ts`의
+`pushAnonymousBirthStats()`가 `birth_stats` 테이블에 생년월일시·성별·계산된
+유형만 저장한다.
+
+**계정과의 분리를 코드로 보장하는 방법**:
+- `pushAnonymousBirthStats()`는 로그인 여부를 아예 확인하지 않는다 (로그인
+  여부와 무관하게 동의만으로 동작) — user_id를 참조할 방법 자체가 없다
+- 삽입하는 컬럼에 `nickname`, `user_id` 등 식별 가능한 값이 전혀 없다
+- `supabase/schema.sql`의 `birth_stats` RLS 정책은 **insert만 허용**, select는
+  클라이언트에서 불가능하도록 막아뒀다 (관리자만 대시보드에서 직접 조회 가능)
+
+**검증**: 미동의/동의 두 경우 모두, 그리고 Supabase 미설정 환경에서 안전하게
+동작하는 것(에러 없이 조용히 무시)을 확인했다.
+
+**Phase 2b 전체 완료**: Supabase 연동, 로그인(이메일 코드·카카오), 클라우드
+동기화, 성장 기능 로그인 필수화, 익명 통계 저장까지 모두 마무리됐다. 다음은
+Phase 2c(지인 연동 궁합, 같은 성향 리스트)로 이어간다.

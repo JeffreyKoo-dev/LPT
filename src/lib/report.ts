@@ -4,6 +4,7 @@ import { getStorage, STORAGE_KEYS } from "@/lib/storage";
 import { calculateSaju } from "@/lib/saju";
 import { computeAxisScores, loadSurveyState } from "@/lib/survey";
 import { deriveLptType } from "@/lib/lpt";
+import { pushAnonymousBirthStats } from "@/lib/supabase/sync";
 
 /**
  * 기본 정보 + 설문 응답을 기반으로 전체 분석(사주 → 설문 점수 → LPT 유형)을
@@ -25,6 +26,10 @@ export function generateAndSaveAnalysisReport(basicInfo: BasicInfo): AnalysisRep
   };
 
   getStorage().set(STORAGE_KEYS.analysis, report);
+  // 동의한 경우에만, 계정과 무관하게 익명 통계 저장소로 결과를 보낸다.
+  // 이 함수가 여러 번 호출될 수 있어 드물게 중복 행이 생길 수 있지만, 집계
+  // 통계 용도라 큰 영향은 없다.
+  pushAnonymousBirthStats(basicInfo, lptType.typeId);
   return report;
 }
 

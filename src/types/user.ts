@@ -19,6 +19,12 @@ export interface BasicInfo {
    * 일치하는 것을 확인해 기본값을 켜진 상태로 변경했다 (원치 않는 사용자는 끌 수 있음).
    */
   applyLocalMeanTime: boolean;
+  /**
+   * 익명 통계 저장 동의 여부. 기본값 false(미동의, 옵트인 방식).
+   * 동의한 경우에만 계정과 전혀 연결되지 않는 별도 테이블(birth_stats)에
+   * 생년월일시·성별·계산된 유형만 저장한다 — docs/PHASE2_ROADMAP.md 3절 참고.
+   */
+  consentToAnonymousStats: boolean;
   createdAt: string; // ISO timestamp
 }
 
@@ -30,5 +36,6 @@ export const EMPTY_BASIC_INFO: BasicInfo = {
   calendarType: "solar",
   gender: "male",
   applyLocalMeanTime: true,
+  consentToAnonymousStats: false,
   createdAt: "",
 };

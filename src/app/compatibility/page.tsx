@@ -63,6 +63,7 @@ export default function CompatibilityPage() {
         calendarType: calendarTypeB,
         gender: "male", // 궁합 계산(오행 기반)에는 성별이 영향을 주지 않음
         applyLocalMeanTime: birthTimeUnknownB ? false : applyLocalMeanTimeB,
+        consentToAnonymousStats: false, // 상대방 정보는 통계 저장 대상이 아님
         createdAt: "",
       });
       const compat = computeCompatibility(
