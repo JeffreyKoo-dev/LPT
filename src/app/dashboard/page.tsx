@@ -11,6 +11,7 @@ import { useGrowthSession } from "@/lib/useGrowthSession";
 import { useRequireLogin } from "@/lib/useRequireLogin";
 import { getLevelProgress } from "@/lib/growth";
 import { BADGES } from "@/data/badges";
+import { TodayRecommendationPanel } from "@/components/dashboard/TodayRecommendationPanel";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -33,7 +34,13 @@ export default function DashboardPage() {
     );
   }
 
-  if (session.status === "missing-analysis" || !session.profile || !session.typeMeta || !session.fantasyClass) {
+  if (
+    session.status === "missing-analysis" ||
+    !session.profile ||
+    !session.typeMeta ||
+    !session.fantasyClass ||
+    !session.report
+  ) {
     return (
       <GuardScreen
         title="아직 캐릭터가 없어요"
@@ -44,7 +51,7 @@ export default function DashboardPage() {
     );
   }
 
-  const { profile, typeMeta, fantasyClass, nickname } = session;
+  const { profile, typeMeta, fantasyClass, nickname, report } = session;
   const levelProgress = getLevelProgress(profile.xp);
   const earnedBadgeCount = profile.badges.length;
 
@@ -64,6 +71,8 @@ export default function DashboardPage() {
         <Card>
           <LevelPanel levelProgress={levelProgress} />
         </Card>
+
+        <TodayRecommendationPanel report={report} profile={profile} fantasyClass={fantasyClass} />
 
         <Card>
           <CardTitle>스탯</CardTitle>
