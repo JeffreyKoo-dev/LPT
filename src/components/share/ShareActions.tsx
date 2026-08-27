@@ -3,18 +3,31 @@
 import { RefObject, useEffect, useState } from "react";
 import { toPng } from "html-to-image";
 import { Button } from "@/components/common/Button";
+import { isKakaoShareConfigured, shareToKakao } from "@/lib/kakaoShare";
+import { buildFacebookShareUrl, buildXShareUrl, buildSmsShareUrl } from "@/lib/shareLinks";
 
 interface ShareActionsProps {
   targetRef: RefObject<HTMLDivElement>;
   fileName: string;
+  shareTitle: string;
+  shareDescription: string;
 }
 
-export function ShareActions({ targetRef, fileName }: ShareActionsProps) {
+/**
+ * 플랫폼별 공유 버튼 모음.
+ *
+ * 카카오톡·페이스북·X·문자는 각각 독립된 방식(카카오 SDK / 직접 링크)으로
+ * 동작해, 하나의 API(navigator.share)에 의존하지 않는다. Web Share API는
+ * 안드로이드 기기·OS 버전에 따라 공유 대상 목록이 비정상적으로 비는 문제가
+ * 실기기 확인 결과 재현되어(게스트 모드에서도 동일), 주력 방식에서
+ * "기타 앱으로 공유"라는 보조 옵션으로 내렸다.
+ */
+export function ShareActions({ targetRef, fileName, shareTitle, shareDescription }: ShareActionsProps) {
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
   const [canUseWebShare, setCanUseWebShare] = useState(false);
+  const [kakaoError, setKakaoError] = useState(false);
 
-  // navigator는 서버 렌더링 시 없으므로 마운트 이후에만 기능 지원 여부를 확인한다
   useEffect(() => {
     setCanUseWebShare(typeof navigator !== "undefined" && typeof navigator.share === "function");
   }, []);
@@ -45,23 +58,32 @@ export function ShareActions({ targetRef, fileName }: ShareActionsProps) {
     }
   }
 
-  /**
-   * OS 기본 공유시트를 연다. 카카오톡·인스타그램·페이스북·문자 등 기기에 설치된
-   * 앱이 시트에 자동으로 뜬다 (플랫폼별 SDK·앱키 불필요).
-   *
-   * title/text를 url과 함께 보내면 일부 안드로이드 기기에서 공유 대상 목록이
-   * 거의 비어버리는 문제가 확인되어(안드로이드가 title+text+url 조합을 순수
-   * 링크 공유와 다르게 처리하는 것으로 추정), 링크만 단독으로 공유하도록
-   * 단순화했다. 카카오톡 등에서 링크를 열면 어차피 페이지 자체의 내용으로
-   * 미리보기가 구성되므로 실사용에는 차이가 없다. 상태 표시용 state도
-   * 제거했다 — 공유 호출 자체가 즉시 실행돼야 안드로이드가 "방금 사용자가
-   * 직접 눌렀다"는 신호(user activation)를 확실히 인식한다.
-   */
-  async function handleShare() {
+  async function handleKakaoShare() {
+    setKakaoError(false);
+    try {
+      await shareToKakao({ title: shareTitle, description: shareDescription, url: window.location.href });
+    } catch (error) {
+      console.error("[share] 카카오톡 공유 실패", error);
+      setKakaoError(true);
+    }
+  }
+
+  function handleFacebookShare() {
+    window.open(buildFacebookShareUrl(window.location.href), "_blank", "noopener,noreferrer");
+  }
+
+  function handleXShare() {
+    window.open(buildXShareUrl(window.location.href, shareTitle), "_blank", "noopener,noreferrer");
+  }
+
+  function handleSmsShare() {
+    window.location.href = buildSmsShareUrl(window.location.href, shareTitle);
+  }
+
+  async function handleWebShare() {
     try {
       await navigator.share({ url: window.location.href });
     } catch (error) {
-      // 사용자가 공유시트를 취소한 경우(AbortError)는 정상 흐름이라 에러로 취급하지 않는다
       if ((error as Error).name !== "AbortError") {
         console.error("[share] 공유 실패", error);
       }
@@ -70,14 +92,28 @@ export function ShareActions({ targetRef, fileName }: ShareActionsProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      {canUseWebShare && (
-        <Button className="w-full" onClick={handleShare}>
-          카카오톡·인스타그램 등으로 공유하기
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {isKakaoShareConfigured() && (
+          <Button variant="secondary" onClick={handleKakaoShare}>
+            카카오톡
+          </Button>
+        )}
+        <Button variant="secondary" onClick={handleFacebookShare}>
+          페이스북
         </Button>
+        <Button variant="secondary" onClick={handleXShare}>
+          X
+        </Button>
+        <Button variant="secondary" onClick={handleSmsShare}>
+          문자
+        </Button>
+      </div>
+      {kakaoError && (
+        <p className="text-xs text-red-400">카카오톡 공유에 실패했어요. 잠시 후 다시 시도해주세요.</p>
       )}
+
       <div className="flex flex-col gap-3 sm:flex-row">
         <Button
-          variant={canUseWebShare ? "secondary" : "primary"}
           className="w-full"
           onClick={handleSavePng}
           disabled={status === "saving"}
@@ -88,6 +124,12 @@ export function ShareActions({ targetRef, fileName }: ShareActionsProps) {
           {copyStatus === "copied" ? "링크 복사됨!" : "링크 복사하기"}
         </Button>
       </div>
+
+      {canUseWebShare && (
+        <Button variant="ghost" className="w-full" onClick={handleWebShare}>
+          기타 앱으로 공유 (기기 공유 메뉴)
+        </Button>
+      )}
     </div>
   );
 }

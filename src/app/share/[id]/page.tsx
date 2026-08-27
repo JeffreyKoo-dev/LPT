@@ -86,7 +86,12 @@ export default function SharePage() {
       </div>
 
       <div className="mt-6">
-        <ShareActions targetRef={cardRef} fileName={`lpt-${shareParam.kind}`} />
+        <ShareActions
+          targetRef={cardRef}
+          fileName={`lpt-${shareParam.kind}`}
+          shareTitle={shareData.heading}
+          shareDescription={shareData.subheading}
+        />
       </div>
     </div>
   );
