@@ -1,7 +1,7 @@
 "use client";
 
 import { RefObject, useEffect, useState } from "react";
-import { toPng, toBlob } from "html-to-image";
+import { toPng } from "html-to-image";
 import { Button } from "@/components/common/Button";
 
 interface ShareActionsProps {
@@ -55,29 +55,17 @@ export function ShareActions({
 
   /**
    * OS 기본 공유시트를 연다. 카카오톡·인스타그램·페이스북·문자 등 기기에 설치된
-   * 앱이 시트에 자동으로 뜬다 (플랫폼별 SDK·앱키 불필요). 이미지 공유가 가능한
-   * 환경이면 카드 이미지를, 아니면 링크만 공유한다.
+   * 앱이 시트에 자동으로 뜬다 (플랫폼별 SDK·앱키 불필요).
+   *
+   * 이미지 파일을 함께 공유하려던 이전 버전은, 파일 공유를 지원하지 않는 앱이
+   * 많아 "일부 방법만 표시됩니다" 같은 경고와 함께 공유 대상 목록이 크게
+   * 줄어드는 문제가 있었다. 그래서 링크(+텍스트)만 공유하도록 단순화했다 —
+   * 이미지 자체는 "PNG로 저장하기" 버튼으로 별도로 받을 수 있다.
    */
   async function handleShare() {
     setShareStatus("sharing");
     try {
-      let file: File | undefined;
-      if (targetRef.current) {
-        try {
-          const blob = await toBlob(targetRef.current, { pixelRatio: 2 });
-          if (blob) file = new File([blob], `${fileName}.png`, { type: "image/png" });
-        } catch {
-          // 이미지 변환 실패 시 링크 공유로 자연스럽게 폴백
-        }
-      }
-
-      const canShareFiles = file && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] });
-
-      if (canShareFiles && file) {
-        await navigator.share({ title: shareTitle, text: shareText, files: [file] });
-      } else {
-        await navigator.share({ title: shareTitle, text: shareText, url: window.location.href });
-      }
+      await navigator.share({ title: shareTitle, text: shareText, url: window.location.href });
     } catch (error) {
       // 사용자가 공유시트를 취소한 경우(AbortError)는 정상 흐름이라 에러로 취급하지 않는다
       if ((error as Error).name !== "AbortError") {
