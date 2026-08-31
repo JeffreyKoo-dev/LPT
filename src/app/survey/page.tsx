@@ -222,7 +222,7 @@ function SurveyComplete({ onReset }: { onReset: () => void }) {
 
       {status === "done" && typeName && (
         <Card className="mt-8 text-left">
-          <p className="text-xs text-fate">당신의 LPT 유형은</p>
+          <p className="text-xs text-muted">당신의 LPT 유형은</p>
           <CardTitle className="mt-1 text-2xl">{typeName}</CardTitle>
           {fantasyClassName && (
             <p className="mt-1 text-sm text-growth">{fantasyClassName}</p>

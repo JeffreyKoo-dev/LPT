@@ -9,13 +9,13 @@ export const ELEMENT_ICON_COMPONENT: Record<Element, LucideIcon> = {
   water: Droplets,
 };
 
-/** 오행별 대표 색상 (Tailwind 유틸리티와 인라인 스타일 양쪽에서 함께 쓰기 위한 원시 값) */
+/** 오행별 대표 색상 — 전통 오방색(청·적·황·백·흑)을 다크 UI 톤으로 조정한 값 */
 export const ELEMENT_HEX: Record<Element, string> = {
-  wood: "#34d399",
-  fire: "#fb7185",
-  earth: "#fbbf24",
-  metal: "#cbd5e1",
-  water: "#38bdf8",
+  wood: "#6f8f6a", // 청(靑) — 옥빛에 가까운 톤다운 녹색
+  fire: "#b8543c", // 적(赤) — 단청 주칠에 가까운 붉은빛
+  earth: "#c99a4a", // 황(黃) — 토황색
+  metal: "#c9c0a8", // 백(白) — 차가운 회색 대신 따뜻한 아이보리
+  water: "#4d6a87", // 흑(黑) — 먹빛에 가까운 짙은 남색
 };
 
 interface ElementIconProps {

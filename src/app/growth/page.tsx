@@ -6,6 +6,7 @@ import { Button } from "@/components/common/Button";
 import { Card, CardDescription, CardTitle } from "@/components/common/Card";
 import { GuardScreen } from "@/components/common/GuardScreen";
 import { GrowthTimeline } from "@/components/growth/GrowthTimeline";
+import { PageHeading } from "@/components/common/PageHeading";
 import { useGrowthSession } from "@/lib/useGrowthSession";
 import { useRequireLogin } from "@/lib/useRequireLogin";
 import { buildGrowthHistory } from "@/lib/growthHistory";
@@ -50,15 +51,12 @@ export default function GrowthHistoryPage() {
   return (
     <div className="relative">
       <section className="px-5 pb-6 pt-14">
-        <div className="mx-auto max-w-lg text-center">
-          <p className="text-xs text-fate">성장 히스토리</p>
-          <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-foreground">
-            지금까지의 성장 기록
-          </h1>
-          <p className="mt-2 text-sm text-muted">
-            지금까지 퀘스트 {profile.questLog.length}개를 완료하고 뱃지 {profile.badges.length}개를
-            모았어요
-          </p>
+        <div className="mx-auto max-w-lg">
+          <PageHeading
+            label="성장 히스토리"
+            title="지금까지의 성장 기록"
+            description={`지금까지 퀘스트 ${profile.questLog.length}개를 완료하고 뱃지 ${profile.badges.length}개를 모았어요`}
+          />
         </div>
       </section>
 

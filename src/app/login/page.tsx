@@ -7,6 +7,7 @@ import { Button } from "@/components/common/Button";
 import { Card, CardDescription, CardTitle } from "@/components/common/Card";
 import { GuardScreen } from "@/components/common/GuardScreen";
 import { TextField } from "@/components/form/TextField";
+import { PageHeading } from "@/components/common/PageHeading";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { useSupabaseSession } from "@/lib/useSupabaseSession";
 
@@ -148,15 +149,12 @@ function LoginPageInner() {
 
   return (
     <div className="mx-auto max-w-md px-5 py-14">
-      <div className="mb-6 text-center">
-        <p className="text-xs text-fate">로그인</p>
-        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-foreground">
-          계정으로 기록을 이어가세요
-        </h1>
-        <p className="mt-2 text-xs text-muted">
-          성장 대시보드·퀘스트·뱃지는 로그인 후 이용할 수 있어요. 결과 리포트는
-          로그인 없이도 계속 확인할 수 있습니다.
-        </p>
+      <div className="mb-6">
+        <PageHeading
+          label="로그인"
+          title="계정으로 기록을 이어가세요"
+          description="성장 대시보드·퀘스트·뱃지는 로그인 후 이용할 수 있어요. 결과 리포트는 로그인 없이도 계속 확인할 수 있습니다."
+        />
       </div>
 
       <Card>

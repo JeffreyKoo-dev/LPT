@@ -1,0 +1,53 @@
+<svg width="400" height="500" viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff8ef"/>
+      <stop offset="100%" stop-color="#ffe8d1"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#bg)"/>
+  <ellipse cx="200" cy="440" rx="100" ry="15" fill="#f5c398" opacity="0.5"/>
+
+  <path d="M 155 300 Q 125 360 132 420 L 160 412 Q 158 360 178 305 Z" fill="#fdba74"/>
+  <path d="M 245 300 Q 275 360 268 420 L 240 412 Q 242 360 222 305 Z" fill="#fdba74"/>
+
+  <ellipse cx="200" cy="375" rx="57" ry="52" fill="#fdba74"/>
+  <path d="M 169 356 Q 200 369 231 356 L 227 391 Q 200 403 173 391 Z" fill="#fef3c7"/>
+  <polygon points="200.0,361.0 197.1,368.0 189.5,368.6 195.3,373.5 193.5,380.9 200.0,376.9 206.5,380.9 204.7,373.5 210.5,368.6 202.9,368.0" fill="#f97316"/>
+  <path d="M 168 388 Q 200 400 232 388 L 236 405 Q 200 416 164 405 Z" fill="#c2410c"/>
+
+  <circle cx="149" cy="377" r="21" fill="#fdba74"/>
+  <circle cx="251" cy="377" r="21" fill="#fdba74"/>
+  <circle cx="141" cy="391" r="13" fill="#fff1e2"/>
+  <circle cx="259" cy="391" r="13" fill="#fff1e2"/>
+
+  <circle cx="200" cy="220" r="118" fill="#fff1e2"/>
+  
+  <circle cx="104" cy="255" r="34" fill="#8a4a1f"/>
+  <circle cx="296" cy="255" r="34" fill="#8a4a1f"/>
+  <path d="M 92 195 C 84 128 132 78 200 78 C 268 78 316 128 308 195
+           C 298 155 268 145 200 145 C 132 145 102 155 92 195 Z" fill="#8a4a1f"/>
+  <circle cx="200" cy="88" r="24" fill="#8a4a1f"/>
+  <path d="M 262 200 L 286 188 L 286 218 Z" fill="#fde047"/>
+  <path d="M 262 200 L 238 188 L 238 218 Z" fill="#fde047"/>
+  <circle cx="262" cy="200" r="7" fill="#f59e0b"/>
+
+  <circle cx="200" cy="168" r="13" fill="#fde047"/>
+  <circle cx="200" cy="168" r="7" fill="#f59e0b"/>
+
+  <circle cx="128" cy="248" r="24" fill="#fdba74" opacity="0.55"/>
+  <circle cx="272" cy="248" r="24" fill="#fdba74" opacity="0.55"/>
+
+  <circle cx="158" cy="228" r="19" fill="#3a2318"/>
+  <circle cx="242" cy="228" r="19" fill="#3a2318"/>
+  <circle cx="164" cy="220" r="6.5" fill="#ffffff"/>
+  <circle cx="248" cy="220" r="6.5" fill="#ffffff"/>
+  <circle cx="153" cy="234" r="3.5" fill="#ffffff" opacity="0.8"/>
+  <circle cx="237" cy="234" r="3.5" fill="#ffffff" opacity="0.8"/>
+
+  <path d="M 188 262 Q 200 272 212 262" stroke="#c2410c" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+
+  <path d="M 300 100 l 4 10 l 10 4 l -10 4 l -4 10 l -4 -10 l -10 -4 l 10 -4 z" fill="#fde047"/>
+
+  <text x="200" y="478" text-anchor="middle" font-family="Noto Sans CJK KR, sans-serif" font-size="22" font-weight="700" fill="#c2410c">군단 지휘관</text>
+</svg>

@@ -13,7 +13,7 @@ import { LifestyleIndicatorPanel } from "@/components/result/LifestyleIndicatorP
 import { SynergyPanel } from "@/components/result/SynergyPanel";
 import { DailyCardWidget } from "@/components/result/DailyCardWidget";
 import { AnalysisReport } from "@/types/report";
-import { BasicInfo } from "@/types/user";
+import { BasicInfo, Gender } from "@/types/user";
 import { loadAnalysisReport, generateAndSaveAnalysisReport } from "@/lib/report";
 import { getStorage, STORAGE_KEYS } from "@/lib/storage";
 import { getLptTypeMeta } from "@/data/lptTypes";
@@ -22,6 +22,7 @@ import { computeLifestyleIndicator } from "@/lib/indicator";
 import { getLunarDate, LunarDate } from "@/lib/saju";
 import { getRelatedTypes } from "@/lib/compatibility";
 import { RelatedTypesPanel } from "@/components/result/RelatedTypesPanel";
+import { PageHeading } from "@/components/common/PageHeading";
 
 type LoadState = "loading" | "missing-basic-info" | "missing-survey" | "ready";
 
@@ -29,6 +30,7 @@ export default function ResultPage() {
   const router = useRouter();
   const [report, setReport] = useState<AnalysisReport | null>(null);
   const [nickname, setNickname] = useState("");
+  const [gender, setGender] = useState<Gender>("male");
   const [lunarDate, setLunarDate] = useState<LunarDate | null>(null);
   const [state, setState] = useState<LoadState>("loading");
 
@@ -39,6 +41,7 @@ export default function ResultPage() {
       return;
     }
     setNickname(basicInfo.nickname);
+    setGender(basicInfo.gender);
     setLunarDate(getLunarDate(basicInfo));
 
     let existing = loadAnalysisReport();
@@ -109,19 +112,17 @@ export default function ResultPage() {
   return (
     <div className="relative">
       <section className="px-5 pb-6 pt-14">
-        <div className="mx-auto max-w-lg text-center">
-          <p className="text-xs text-fate">{nickname}님의 LPT 분석 리포트</p>
-          <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-foreground">
-            결과 리포트
-          </h1>
-          <p className="mt-2 text-xs text-muted">
-            모든 결과는 확정된 사실이 아닌, 참고할 수 있는 경향과 가능성입니다.
-          </p>
+        <div className="mx-auto max-w-lg">
+          <PageHeading
+            label={`${nickname}님의 LPT 분석 리포트`}
+            title="결과 리포트"
+            description="모든 결과는 확정된 사실이 아닌, 참고할 수 있는 경향과 가능성입니다."
+          />
         </div>
       </section>
 
       <section className="mx-auto grid max-w-lg gap-5 px-5 pb-24">
-        <CharacterCard nickname={nickname} typeMeta={typeMeta} fantasyClass={fantasyClass} />
+        <CharacterCard nickname={nickname} typeMeta={typeMeta} fantasyClass={fantasyClass} gender={gender} />
         {lunarDate && (
           <p className="-mt-2 text-center text-xs text-muted">
             음력 {lunarDate.year}년 {lunarDate.month}월 {lunarDate.day}일생
@@ -131,19 +132,19 @@ export default function ResultPage() {
 
         <DailyCardWidget quadrant={report.lptType.quadrant} />
 
-        <Card>
+        <Card variant="ledger">
           <ElementRadar elementCounts={report.sajuChart.elementCounts} />
         </Card>
 
-        <Card>
+        <Card variant="ledger">
           <AxisScoreBars scores={report.surveyScores} />
         </Card>
 
-        <Card>
+        <Card variant="ledger">
           <LifestyleIndicatorPanel indicator={indicator} />
         </Card>
 
-        <Card>
+        <Card variant="ledger">
           <TenGodsPanel sajuChart={report.sajuChart} />
         </Card>
 

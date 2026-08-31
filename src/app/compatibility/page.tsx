@@ -15,6 +15,7 @@ import { useGrowthSession } from "@/lib/useGrowthSession";
 import { calculateSaju } from "@/lib/saju";
 import { computeCompatibility, CompatibilityResult } from "@/lib/compatibility";
 import { CalendarType } from "@/types/user";
+import { PageHeading } from "@/components/common/PageHeading";
 
 export default function CompatibilityPage() {
   const router = useRouter();
@@ -79,14 +80,12 @@ export default function CompatibilityPage() {
 
   return (
     <div className="mx-auto max-w-lg px-5 py-14">
-      <div className="mb-6 text-center">
-        <p className="text-xs text-fate">관계 적합도</p>
-        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-foreground">
-          지인과의 궁합을 확인해보세요
-        </h1>
-        <p className="mt-2 text-xs text-muted">
-          상대방 정보는 이 계산에만 사용되며 저장되지 않습니다.
-        </p>
+      <div className="mb-6">
+        <PageHeading
+          label="관계 적합도"
+          title="지인과의 궁합을 확인해보세요"
+          description="상대방 정보는 이 계산에만 사용되며 저장되지 않습니다."
+        />
       </div>
 
       {!result && (

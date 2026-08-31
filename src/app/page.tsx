@@ -33,7 +33,7 @@ export default function HomePage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: "LPT — Life Pattern Type",
+    name: "사주 기반 성향 테스트 LPT",
     alternateName: "QuestofME",
     url: "https://questofme.com",
     applicationCategory: "LifestyleApplication",
@@ -51,9 +51,6 @@ export default function HomePage() {
       />
       <section className="px-5 pb-20 pt-16 sm:pt-24">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-fate/40 bg-fate-soft px-4 py-1.5 text-xs text-fate">
-            자기이해를 위한 라이프 전략 RPG
-          </p>
           <h1 className="animate-rise font-display text-4xl leading-tight font-bold tracking-tight text-foreground sm:text-5xl">
             타고난 기질과 지금의 나,
             <br />

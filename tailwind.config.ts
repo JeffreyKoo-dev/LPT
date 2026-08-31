@@ -29,9 +29,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        // 디스플레이/본문/숫자 모두 동일 서체를 쓰고 굵기·자간으로만 위계를 만든다.
+        // 본문은 Noto Sans KR, 제목/디스플레이는 Song Myung으로 확실히 구분한다.
         sans: ["var(--font-sans)", "-apple-system", "sans-serif"],
-        display: ["var(--font-sans)", "-apple-system", "sans-serif"],
+        display: ["var(--font-display)", "Georgia", "serif"],
         body: ["var(--font-sans)", "-apple-system", "sans-serif"],
         numeral: ["var(--font-sans)", "-apple-system", "sans-serif"],
       },

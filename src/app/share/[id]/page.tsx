@@ -6,6 +6,7 @@ import { GuardScreen } from "@/components/common/GuardScreen";
 import { ShareCard } from "@/components/share/ShareCard";
 import { ShareActions } from "@/components/share/ShareActions";
 import { useGrowthSession } from "@/lib/useGrowthSession";
+import { PageHeading } from "@/components/common/PageHeading";
 import {
   buildBadgeShareData,
   buildCharacterShareData,
@@ -71,14 +72,12 @@ export default function SharePage() {
 
   return (
     <div className="mx-auto max-w-md px-5 py-14">
-      <div className="mb-6 text-center">
-        <p className="text-xs text-fate">공유 카드</p>
-        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-foreground">
-          이미지로 저장하고 공유해보세요
-        </h1>
-        <p className="mt-2 text-xs text-muted">
-          생년월일, 출생시간, 성별, 설문 응답은 카드에 포함되지 않습니다.
-        </p>
+      <div className="mb-6">
+        <PageHeading
+          label="공유 카드"
+          title="이미지로 저장하고 공유해보세요"
+          description="생년월일, 출생시간, 성별, 설문 응답은 카드에 포함되지 않습니다."
+        />
       </div>
 
       <div className="flex justify-center">

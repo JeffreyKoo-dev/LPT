@@ -6,6 +6,7 @@ import { QuestCard } from "@/components/quest/QuestCard";
 import { useGrowthSession } from "@/lib/useGrowthSession";
 import { useRequireLogin } from "@/lib/useRequireLogin";
 import { getRecommendedQuests, isQuestCompleted } from "@/lib/quest";
+import { PageHeading } from "@/components/common/PageHeading";
 
 export default function QuestsPage() {
   const router = useRouter();
@@ -45,14 +46,12 @@ export default function QuestsPage() {
   return (
     <div className="relative">
       <section className="px-5 pb-6 pt-14">
-        <div className="mx-auto max-w-lg text-center">
-          <p className="text-xs text-fate">성장 퀘스트</p>
-          <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-foreground">
-            {fantasyClass.className}에게 맞는 퀘스트
-          </h1>
-          <p className="mt-2 text-sm text-muted">
-            {fantasyClass.primaryStat} 관련 퀘스트가 먼저 추천됩니다.
-          </p>
+        <div className="mx-auto max-w-lg">
+          <PageHeading
+            label="성장 퀘스트"
+            title={`${fantasyClass.className}에게 맞는 퀘스트`}
+            description={`${fantasyClass.primaryStat} 관련 퀘스트가 먼저 추천됩니다.`}
+          />
         </div>
       </section>
 

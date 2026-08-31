@@ -9,6 +9,7 @@ import { BirthDateField } from "@/components/form/BirthDateField";
 import { BirthTimeField } from "@/components/form/BirthTimeField";
 import { SegmentedControl } from "@/components/form/SegmentedControl";
 import { Checkbox } from "@/components/form/Checkbox";
+import { PageHeading } from "@/components/common/PageHeading";
 import { BasicInfo, CalendarType, Gender } from "@/types/user";
 import { getStorage, STORAGE_KEYS } from "@/lib/storage";
 import { checkNicknameLocally } from "@/lib/contentModeration";
@@ -79,15 +80,11 @@ export default function StartPage() {
 
   return (
     <div className="mx-auto max-w-xl px-5 py-14">
-      <div className="mb-8 text-center">
-        <p className="text-xs text-fate">기본 정보 입력</p>
-        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-foreground">
-          캐릭터 시트의 첫 줄을 채워주세요
-        </h1>
-        <p className="mt-2 text-sm text-muted">
-          입력한 정보는 사주 기반 기질 분석에 사용되며, 기기에만 저장됩니다.
-        </p>
-      </div>
+      <PageHeading
+        label="기본 정보 입력"
+        title="캐릭터 시트의 첫 줄을 채워주세요"
+        description="입력한 정보는 사주 기반 기질 분석에 사용되며, 기기에만 저장됩니다."
+      />
 
       <Card>
         <form onSubmit={handleSubmit} className="flex flex-col gap-6" noValidate>

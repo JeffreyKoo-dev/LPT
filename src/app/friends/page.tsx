@@ -9,6 +9,7 @@ import { useGrowthSession } from "@/lib/useGrowthSession";
 import { useRequireLogin } from "@/lib/useRequireLogin";
 import { createFriendInvite, getFriendsList, Friend } from "@/lib/friends";
 import { useRouter } from "next/navigation";
+import { PageHeading } from "@/components/common/PageHeading";
 
 export default function FriendsPage() {
   const router = useRouter();
@@ -90,15 +91,12 @@ export default function FriendsPage() {
 
   return (
     <div className="mx-auto max-w-lg px-5 py-14">
-      <div className="mb-6 text-center">
-        <p className="text-xs text-fate">친구</p>
-        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-foreground">
-          지인과 성향을 비교해보세요
-        </h1>
-        <p className="mt-2 text-xs text-muted">
-          검색으로 찾는 기능은 없어요. 초대 링크를 공유하고, 상대방이 로그인
-          상태로 열어 수락하면 친구가 됩니다.
-        </p>
+      <div className="mb-6">
+        <PageHeading
+          label="친구"
+          title="지인과 성향을 비교해보세요"
+          description="검색으로 찾는 기능은 없어요. 초대 링크를 공유하고, 상대방이 로그인 상태로 열어 수락하면 친구가 됩니다."
+        />
       </div>
 
       <Card>

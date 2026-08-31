@@ -1,0 +1,50 @@
+<svg width="400" height="500" viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff8ef"/>
+      <stop offset="100%" stop-color="#ffe8d1"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#bg)"/>
+  <ellipse cx="200" cy="440" rx="100" ry="15" fill="#f5c398" opacity="0.5"/>
+
+  <path d="M 155 300 Q 125 360 132 420 L 160 412 Q 158 360 178 305 Z" fill="#fdba74"/>
+  <path d="M 245 300 Q 275 360 268 420 L 240 412 Q 242 360 222 305 Z" fill="#fdba74"/>
+
+  <ellipse cx="200" cy="375" rx="57" ry="52" fill="#fdba74"/>
+  <path d="M 169 356 Q 200 369 231 356 L 227 391 Q 200 403 173 391 Z" fill="#fef3c7"/>
+  <path d="M 200 361 L 211 372 L 200 383 L 189 372 Z" fill="#f97316"/>
+  
+
+  <circle cx="149" cy="377" r="21" fill="#fdba74"/>
+  <circle cx="251" cy="377" r="21" fill="#fdba74"/>
+  <circle cx="141" cy="391" r="13" fill="#fff1e2"/>
+  <circle cx="259" cy="391" r="13" fill="#fff1e2"/>
+
+  <circle cx="200" cy="220" r="118" fill="#fff1e2"/>
+  
+  <path d="M 90 200 C 82 130 130 78 200 78 C 270 78 318 130 310 200
+           C 300 160 270 150 200 150 C 130 150 100 160 90 200 Z" fill="#8a4a1f"/>
+  <circle cx="118" cy="130" r="26" fill="#8a4a1f"/>
+  <circle cx="282" cy="130" r="26" fill="#8a4a1f"/>
+  <circle cx="200" cy="88" r="24" fill="#8a4a1f"/>
+
+  <circle cx="200" cy="168" r="13" fill="#fde047"/>
+  <circle cx="200" cy="168" r="7" fill="#f59e0b"/>
+
+  <circle cx="128" cy="248" r="24" fill="#fdba74" opacity="0.55"/>
+  <circle cx="272" cy="248" r="24" fill="#fdba74" opacity="0.55"/>
+
+  <circle cx="158" cy="228" r="19" fill="#3a2318"/>
+  <circle cx="242" cy="228" r="19" fill="#3a2318"/>
+  <circle cx="164" cy="220" r="6.5" fill="#ffffff"/>
+  <circle cx="248" cy="220" r="6.5" fill="#ffffff"/>
+  <circle cx="153" cy="234" r="3.5" fill="#ffffff" opacity="0.8"/>
+  <circle cx="237" cy="234" r="3.5" fill="#ffffff" opacity="0.8"/>
+
+  <path d="M 188 262 Q 200 272 212 262" stroke="#c2410c" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+
+  <path d="M 300 100 l 4 10 l 10 4 l -10 4 l -4 10 l -4 -10 l -10 -4 l 10 -4 z" fill="#fde047"/>
+
+  <text x="200" y="478" text-anchor="middle" font-family="Noto Sans CJK KR, sans-serif" font-size="22" font-weight="700" fill="#c2410c">선봉 전사</text>
+</svg>

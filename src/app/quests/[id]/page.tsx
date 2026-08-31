@@ -12,6 +12,7 @@ import { completeQuest, isQuestCompleted } from "@/lib/quest";
 import { getQuestById } from "@/data/quests";
 import { getLevelProgress } from "@/lib/growth";
 import { objectParticle } from "@/lib/korean";
+import { PageHeading } from "@/components/common/PageHeading";
 import type { CompleteQuestResult } from "@/lib/quest";
 
 export default function QuestDetailPage() {
@@ -72,10 +73,7 @@ export default function QuestDetailPage() {
 
   return (
     <div className="mx-auto max-w-lg px-5 py-14">
-      <p className="text-xs text-fate">{quest.category} 퀘스트</p>
-      <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-foreground">
-        {quest.title}
-      </h1>
+      <PageHeading label={`${quest.category} 퀘스트`} title={quest.title} align="left" />
 
       <Card className="mt-6">
         <CardDescription>{quest.description}</CardDescription>

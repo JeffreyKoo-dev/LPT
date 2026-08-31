@@ -1,7 +1,9 @@
+import Image from "next/image";
 import { Card } from "@/components/common/Card";
 import { ElementIcon } from "@/components/common/ElementIcon";
 import { LptTypeMeta, FantasyClassMeta } from "@/types/lpt";
 import { Element } from "@/types/saju";
+import { Gender } from "@/types/user";
 import { cn } from "@/lib/utils";
 
 const ELEMENT_LABEL: Record<Element, string> = {
@@ -24,28 +26,33 @@ interface CharacterCardProps {
   nickname: string;
   typeMeta: LptTypeMeta;
   fantasyClass: FantasyClassMeta;
+  gender: Gender;
 }
 
-export function CharacterCard({ nickname, typeMeta, fantasyClass }: CharacterCardProps) {
+export function CharacterCard({ nickname, typeMeta, fantasyClass, gender }: CharacterCardProps) {
   const element = fantasyClass.accentElement;
+  const illustrationSlug = `${typeMeta.id.toLowerCase().replace(/_/g, "-")}-${gender}`;
+
   return (
     <Card className="relative overflow-hidden border-t-2 border-t-fate">
       <div className="flex flex-col items-center text-center">
-        <div
-          className={cn(
-            "flex h-14 w-14 items-center justify-center rounded-2xl border",
-            ELEMENT_COLOR[element]
-          )}
-        >
-          <ElementIcon element={element} size={26} />
+        <div className="relative -mt-2 h-40 w-32 overflow-hidden rounded-2xl bg-surface-2">
+          <Image
+            src={`/characters/${illustrationSlug}.svg`}
+            alt={`${typeMeta.name} 캐릭터 일러스트`}
+            fill
+            className="object-cover object-top"
+            priority
+          />
         </div>
 
         <span
           className={cn(
-            "mt-3 inline-flex items-center rounded-full border px-3 py-1 text-xs",
+            "mt-3 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs",
             ELEMENT_COLOR[element]
           )}
         >
+          <ElementIcon element={element} size={14} />
           {ELEMENT_LABEL[element]} 기운
         </span>
 

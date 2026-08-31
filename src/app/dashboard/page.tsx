@@ -12,6 +12,7 @@ import { useRequireLogin } from "@/lib/useRequireLogin";
 import { getLevelProgress } from "@/lib/growth";
 import { BADGES } from "@/data/badges";
 import { TodayRecommendationPanel } from "@/components/dashboard/TodayRecommendationPanel";
+import { PageHeading } from "@/components/common/PageHeading";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -58,12 +59,12 @@ export default function DashboardPage() {
   return (
     <div className="relative">
       <section className="px-5 pb-6 pt-14">
-        <div className="mx-auto max-w-lg text-center">
-          <p className="text-xs text-fate">{nickname}님의 성장 대시보드</p>
-          <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-foreground">
-            {typeMeta.name}
-          </h1>
-          <p className="mt-1 text-sm text-muted">{fantasyClass.className}</p>
+        <div className="mx-auto max-w-lg">
+          <PageHeading
+            label={`${nickname}님의 성장 대시보드`}
+            title={typeMeta.name}
+            description={fantasyClass.className}
+          />
         </div>
       </section>
 

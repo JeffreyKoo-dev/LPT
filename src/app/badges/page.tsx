@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { GuardScreen } from "@/components/common/GuardScreen";
 import { BadgeCard } from "@/components/badge/BadgeCard";
+import { PageHeading } from "@/components/common/PageHeading";
 import { useGrowthSession } from "@/lib/useGrowthSession";
 import { useRequireLogin } from "@/lib/useRequireLogin";
 import { BADGES } from "@/data/badges";
@@ -45,11 +46,8 @@ export default function BadgesPage() {
   return (
     <div className="relative">
       <section className="px-5 pb-6 pt-14">
-        <div className="mx-auto max-w-lg text-center">
-          <p className="text-xs text-fate">뱃지 컬렉션</p>
-          <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-foreground">
-            {profile.badges.length} / {BADGES.length}개 획득
-          </h1>
+        <div className="mx-auto max-w-lg">
+          <PageHeading label="뱃지 컬렉션" title={`${profile.badges.length} / ${BADGES.length}개 획득`} />
         </div>
       </section>
 
