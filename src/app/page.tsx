@@ -30,8 +30,25 @@ const CONCEPT_ITEMS = [
 ];
 
 export default function HomePage() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "LPT — Life Pattern Type",
+    alternateName: "QuestofME",
+    url: "https://questofme.com",
+    applicationCategory: "LifestyleApplication",
+    description:
+      "사주팔자와 성향 설문(MBTI식 행동 유형 검사)을 함께 분석해 나만의 라이프 패턴 유형을 찾는 자기이해 서비스",
+    inLanguage: "ko",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "KRW" },
+  };
+
   return (
     <div className="relative">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <section className="px-5 pb-20 pt-16 sm:pt-24">
         <div className="mx-auto max-w-3xl text-center">
           <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-fate/40 bg-fate-soft px-4 py-1.5 text-xs text-fate">

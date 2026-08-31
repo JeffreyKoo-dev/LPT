@@ -11,6 +11,8 @@ import { SegmentedControl } from "@/components/form/SegmentedControl";
 import { Checkbox } from "@/components/form/Checkbox";
 import { BasicInfo, CalendarType, Gender } from "@/types/user";
 import { getStorage, STORAGE_KEYS } from "@/lib/storage";
+import { checkNicknameLocally } from "@/lib/contentModeration";
+import { checkContentWithAi } from "@/lib/moderationApi";
 
 type FormErrors = Partial<Record<keyof BasicInfo, string>>;
 
@@ -25,10 +27,16 @@ export default function StartPage() {
   const [gender, setGender] = useState<Gender>("male");
   const [consentToAnonymousStats, setConsentToAnonymousStats] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [checkingNickname, setCheckingNickname] = useState(false);
 
   function validate(): FormErrors {
     const next: FormErrors = {};
-    if (!nickname.trim()) next.nickname = "닉네임을 입력해주세요.";
+    if (!nickname.trim()) {
+      next.nickname = "닉네임을 입력해주세요.";
+    } else {
+      const localCheck = checkNicknameLocally(nickname.trim());
+      if (!localCheck.allowed) next.nickname = localCheck.reason;
+    }
     if (!birthDate || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
       next.birthDate = "생년월일을 정확히 입력해주세요.";
     }
@@ -38,11 +46,21 @@ export default function StartPage() {
     return next;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const validationErrors = validate();
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
+
+    // 1차(키워드) 필터를 통과했으면, AI 기반 정밀 검수까지 거친다
+    // (Supabase 미설정 환경이거나 호출 실패 시엔 통과 처리되어 흐름을 막지 않는다)
+    setCheckingNickname(true);
+    const aiCheck = await checkContentWithAi("nickname", nickname.trim());
+    setCheckingNickname(false);
+    if (!aiCheck.allowed) {
+      setErrors({ nickname: aiCheck.reason ?? "사용할 수 없는 닉네임이에요." });
+      return;
+    }
 
     const basicInfo: BasicInfo = {
       nickname: nickname.trim(),
@@ -143,8 +161,8 @@ export default function StartPage() {
             ]}
           />
 
-          <Button type="submit" size="lg" className="mt-2 w-full">
-            성향 설문으로 이동하기
+          <Button type="submit" size="lg" className="mt-2 w-full" disabled={checkingNickname}>
+            {checkingNickname ? "확인 중…" : "성향 설문으로 이동하기"}
           </Button>
 
           <div className="rounded-xl border border-border bg-surface-2/60 p-3">

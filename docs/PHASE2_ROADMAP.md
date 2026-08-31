@@ -411,3 +411,56 @@ Phase 2c(지인 연동 궁합, 같은 성향 리스트)로 이어간다.
 3. 앱 설정 → 플랫폼 → **Web 플랫폼**에 실제 서비스 도메인 등록
    (예: `https://questofme.com`)
 4. `.env.local`에 `NEXT_PUBLIC_KAKAO_JS_KEY=발급받은키` 추가 (로컬/EC2 양쪽 모두)
+
+---
+
+## 15. SEO 기본 설정 + 콘텐츠 감수(Audit) 1차 구현
+
+### SEO (요청 4번)
+- `app/layout.tsx`: title/description/keywords/OpenGraph/Twitter 메타데이터를
+  사주·MBTI·성향테스트 등 실제 검색 의도에 맞춰 채움
+- `app/robots.ts`, `app/sitemap.ts`: **개인 데이터가 표시될 수 있는 모든 페이지
+  (설문·결과·대시보드·퀘스트·뱃지·성장기록·궁합·친구·공유·로그인)는 기본적으로
+  검색 노출을 막고, 홈페이지만 공개**한다. "사용자 동의 시에만 검색 노출"이라는
+  요구사항을, 현재는 공개 동의 기능 자체가 없으므로 "기본값 전체 비공개"로
+  구현했다 — 추후 "내 결과 공개하기" 동의 토글을 추가하면 그 페이지만
+  robots.ts에서 별도로 허용하면 된다
+- 홈페이지에 WebApplication 구조화 데이터(JSON-LD) 추가
+
+**"claude-seo skill"이라는 이름의 스킬은 확인 결과 존재하지 않아, 스킬 없이
+표준 Next.js 메타데이터 API로 직접 구현했다.**
+
+### 콘텐츠 감수 — Audit AI Agent (요청 3번)
+2단계 구조로 구현했다.
+
+1. **1차: 키워드 필터** (`lib/contentModeration.ts`) — 닉네임 제출 시 즉시
+   클라이언트에서 확인. 우회가 쉬운 한계가 있어 최종 방어선이 아니라
+   즉각적인 사용자 피드백 용도
+2. **2차: AI 정밀 검수** (`supabase/functions/moderate-content`) — Supabase
+   Edge Function에서 Anthropic API(Claude)를 호출해 종교·성적 비하·인종·장애
+   관련 문제 소지를 의미 기반으로 판단. 문제로 판단되면 `moderation_reports`
+   테이블에 원문·카테고리와 함께 기록하고 제출을 차단한다. 이 테이블은
+   클라이언트에서 조회가 불가능하도록 막아뒀다 (관리자만 Supabase 대시보드에서
+   service_role로 조회 — "관리자에게 리포팅" 요구사항 반영)
+
+**배포 방법** (Supabase CLI 설치 필요, `npm install -g supabase` 또는
+공식 설치 가이드 참고):
+```bash
+supabase login
+supabase link --project-ref qnyhotenvynbvtpgfcra
+supabase functions deploy moderate-content
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-실제키
+```
+그리고 `supabase/migrations/003_moderation_reports.sql`을 SQL Editor에서 실행.
+
+**Anthropic API 키가 아직 없다면**: [console.anthropic.com](https://console.anthropic.com)에서
+발급 가능. 이 키가 없으면(또는 배포 전이면) Edge Function이 검수 없이
+통과시키도록 만들어놔서, 서비스 흐름 자체는 막히지 않는다 — 1차 키워드
+필터만 동작하는 상태로 안전하게 운영된다.
+
+### 남은 것 (요청 1·2번)
+- **캐릭터 일러스트(1번)**: 이 환경은 SVG 벡터 일러스트만 가능하고 실사/페인팅풍
+  이미지 생성 모델은 없다. 샘플 1~2종 먼저 확인 후 진행 필요
+- **디자인/톤 개편(2번)**: `frontend-design` 스킬은 실존해 적용 가능하나,
+  "humanizer skill"이라는 이름의 스킬은 존재하지 않아 별도 스킬 없이 직접
+  카피·톤을 다듬는 방식으로 진행 필요
