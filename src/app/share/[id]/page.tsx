@@ -14,6 +14,8 @@ import {
   parseShareId,
 } from "@/lib/share";
 import { getBadgeMeta } from "@/data/badges";
+import { getStorage, STORAGE_KEYS } from "@/lib/storage";
+import { BasicInfo, Gender } from "@/types/user";
 
 export default function SharePage() {
   const params = useParams<{ id: string }>();
@@ -22,6 +24,7 @@ export default function SharePage() {
   const cardRef = useRef<HTMLDivElement>(null);
 
   const shareParam = useMemo(() => parseShareId(params.id), [params.id]);
+  const gender: Gender = getStorage().get<BasicInfo>(STORAGE_KEYS.basicInfo)?.gender ?? "male";
 
   if (session.status === "loading") {
     return (
@@ -46,7 +49,7 @@ export default function SharePage() {
 
   const shareData = (() => {
     if (shareParam.kind === "character") {
-      return buildCharacterShareData(nickname, typeMeta, fantasyClass);
+      return buildCharacterShareData(nickname, typeMeta, fantasyClass, gender);
     }
     if (shareParam.kind === "level") {
       return buildLevelShareData(nickname, shareParam.level);

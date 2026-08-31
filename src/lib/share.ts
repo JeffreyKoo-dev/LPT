@@ -1,6 +1,7 @@
 import { LptTypeMeta, FantasyClassMeta } from "@/types/lpt";
 import { BadgeMeta } from "@/types/badge";
 import { Element } from "@/types/saju";
+import { Gender } from "@/types/user";
 
 export type ShareKind = "character" | "level" | "badge";
 
@@ -12,6 +13,8 @@ export type ShareCardIcon =
 /**
  * 공유 카드에 노출할 데이터만 골라 담는다.
  * 표현 원칙: 생년월일, 출생시간, 성별, 설문 상세 응답은 절대 포함하지 않는다.
+ * (illustrationSlug는 성별을 그대로 노출하는 게 아니라, 캐릭터 일러스트
+ * 파일명만 가리키는 값이라 원칙에 위배되지 않는다.)
  */
 export interface ShareCardData {
   kind: ShareKind;
@@ -20,12 +23,14 @@ export interface ShareCardData {
   badge: string; // 카드 상단 작은 라벨
   nickname: string;
   icon: ShareCardIcon;
+  illustrationSlug?: string; // "character" 카드에서만 사용
 }
 
 export function buildCharacterShareData(
   nickname: string,
   typeMeta: LptTypeMeta,
-  fantasyClass: FantasyClassMeta
+  fantasyClass: FantasyClassMeta,
+  gender: Gender
 ): ShareCardData {
   return {
     kind: "character",
@@ -34,6 +39,7 @@ export function buildCharacterShareData(
     badge: fantasyClass.className,
     nickname,
     icon: { kind: "element", element: fantasyClass.accentElement },
+    illustrationSlug: `${typeMeta.id.toLowerCase().replace(/_/g, "-")}-${gender}`,
   };
 }
 
