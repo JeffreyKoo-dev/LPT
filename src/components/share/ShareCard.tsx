@@ -44,7 +44,7 @@ export const ShareCard = forwardRef<HTMLDivElement, { data: ShareCardData }>(fun
         flexDirection: "column",
         justifyContent: "space-between",
         color: "#ece5d8",
-        fontFamily: "var(--font-sans), sans-serif",
+        fontFamily: "'Noto Sans KR', sans-serif",
       }}
     >
       <div>
@@ -103,7 +103,7 @@ export const ShareCard = forwardRef<HTMLDivElement, { data: ShareCardData }>(fun
         <h1
           style={{
             marginTop: 8,
-            fontFamily: "var(--font-display), serif",
+            fontFamily: "'Song Myung', serif",
             fontWeight: 400,
             fontSize: 32,
             lineHeight: 1.3,

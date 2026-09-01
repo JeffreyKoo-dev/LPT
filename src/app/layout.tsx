@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
-import { Noto_Sans_KR, Song_Myung } from "next/font/google";
+import "@fontsource/noto-sans-kr/korean-400.css";
+import "@fontsource/noto-sans-kr/korean-500.css";
+import "@fontsource/noto-sans-kr/korean-600.css";
+import "@fontsource/noto-sans-kr/korean-700.css";
+import "@fontsource/song-myung/korean-400.css";
 import "./globals.css";
 import { SiteHeader } from "@/components/common/SiteHeader";
 import { SiteFooter } from "@/components/common/SiteFooter";
@@ -9,20 +13,15 @@ import { AuthSync } from "@/components/common/AuthSync";
  * 본문은 Noto Sans KR, 제목/디스플레이는 Song Myung(전통 인장·목판 인쇄
  * 느낌의 명조 계열)으로 분리한다. 사주라는 소재 자체가 전통 문서·인장의
  * 시각 언어를 갖고 있어, 여기서 타이포그래피의 개성을 가져온다.
+ *
+ * next/font/google 대신 @fontsource 패키지로 폰트 파일 자체를 프로젝트에
+ * 내장한다. next/font/google은 next build 실행 시점마다 fonts.gstatic.com에
+ * 직접 접속해 폰트를 내려받는데, 서버(EC2)의 네트워크 상태에 따라 이 요청이
+ * 실패·재시도를 반복할 수 있다 (실제로 배포 중 이 문제가 발생했었다).
+ * @fontsource는 npm install 시점에 폰트 파일을 node_modules에 통째로
+ * 내려받아두므로, 빌드 때는 로컬 파일만 사용해 이 문제가 원천적으로
+ * 발생하지 않는다.
  */
-const sans = Noto_Sans_KR({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-sans",
-  display: "swap",
-});
-
-const display = Song_Myung({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-display",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://questofme.com"),
@@ -54,7 +53,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={`${sans.variable} ${display.variable}`}>
+    <html lang="ko">
       <body className="min-h-screen flex flex-col font-sans antialiased">
         <AuthSync />
         <SiteHeader />

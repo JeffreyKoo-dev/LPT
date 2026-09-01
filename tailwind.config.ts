@@ -29,11 +29,12 @@ const config: Config = {
         },
       },
       fontFamily: {
-        // 본문은 Noto Sans KR, 제목/디스플레이는 Song Myung으로 확실히 구분한다.
-        sans: ["var(--font-sans)", "-apple-system", "sans-serif"],
-        display: ["var(--font-display)", "Georgia", "serif"],
-        body: ["var(--font-sans)", "-apple-system", "sans-serif"],
-        numeral: ["var(--font-sans)", "-apple-system", "sans-serif"],
+        // @fontsource가 등록하는 실제 폰트 이름을 그대로 참조한다
+        // (next/font/google의 CSS 변수 방식에서 전환 — layout.tsx 주석 참고).
+        sans: ["'Noto Sans KR'", "-apple-system", "sans-serif"],
+        display: ["'Song Myung'", "Georgia", "serif"],
+        body: ["'Noto Sans KR'", "-apple-system", "sans-serif"],
+        numeral: ["'Noto Sans KR'", "-apple-system", "sans-serif"],
       },
       boxShadow: {
         // 컬러 글로우 대신 절제된 elevation(그림자)만 사용한다.
