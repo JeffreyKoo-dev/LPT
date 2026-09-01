@@ -82,5 +82,14 @@ export async function shareToKakao(params: KakaoShareParams): Promise<void> {
     objectType: "text",
     text: `${params.title}\n${params.description}`,
     link: { mobileWebUrl: params.url, webUrl: params.url },
+    // 본문(link)만으로는 카드 전체가 클릭되지 않는 사례가 실제로 보고되어 있어
+    // (카카오 데브톡 문의 사례 확인), 명시적인 버튼을 추가해 확실하게 클릭
+    // 가능하도록 한다.
+    buttons: [
+      {
+        title: "결과 보기",
+        link: { mobileWebUrl: params.url, webUrl: params.url },
+      },
+    ],
   });
 }
