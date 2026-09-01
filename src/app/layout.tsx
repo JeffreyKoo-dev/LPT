@@ -3,16 +3,16 @@ import "@fontsource/noto-sans-kr/korean-400.css";
 import "@fontsource/noto-sans-kr/korean-500.css";
 import "@fontsource/noto-sans-kr/korean-600.css";
 import "@fontsource/noto-sans-kr/korean-700.css";
-import "@fontsource/song-myung/korean-400.css";
+import "@fontsource/jua/korean-400.css";
 import "./globals.css";
 import { SiteHeader } from "@/components/common/SiteHeader";
 import { SiteFooter } from "@/components/common/SiteFooter";
 import { AuthSync } from "@/components/common/AuthSync";
 
 /**
- * 본문은 Noto Sans KR, 제목/디스플레이는 Song Myung(전통 인장·목판 인쇄
- * 느낌의 명조 계열)으로 분리한다. 사주라는 소재 자체가 전통 문서·인장의
- * 시각 언어를 갖고 있어, 여기서 타이포그래피의 개성을 가져온다.
+ * 본문은 Noto Sans KR, 제목/디스플레이는 Jua(동글동글하고 부드러운 인상의
+ * 라운드 서체)로 분리한다. 밝고 귀여운 캐릭터 일러스트 톤에 맞춰, 무거운
+ * 명조 대신 친근한 라운드 서체를 골랐다.
  *
  * next/font/google 대신 @fontsource 패키지로 폰트 파일 자체를 프로젝트에
  * 내장한다. next/font/google은 next build 실행 시점마다 fonts.gstatic.com에

@@ -9,9 +9,9 @@ function getIconAccent(data: ShareCardData): { Icon: typeof TrendingUp; color: s
     return { Icon: ELEMENT_ICON_COMPONENT[data.icon.element], color: ELEMENT_HEX[data.icon.element] };
   }
   if (data.icon.kind === "level") {
-    return { Icon: TrendingUp, color: "#b8863d" };
+    return { Icon: TrendingUp, color: "#d9954a" };
   }
-  return { Icon: Award, color: "#b8863d" };
+  return { Icon: Award, color: "#d9954a" };
 }
 
 /**
@@ -33,17 +33,17 @@ export const ShareCard = forwardRef<HTMLDivElement, { data: ShareCardData }>(fun
       style={{
         width: 360,
         height: 480,
-        borderRadius: 4,
+        borderRadius: 20,
         padding: 32,
         position: "relative",
         overflow: "hidden",
-        background: "#221d17",
-        border: "1px solid #3d362b",
-        borderTop: "3px solid #7a5a8f",
+        background: "linear-gradient(180deg, #fff8ef 0%, #ffe8d1 100%)",
+        border: "1px solid #f0d9bd",
+        borderTop: "4px solid #8a5fae",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        color: "#ece5d8",
+        color: "#4a3728",
         fontFamily: "'Noto Sans KR', sans-serif",
       }}
     >
@@ -53,9 +53,9 @@ export const ShareCard = forwardRef<HTMLDivElement, { data: ShareCardData }>(fun
             style={{
               width: 88,
               height: 110,
-              borderRadius: 8,
+              borderRadius: 12,
               overflow: "hidden",
-              background: "#2c2620",
+              background: "#fef0e0",
             }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- html-to-image 캡처 호환을 위해 next/image 대신 일반 img 사용 */}
@@ -75,9 +75,9 @@ export const ShareCard = forwardRef<HTMLDivElement, { data: ShareCardData }>(fun
               width: 56,
               alignItems: "center",
               justifyContent: "center",
-              borderRadius: 14,
+              borderRadius: 16,
               border: `1px solid ${color}55`,
-              background: `${color}1f`,
+              background: `${color}22`,
             }}
           >
             <Icon size={26} strokeWidth={1.75} color={color} />
@@ -90,20 +90,20 @@ export const ShareCard = forwardRef<HTMLDivElement, { data: ShareCardData }>(fun
             marginTop: 16,
             fontSize: 12,
             padding: "4px 10px",
-            borderRadius: 4,
-            border: "1px solid rgba(122,90,143,0.35)",
-            background: "rgba(122,90,143,0.14)",
-            color: "#b7a0c7",
+            borderRadius: 999,
+            border: "1px solid rgba(138,95,174,0.3)",
+            background: "rgba(138,95,174,0.12)",
+            color: "#8a5fae",
             letterSpacing: "0.01em",
           }}
         >
           {data.badge}
         </span>
-        <p style={{ marginTop: 16, fontSize: 13, color: "#9c9284" }}>{data.nickname}님</p>
+        <p style={{ marginTop: 16, fontSize: 13, color: "#9c8770" }}>{data.nickname}님</p>
         <h1
           style={{
             marginTop: 8,
-            fontFamily: "'Song Myung', serif",
+            fontFamily: "'Jua', sans-serif",
             fontWeight: 400,
             fontSize: 32,
             lineHeight: 1.3,
@@ -111,14 +111,14 @@ export const ShareCard = forwardRef<HTMLDivElement, { data: ShareCardData }>(fun
         >
           {data.heading}
         </h1>
-        <p style={{ marginTop: 12, fontSize: 14, lineHeight: 1.6, color: "#9c9284" }}>
+        <p style={{ marginTop: 12, fontSize: 14, lineHeight: 1.6, color: "#9c8770" }}>
           {data.subheading}
         </p>
       </div>
 
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-        <p style={{ fontSize: 11, color: "#786f60" }}>Life Pattern Type</p>
-        <p style={{ fontWeight: 700, fontSize: 15, letterSpacing: "-0.01em" }}>LPT</p>
+        <p style={{ fontSize: 11, color: "#b5a48c" }}>Life Pattern Type</p>
+        <p style={{ fontWeight: 700, fontSize: 15, letterSpacing: "-0.01em", color: "#4a3728" }}>LPT</p>
       </div>
     </div>
   );

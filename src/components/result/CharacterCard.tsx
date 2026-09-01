@@ -15,11 +15,11 @@ const ELEMENT_LABEL: Record<Element, string> = {
 };
 
 const ELEMENT_COLOR: Record<Element, string> = {
-  wood: "text-emerald-400 border-emerald-400/40 bg-emerald-400/10",
-  fire: "text-rose-400 border-rose-400/40 bg-rose-400/10",
-  earth: "text-amber-400 border-amber-400/40 bg-amber-400/10",
-  metal: "text-slate-300 border-slate-300/40 bg-slate-300/10",
-  water: "text-sky-400 border-sky-400/40 bg-sky-400/10",
+  wood: "text-emerald-700 border-emerald-600/40 bg-emerald-500/10",
+  fire: "text-rose-700 border-rose-600/40 bg-rose-500/10",
+  earth: "text-amber-700 border-amber-600/40 bg-amber-500/10",
+  metal: "text-slate-600 border-slate-500/40 bg-slate-500/10",
+  water: "text-sky-700 border-sky-600/40 bg-sky-500/10",
 };
 
 interface CharacterCardProps {

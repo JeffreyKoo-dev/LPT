@@ -27,14 +27,14 @@ export default function GlobalError({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#0a0a0c",
-          color: "#ededef",
+          background: "#fff6ec",
+          color: "#4a3728",
           fontFamily: "-apple-system, sans-serif",
         }}
       >
         <div style={{ maxWidth: 360, padding: 24, textAlign: "center" }}>
           <h1 style={{ fontSize: 20, fontWeight: 600 }}>문제가 발생했어요</h1>
-          <p style={{ marginTop: 8, fontSize: 14, color: "#8b8b93", lineHeight: 1.6 }}>
+          <p style={{ marginTop: 8, fontSize: 14, color: "#9c8770", lineHeight: 1.6 }}>
             서비스를 불러오는 중 오류가 발생했습니다. 아래 버튼으로 다시
             시도해주세요.
           </p>
@@ -45,7 +45,7 @@ export default function GlobalError({
                 height: 44,
                 borderRadius: 8,
                 border: "none",
-                background: "#5b5bd6",
+                background: "#8a5fae",
                 color: "#fff",
                 fontSize: 14,
                 fontWeight: 500,
@@ -71,9 +71,9 @@ export default function GlobalError({
               style={{
                 height: 44,
                 borderRadius: 8,
-                border: "1px solid #26262b",
+                border: "1px solid #f0d9bd",
                 background: "transparent",
-                color: "#ededef",
+                color: "#4a3728",
                 fontSize: 14,
                 cursor: "pointer",
               }}

@@ -29,10 +29,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        // @fontsource가 등록하는 실제 폰트 이름을 그대로 참조한다
-        // (next/font/google의 CSS 변수 방식에서 전환 — layout.tsx 주석 참고).
+        // @fontsource가 등록하는 실제 폰트 이름을 그대로 참조한다.
         sans: ["'Noto Sans KR'", "-apple-system", "sans-serif"],
-        display: ["'Song Myung'", "Georgia", "serif"],
+        display: ["'Jua'", "-apple-system", "sans-serif"],
         body: ["'Noto Sans KR'", "-apple-system", "sans-serif"],
         numeral: ["'Noto Sans KR'", "-apple-system", "sans-serif"],
       },

@@ -35,7 +35,7 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
             {hint}
           </p>
         )}
-        {error && <p className="mt-1.5 text-xs text-red-400">{error}</p>}
+        {error && <p className="mt-1.5 text-xs text-red-600">{error}</p>}
       </div>
     );
   }

@@ -216,7 +216,7 @@ function LoginPageInner() {
           </form>
         )}
 
-        {errorMessage && <p className="mt-4 text-sm text-red-400">{errorMessage}</p>}
+        {errorMessage && <p className="mt-4 text-sm text-red-600">{errorMessage}</p>}
       </Card>
 
       <p className="mt-6 text-center text-xs text-muted">

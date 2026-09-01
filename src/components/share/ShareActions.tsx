@@ -109,7 +109,7 @@ export function ShareActions({ targetRef, fileName, shareTitle, shareDescription
         </Button>
       </div>
       {kakaoError && (
-        <p className="text-xs text-red-400">카카오톡 공유에 실패했어요. 잠시 후 다시 시도해주세요.</p>
+        <p className="text-xs text-red-600">카카오톡 공유에 실패했어요. 잠시 후 다시 시도해주세요.</p>
       )}
 
       <div className="flex flex-col gap-3 sm:flex-row">

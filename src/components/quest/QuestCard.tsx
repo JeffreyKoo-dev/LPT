@@ -3,10 +3,10 @@ import { Quest } from "@/types/quest";
 import { cn } from "@/lib/utils";
 
 const CATEGORY_COLOR: Record<Quest["category"], string> = {
-  몰입: "text-sky-400 border-sky-400/30 bg-sky-400/10",
-  관계: "text-emerald-400 border-emerald-400/30 bg-emerald-400/10",
-  루틴: "text-amber-400 border-amber-400/30 bg-amber-400/10",
-  체력: "text-rose-400 border-rose-400/30 bg-rose-400/10",
+  몰입: "text-sky-700 border-sky-600/30 bg-sky-500/10",
+  관계: "text-emerald-700 border-emerald-600/30 bg-emerald-500/10",
+  루틴: "text-amber-700 border-amber-600/30 bg-amber-500/10",
+  체력: "text-rose-700 border-rose-600/30 bg-rose-500/10",
 };
 
 interface QuestCardProps {

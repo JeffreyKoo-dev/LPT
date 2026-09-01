@@ -121,7 +121,7 @@ export default function FriendsPage() {
           </div>
         )}
         {inviteStatus === "error" && (
-          <p className="mt-2 text-xs text-red-400">초대 링크 생성에 실패했어요. 다시 시도해주세요.</p>
+          <p className="mt-2 text-xs text-red-600">초대 링크 생성에 실패했어요. 다시 시도해주세요.</p>
         )}
       </Card>
 
