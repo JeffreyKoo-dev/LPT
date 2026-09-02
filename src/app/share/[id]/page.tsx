@@ -93,6 +93,7 @@ export default function SharePage() {
           fileName={`lpt-${shareParam.kind}`}
           shareTitle={shareData.heading}
           shareDescription={shareData.subheading}
+          illustrationSlug={shareData.illustrationSlug}
         />
       </div>
     </div>

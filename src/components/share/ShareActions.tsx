@@ -11,6 +11,8 @@ interface ShareActionsProps {
   fileName: string;
   shareTitle: string;
   shareDescription: string;
+  /** 캐릭터 카드일 때만 존재. 있으면 해당 캐릭터 PNG를, 없으면 기본 이미지를 카카오 카드에 쓴다. */
+  illustrationSlug?: string;
 }
 
 /**
@@ -22,7 +24,13 @@ interface ShareActionsProps {
  * 실기기 확인 결과 재현되어(게스트 모드에서도 동일), 주력 방식에서
  * "기타 앱으로 공유"라는 보조 옵션으로 내렸다.
  */
-export function ShareActions({ targetRef, fileName, shareTitle, shareDescription }: ShareActionsProps) {
+export function ShareActions({
+  targetRef,
+  fileName,
+  shareTitle,
+  shareDescription,
+  illustrationSlug,
+}: ShareActionsProps) {
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
   const [canUseWebShare, setCanUseWebShare] = useState(false);
@@ -61,7 +69,15 @@ export function ShareActions({ targetRef, fileName, shareTitle, shareDescription
   async function handleKakaoShare() {
     setKakaoError(false);
     try {
-      await shareToKakao({ title: shareTitle, description: shareDescription, url: window.location.href });
+      const imagePath = illustrationSlug
+        ? `/characters/${illustrationSlug}.png`
+        : "/characters/default-share.png";
+      await shareToKakao({
+        title: shareTitle,
+        description: shareDescription,
+        url: window.location.href,
+        imageUrl: `${window.location.origin}${imagePath}`,
+      });
     } catch (error) {
       console.error("[share] 카카오톡 공유 실패", error);
       setKakaoError(true);

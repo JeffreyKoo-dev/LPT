@@ -71,20 +71,32 @@ export interface KakaoShareParams {
   title: string;
   description: string;
   url: string;
+  /** 카드에 쓰일 절대 URL 이미지. 카카오 스크랩 서버가 접근 가능해야 하므로
+   * 반드시 https:// 절대경로여야 한다 (상대경로 불가). */
+  imageUrl: string;
 }
 
-/** 카카오톡 채팅방으로 텍스트 카드를 공유한다 (이미지 없이도 되는 텍스트형 템플릿) */
+/**
+ * 카카오톡 채팅방으로 카드를 공유한다.
+ *
+ * `objectType: "text"` + 본문(link)만 쓰는 방식은 카드 전체가 클릭되지 않는
+ * 사례가 실제로 보고되어 있고(카카오 데브톡 문의 사례 확인, 이미지도 표시
+ * 안 되는 경우가 있었음), 카카오 공식 예제들은 버튼이 있는 카드를 전부
+ * `objectType: "feed"` + `content.imageUrl` + `buttons` 조합으로 구성한다.
+ * 이 조합이 가장 널리 검증된 패턴이라 여기로 전환했다.
+ */
 export async function shareToKakao(params: KakaoShareParams): Promise<void> {
   await loadKakaoSdk();
   if (!window.Kakao) throw new Error("카카오 SDK를 불러오지 못했어요.");
 
   window.Kakao.Share.sendDefault({
-    objectType: "text",
-    text: `${params.title}\n${params.description}`,
-    link: { mobileWebUrl: params.url, webUrl: params.url },
-    // 본문(link)만으로는 카드 전체가 클릭되지 않는 사례가 실제로 보고되어 있어
-    // (카카오 데브톡 문의 사례 확인), 명시적인 버튼을 추가해 확실하게 클릭
-    // 가능하도록 한다.
+    objectType: "feed",
+    content: {
+      title: params.title,
+      description: params.description,
+      imageUrl: params.imageUrl,
+      link: { mobileWebUrl: params.url, webUrl: params.url },
+    },
     buttons: [
       {
         title: "결과 보기",
