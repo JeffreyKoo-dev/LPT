@@ -11,7 +11,7 @@
 // 클라이언트에서는 이 함수를 호출만 하고, Anthropic API 키는 절대
 // 클라이언트 코드에 노출되지 않는다 (Edge Function 안에서만 사용).
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
