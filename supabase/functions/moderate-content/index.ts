@@ -11,13 +11,24 @@
 // 클라이언트에서는 이 함수를 호출만 하고, Anthropic API 키는 절대
 // 클라이언트 코드에 노출되지 않는다 (Edge Function 안에서만 사용).
 
+// npm: 지정자를 사용한다 (esm.sh 대신). 일부 네트워크 환경(방화벽·백신의 HTTPS
+// 검사 등)에서 esm.sh 인증서를 신뢰하지 못해 번들링이 실패하는 사례가 있어,
+// Deno의 npm 호환 레이어를 통해 받아오는 방식으로 바꿨다.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const CATEGORIES = ["religious", "sexual", "racial", "disability", "other", "none"] as const;
+const CATEGORIES = [
+  "religious",
+  "sexual",
+  "racial",
+  "disability",
+  "abusive",
+  "other",
+  "none",
+] as const;
 
 Deno.serve(async (req: Request) => {
   const corsHeaders = {
@@ -90,10 +101,18 @@ async function classifyText(text: string): Promise<{ category: (typeof CATEGORIE
       model: "claude-haiku-4-5-20251001",
       max_tokens: 20,
       system:
-        "당신은 사용자 닉네임을 검수하는 필터입니다. 아래 텍스트에 종교 비하, 성적 비하, " +
-        "인종/민족 비하, 장애 비하 표현이 있는지 판단하세요. " +
-        "religious, sexual, racial, disability, other(그 외 심한 욕설·혐오 표현), none(문제없음) " +
-        "중 하나의 단어만 정확히 출력하세요. 다른 설명은 절대 추가하지 마세요.",
+        "당신은 서비스 닉네임을 검수하는 필터입니다. 아래 텍스트를 보고 아래 " +
+        "카테고리 중 하나로만 정확히 답하세요 (다른 설명은 절대 추가하지 마세요).\n" +
+        "religious: 종교를 비하·조롱하는 표현\n" +
+        "sexual: 성적으로 노골적이거나 성별을 비하하는 표현\n" +
+        "racial: 인종·민족·출신을 비하하는 표현\n" +
+        "disability: 장애나 정신질환을 비하·조롱하는 표현(예: 특정 정신질환 명칭을 " +
+        "욕설처럼 쓰는 경우 포함)\n" +
+        "abusive: 위 카테고리에 속하지 않더라도, 공격적이거나 무례하거나 상대를 " +
+        "모욕하는 일반적인 욕설·비속어·비하 표현(예: 심한 욕설, '미친OO', '싸이코' " +
+        "같이 사람을 깎아내리는 표현)\n" +
+        "other: 위 어디에도 속하지 않는 그 외 부적절한 표현\n" +
+        "none: 문제없는 정상적인 닉네임",
       messages: [{ role: "user", content: text }],
     }),
   });

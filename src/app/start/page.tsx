@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/common/Button";
 import { Card, CardDescription } from "@/components/common/Card";
@@ -30,13 +30,51 @@ export default function StartPage() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [checkingNickname, setCheckingNickname] = useState(false);
 
+  // 실시간 닉네임 검수: 타이핑을 멈춘 뒤 잠깐(0.6초) 있다가 자동으로 확인한다.
+  const [nicknameStatus, setNicknameStatus] = useState<"idle" | "checking" | "ok" | "blocked">(
+    "idle"
+  );
+  const lastCheckedNickname = useRef<string>("");
+
+  useEffect(() => {
+    const trimmed = nickname.trim();
+    if (!trimmed) {
+      setNicknameStatus("idle");
+      return;
+    }
+
+    // 1차(키워드) 필터는 디바운스 없이 즉시 확인한다 — 네트워크 호출이 아니라 빠르다.
+    const localCheck = checkNicknameLocally(trimmed);
+    if (!localCheck.allowed) {
+      setNicknameStatus("blocked");
+      setErrors((prev) => ({ ...prev, nickname: localCheck.reason }));
+      lastCheckedNickname.current = trimmed;
+      return;
+    }
+
+    setNicknameStatus("checking");
+    const timer = window.setTimeout(async () => {
+      const aiCheck = await checkContentWithAi("nickname", trimmed);
+      lastCheckedNickname.current = trimmed;
+      if (!aiCheck.allowed) {
+        setNicknameStatus("blocked");
+        setErrors((prev) => ({ ...prev, nickname: aiCheck.reason ?? "사용할 수 없는 닉네임이에요." }));
+      } else {
+        setNicknameStatus("ok");
+        setErrors((prev) => ({ ...prev, nickname: undefined }));
+      }
+    }, 600);
+
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nickname]);
+
   function validate(): FormErrors {
     const next: FormErrors = {};
     if (!nickname.trim()) {
       next.nickname = "닉네임을 입력해주세요.";
-    } else {
-      const localCheck = checkNicknameLocally(nickname.trim());
-      if (!localCheck.allowed) next.nickname = localCheck.reason;
+    } else if (nicknameStatus === "blocked") {
+      next.nickname = errors.nickname ?? "사용할 수 없는 표현이 포함되어 있어요.";
     }
     if (!birthDate || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
       next.birthDate = "생년월일을 정확히 입력해주세요.";
@@ -53,14 +91,17 @@ export default function StartPage() {
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
-    // 1차(키워드) 필터를 통과했으면, AI 기반 정밀 검수까지 거친다
-    // (Supabase 미설정 환경이거나 호출 실패 시엔 통과 처리되어 흐름을 막지 않는다)
-    setCheckingNickname(true);
-    const aiCheck = await checkContentWithAi("nickname", nickname.trim());
-    setCheckingNickname(false);
-    if (!aiCheck.allowed) {
-      setErrors({ nickname: aiCheck.reason ?? "사용할 수 없는 닉네임이에요." });
-      return;
+    // 실시간 검수로 이미 같은 닉네임을 확인해둔 상태면 다시 호출하지 않는다.
+    // (타이핑 직후 바로 제출하는 등, 아직 실시간 검수가 안 끝났을 수 있어 안전망으로 유지)
+    if (lastCheckedNickname.current !== nickname.trim() || nicknameStatus !== "ok") {
+      setCheckingNickname(true);
+      const aiCheck = await checkContentWithAi("nickname", nickname.trim());
+      setCheckingNickname(false);
+      if (!aiCheck.allowed) {
+        setErrors({ nickname: aiCheck.reason ?? "사용할 수 없는 닉네임이에요." });
+        setNicknameStatus("blocked");
+        return;
+      }
     }
 
     const basicInfo: BasicInfo = {
@@ -88,15 +129,23 @@ export default function StartPage() {
 
       <Card>
         <form onSubmit={handleSubmit} className="flex flex-col gap-6" noValidate>
-          <TextField
-            label="닉네임"
-            name="nickname"
-            placeholder="캐릭터 카드에 표시될 이름"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            error={errors.nickname}
-            maxLength={20}
-          />
+          <div>
+            <TextField
+              label="닉네임"
+              name="nickname"
+              placeholder="캐릭터 카드에 표시될 이름"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              error={errors.nickname}
+              maxLength={20}
+            />
+            {nicknameStatus === "checking" && (
+              <p className="mt-1.5 text-xs text-muted">확인 중…</p>
+            )}
+            {nicknameStatus === "ok" && (
+              <p className="mt-1.5 text-xs text-emerald-700">사용 가능한 닉네임이에요.</p>
+            )}
+          </div>
 
           <SegmentedControl<CalendarType>
             label="양력·음력"
