@@ -496,3 +496,26 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-실제키
 필요.
 
 **필요 작업**: `supabase/migrations/004_shared_profiles.sql`을 SQL Editor에서 실행.
+
+---
+
+## 17. npm 취약점 점검
+
+`npm audit` 기준 5개(high) → **2개로 축소**했다.
+
+- **glob**: `package.json`에 `overrides: { "glob": "^11.1.0" }` 추가로 해결.
+  `eslint-config-next`가 물고 있던 예전 glob을 안전한 버전으로 강제 고정했다
+  (Next.js 버전과 무관하게 독립적으로 고칠 수 있었다)
+- **next/postcss**: `npm audit fix --force`가 next 14→16 메이저 업그레이드를
+  요구해 지금 당장은 적용하지 않았다. 실제 앱 설정을 CVE 목록과 대조한 결과:
+  - `remotePatterns`, `rewrites`, `i18n` 전부 미사용(`next.config.mjs`가 빈 설정)
+  - `middleware.ts` 없음, CSP nonce 없음, Pages Router 없음, Server Actions
+    (`"use server"`) 없음
+  - → 목록의 상당수 CVE(원격 이미지 DoS, 리라이트 SSRF, i18n 미들웨어 우회,
+    CSP nonce XSS, WebSocket SSRF, Server Actions 관련 다수)가 실제로는
+    해당 사항 없음. 남은 건 주로 App Router 일반 요청 처리 관련 DoS 계열로,
+    소규모 서비스 기준 실익-리스크 비율상 지금 강제 업그레이드할 이유는
+    낮다고 판단했다
+
+**남은 작업**: Next.js 14 → 15 → 16 단계적 업그레이드를 별도 시간을 잡고
+충분히 테스트하며 진행할 것을 권장한다 (한 번에 16으로 뛰지 않기).
