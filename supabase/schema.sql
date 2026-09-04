@@ -129,3 +129,28 @@ create policy "친구의 프로필 조회 허용" on user_profiles
         )
     )
   );
+
+-- ============================================================
+-- 5. shared_profiles: 공유 링크로 "결과 보기 허용" 기능 (Phase 3)
+--    사용자가 명시적으로 동의한 경우에만 생성되며, 공개 조회 가능하다.
+--    생년월일·출생시간·성별 원본은 절대 저장하지 않는다.
+-- ============================================================
+create table if not exists shared_profiles (
+  id text primary key,
+  kind text not null,
+  nickname text not null,
+  heading text not null,
+  subheading text not null,
+  badge_label text not null,
+  illustration_slug text,
+  icon_element text,
+  created_at timestamptz not null default now()
+);
+
+alter table shared_profiles enable row level security;
+
+create policy "공유 프로필 공개 조회 허용" on shared_profiles
+  for select using (true);
+
+create policy "공유 프로필 생성 허용" on shared_profiles
+  for insert with check (true);

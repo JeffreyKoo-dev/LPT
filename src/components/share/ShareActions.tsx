@@ -13,6 +13,13 @@ interface ShareActionsProps {
   shareDescription: string;
   /** 캐릭터 카드일 때만 존재. 있으면 해당 캐릭터 PNG를, 없으면 기본 이미지를 카카오 카드에 쓴다. */
   illustrationSlug?: string;
+  /**
+   * 공유 시 사용할 URL을 명시적으로 지정한다. 지정하지 않으면 현재 페이지
+   * 주소(window.location.href)를 그대로 쓴다 — "결과 보기 허용"에 동의해
+   * 공개 공유 링크(/view/[id])가 만들어진 경우, 그 링크를 여기로 넘기면
+   * 카카오톡·페이스북 등에서 그 링크가 공유된다.
+   */
+  shareUrl?: string;
 }
 
 /**
@@ -30,6 +37,7 @@ export function ShareActions({
   shareTitle,
   shareDescription,
   illustrationSlug,
+  shareUrl,
 }: ShareActionsProps) {
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
@@ -39,6 +47,10 @@ export function ShareActions({
   useEffect(() => {
     setCanUseWebShare(typeof navigator !== "undefined" && typeof navigator.share === "function");
   }, []);
+
+  function getUrl(): string {
+    return shareUrl ?? window.location.href;
+  }
 
   async function handleSavePng() {
     if (!targetRef.current) return;
@@ -58,7 +70,7 @@ export function ShareActions({
 
   async function handleCopyLink() {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(getUrl());
       setCopyStatus("copied");
       window.setTimeout(() => setCopyStatus("idle"), 2000);
     } catch (error) {
@@ -75,7 +87,7 @@ export function ShareActions({
       await shareToKakao({
         title: shareTitle,
         description: shareDescription,
-        url: window.location.href,
+        url: getUrl(),
         imageUrl: `${window.location.origin}${imagePath}`,
       });
     } catch (error) {
@@ -85,20 +97,20 @@ export function ShareActions({
   }
 
   function handleFacebookShare() {
-    window.open(buildFacebookShareUrl(window.location.href), "_blank", "noopener,noreferrer");
+    window.open(buildFacebookShareUrl(getUrl()), "_blank", "noopener,noreferrer");
   }
 
   function handleXShare() {
-    window.open(buildXShareUrl(window.location.href, shareTitle), "_blank", "noopener,noreferrer");
+    window.open(buildXShareUrl(getUrl(), shareTitle), "_blank", "noopener,noreferrer");
   }
 
   function handleSmsShare() {
-    window.location.href = buildSmsShareUrl(window.location.href, shareTitle);
+    window.location.href = buildSmsShareUrl(getUrl(), shareTitle);
   }
 
   async function handleWebShare() {
     try {
-      await navigator.share({ url: window.location.href });
+      await navigator.share({ url: getUrl() });
     } catch (error) {
       if ((error as Error).name !== "AbortError") {
         console.error("[share] 공유 실패", error);
