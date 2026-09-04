@@ -1,6 +1,7 @@
 import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { ProgressBar } from "@/components/common/ProgressBar";
 import { CompatibilityResult } from "@/lib/compatibility";
+import { conjunctionParticle } from "@/lib/korean";
 
 interface CompatibilityResultCardProps {
   nicknameA: string;
@@ -17,7 +18,7 @@ export function CompatibilityResultCard({
     <div className="flex flex-col gap-5">
       <Card className="border-t-2 border-t-fate text-center">
         <p className="text-xs text-muted">
-          {nicknameA} · {nicknameB}
+          {nicknameA}{conjunctionParticle(nicknameA)} {nicknameB}
         </p>
         <CardTitle className="mt-2 text-2xl">{result.headline}</CardTitle>
         <CardDescription className="mt-2">{result.description}</CardDescription>

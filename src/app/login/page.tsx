@@ -153,7 +153,7 @@ function LoginPageInner() {
         <PageHeading
           label="로그인"
           title="계정으로 기록을 이어가세요"
-          description="성장 대시보드·퀘스트·뱃지는 로그인 후 이용할 수 있어요. 결과 리포트는 로그인 없이도 계속 확인할 수 있습니다."
+          description="성장 관련 화면은 로그인 후 이용할 수 있어요. 결과 리포트는 로그인 없이도 계속 확인할 수 있습니다."
         />
       </div>
 
