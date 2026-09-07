@@ -519,3 +519,39 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-실제키
 
 **남은 작업**: Next.js 14 → 15 → 16 단계적 업그레이드를 별도 시간을 잡고
 충분히 테스트하며 진행할 것을 권장한다 (한 번에 16으로 뛰지 않기).
+
+---
+
+## 18. 쿠팡파트너스 실시간 상품검색 연동 (요청 9번, 자동화 방식)
+
+**구조**: 쿠팡파트너스 Search API는 **시간당 최대 10회** 호출 제한이 있어,
+사용자 요청마다 직접 호출하지 않는다. Edge Function(`coupang-search`)이
+`coupang_product_cache` 테이블에 20시간 캐싱하고, 캐시가 오래됐을 때만
+실제 API를 호출해 갱신한다.
+
+- `supabase/functions/coupang-search` — HMAC-SHA256 서명(쿠팡 공식 가이드
+  알고리즘 그대로 구현, Web Crypto API 사용), 캐시 조회/갱신, API 실패 시
+  오래된 캐시로 폴백
+- `lib/coupang.ts` — 클라이언트에서 이 함수를 호출하는 헬퍼
+- `data/shoppingItems.ts`에 `searchKeyword` 필드 추가 — 오행별 큐레이션
+  아이템의 검색어로 쓰인다
+- `TodayRecommendationPanel`: 실시간 검색 결과(실제 상품명·가격·이미지·
+  로켓배송 여부·제휴 링크)가 있으면 그걸 우선 표시하고, 없으면(API
+  미설정, 검색 결과 없음 등) 기존 정적 큐레이션 문구로 자연스럽게 폴백
+
+**중요한 전제조건**: 쿠팡파트너스는 가입 즉시 API가 열리지 않는다.
+**판매 실적이 누적 15만원을 넘어야 API 키 발급/활성화가 가능**하다
+(쿠팡 측 정책, 코드로 우회 불가능). 이 조건을 만족하기 전까지는
+`COUPANG_ACCESS_KEY`/`COUPANG_SECRET_KEY`를 설정할 수 없고, 그동안은
+자동으로 정적 큐레이션 문구가 노출된다 — 서비스 흐름에는 영향 없음.
+
+**API 활성화되면 배포 방법** (Supabase 대시보드 → Edge Functions →
+Deploy a new function → Via Editor 권장, 로컬 CLI는 일부 네트워크
+환경에서 인증서 문제로 실패한 사례 있음):
+1. 함수 이름 `coupang-search`로 배포 (코드는
+   `supabase/functions/coupang-search/index.ts` 참고)
+2. Secrets에 `COUPANG_ACCESS_KEY`, `COUPANG_SECRET_KEY` 등록
+3. `supabase/migrations/005_coupang_cache.sql`을 SQL Editor에서 실행
+
+**남은 것**: 네이버 쇼핑 커넥트(외부 사이트 API 연동 가능 여부 추가 확인
+필요), 아마존 어소시에이트(추후 진행)
