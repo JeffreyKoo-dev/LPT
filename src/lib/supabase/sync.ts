@@ -4,6 +4,7 @@ import { GrowthProfile } from "@/types/growth";
 import { SurveyState } from "@/types/survey";
 import { BasicInfo } from "@/types/user";
 import { LptTypeId } from "@/types/lpt";
+import { AnalysisReport } from "@/types/report";
 
 /**
  * 로그인한 사용자의 데이터를 Supabase와 동기화한다.
@@ -20,6 +21,7 @@ interface UserProfileRow {
   stats: GrowthProfile["stats"];
   badges: string[];
   quest_log: GrowthProfile["questLog"];
+  analysis_report: AnalysisReport | null;
   created_at: string;
   updated_at: string;
 }
@@ -76,6 +78,31 @@ export async function pushSurveyToCloud(state: SurveyState): Promise<void> {
     });
   } catch (error) {
     console.error("[sync] 설문 응답 업로드 실패", error);
+  }
+}
+
+/**
+ * 계산된 사주 분석 리포트(AnalysisReport)를 동기화한다. 원본 생년월일시가
+ * 아니라, 이미 계산이 끝난 파생값(간지·오행·십성 등)만 담긴 sajuChart를
+ * 포함한 리포트 전체를 저장한다 — 이 값만으로는 원본 생년월일시를 역산할
+ * 수 없다. 로그인 상태에서 리포트가 생성/갱신될 때마다 호출한다.
+ */
+export async function pushAnalysisReportToCloud(report: AnalysisReport): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+
+  try {
+    const supabase = getSupabaseClient();
+    const { data } = await supabase.auth.getUser();
+    const userId = data.user?.id;
+    if (!userId) return;
+
+    await supabase.from("user_profiles").upsert({
+      user_id: userId,
+      nickname: getLocalNickname() || "익명",
+      analysis_report: report,
+    });
+  } catch (error) {
+    console.error("[sync] 분석 리포트 업로드 실패", error);
   }
 }
 
@@ -144,11 +171,21 @@ export async function pullAndMergeOnLogin(userId: string): Promise<void> {
 
     const localProfile = getStorage().get<GrowthProfile>(STORAGE_KEYS.growthProfile);
     const localSurvey = getStorage().get<SurveyState>(STORAGE_KEYS.survey);
+    const localReport = getStorage().get<AnalysisReport>(STORAGE_KEYS.analysis);
 
     if (cloudProfile) {
       getStorage().set(STORAGE_KEYS.growthProfile, cloudProfileToLocal(cloudProfile as UserProfileRow));
     } else if (localProfile) {
       await pushGrowthProfileToCloud(localProfile);
+    }
+
+    // 분석 리포트: 클라우드에 있으면(다른 기기에서 이미 계산해둔 경우) 로컬로
+    // 가져오고, 클라우드가 비어있고 로컬에만 있으면(이 기기에서 첫 로그인) 올린다.
+    const cloudReport = (cloudProfile as UserProfileRow | null)?.analysis_report;
+    if (cloudReport) {
+      getStorage().set(STORAGE_KEYS.analysis, cloudReport);
+    } else if (localReport) {
+      await pushAnalysisReportToCloud(localReport);
     }
 
     if (cloudSurvey) {

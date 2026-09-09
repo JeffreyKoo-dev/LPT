@@ -4,7 +4,7 @@ import { getStorage, STORAGE_KEYS } from "@/lib/storage";
 import { calculateSaju } from "@/lib/saju";
 import { computeAxisScores, loadSurveyState } from "@/lib/survey";
 import { deriveLptType } from "@/lib/lpt";
-import { pushAnonymousBirthStats } from "@/lib/supabase/sync";
+import { pushAnonymousBirthStats, pushAnalysisReportToCloud } from "@/lib/supabase/sync";
 
 /**
  * 기본 정보 + 설문 응답을 기반으로 전체 분석(사주 → 설문 점수 → LPT 유형)을
@@ -30,6 +30,10 @@ export function generateAndSaveAnalysisReport(basicInfo: BasicInfo): AnalysisRep
   // 이 함수가 여러 번 호출될 수 있어 드물게 중복 행이 생길 수 있지만, 집계
   // 통계 용도라 큰 영향은 없다.
   pushAnonymousBirthStats(basicInfo, lptType.typeId);
+  // 로그인 상태라면(비로그인이면 sync.ts 내부에서 조용히 무시됨), 계산된
+  // 결과(파생값만 — 원본 생년월일시 아님)를 클라우드에도 올려 다른 기기에서
+  // 로그인했을 때 이어볼 수 있게 한다.
+  pushAnalysisReportToCloud(report);
   return report;
 }
 

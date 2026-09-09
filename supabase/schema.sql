@@ -13,6 +13,7 @@ create table if not exists user_profiles (
   stats jsonb not null default '{}'::jsonb,
   badges text[] not null default '{}',
   quest_log jsonb not null default '[]'::jsonb,  -- [{questId, completedAt}, ...]
+  analysis_report jsonb,                      -- 계산된 사주 분석 리포트(원본 생년월일시 미포함, 파생값만)
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

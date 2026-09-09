@@ -555,3 +555,32 @@ Deploy a new function → Via Editor 권장, 로컬 CLI는 일부 네트워크
 
 **남은 것**: 네이버 쇼핑 커넥트(외부 사이트 API 연동 가능 여부 추가 확인
 필요), 아마존 어소시에이트(추후 진행)
+
+---
+
+## 19. 다른 기기에서 로그인해도 결과 이어보기 (원본 생년월일시 미저장 원칙 유지)
+
+**배경**: 외부에서 전달받은 스키마 초안(`profiles.birth_date`, `birth_time`을
+서버 컬럼으로 직접 저장하는 구조)은 저희가 처음부터 지켜온 "생년월일시는
+기기에만 저장" 원칙과 충돌해 그대로 적용하지 않았다. 대신 **이미 계산이
+끝난 파생값(사주 분석 리포트)만 동기화**하는 방식으로, 원본을 서버에
+두지 않으면서도 "로그인하면 다른 기기에서도 이어보기"를 만족시켰다.
+
+**구현**:
+- `user_profiles`에 `analysis_report jsonb` 컬럼 추가 (마이그레이션
+  `006_sync_analysis_report.sql`)
+- 저장되는 값은 `AnalysisReport`(스키마버전, `sajuChart`, 설문점수,
+  LPT유형, 계산시각) 전체 — `sajuChart`는 간지·오행분포·십성 등 이미
+  계산이 끝난 결과만 담고 있고, 원본 생년월일시로 역산이 불가능한 값이다
+- `lib/supabase/sync.ts`: `pushAnalysisReportToCloud()` 추가,
+  `pullAndMergeOnLogin()`이 로그인 시 클라우드 리포트가 있으면 로컬로
+  가져오고(다른 기기에서 이미 계산해둔 경우), 없고 로컬에만 있으면
+  올리도록(이 기기에서 첫 로그인) 처리
+- `lib/report.ts`의 `generateAndSaveAnalysisReport()`가 로컬 저장 직후
+  자동으로 클라우드 업로드까지 트리거 (로그인 상태가 아니면 조용히 무시됨)
+
+**검증**: Supabase 미설정 환경에서 push/pull 둘 다 예외 없이 안전하게
+통과하는 것을 확인했다.
+
+**필요 작업**: `supabase/migrations/006_sync_analysis_report.sql`을
+SQL Editor에서 실행.
