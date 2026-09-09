@@ -584,3 +584,63 @@ Deploy a new function → Via Editor 권장, 로컬 CLI는 일부 네트워크
 
 **필요 작업**: `supabase/migrations/006_sync_analysis_report.sql`을
 SQL Editor에서 실행.
+
+---
+
+## 20. 캐시 지갑/결제 인프라 (1단계 — 지갑만, 콘텐츠는 다음 단계)
+
+**배경**: 외부에서 전달받은 통합 기획서(`INTEGRATED_PLAN.md`)에는 다시
+"안 쓰기로 한" 코어 스키마(`profiles`, `saju_reports` 등)가 섞여 있었지만,
+**지갑/결제 부분은 `auth.users`를 직접 참조**해 저희 실제 구조와 충돌이
+없어 그대로 채택했다. `migrateLocalToSupabase.ts`는 저희가 이미 갖고 있는
+`sync.ts`와 역할이 겹쳐 버렸다.
+
+**구현**:
+- `wallets`, `wallet_transactions`, `product_prices`, `daily_unlocks`,
+  `ad_view_logs`, `purchase_orders` 테이블 (마이그레이션 007~009)
+- 잔액 변경은 전부 `SECURITY DEFINER` 함수(`grant_ad_cash_reward`,
+  `unlock_daily_content`, `purchase_product`, `charge_cash_from_pg`)를
+  통해서만 — 클라이언트의 테이블 직접 write는 RLS로 차단
+- `lib/wallet.ts`를 우리 기존 `getSupabaseClient()`/`isSupabaseConfigured()`
+  패턴으로 재작성 (원본은 자체 클라이언트를 새로 만들고 있었음)
+- 리워드 광고: `lib/ads/gpt.ts`(GPT 스크립트 로더, googletag 최소 타입
+  직접 선언 — 공식 npm 타입 패키지 없음), `hooks/useRewardedAd.ts`,
+  `components/ads/RewardedAdButton.tsx`
+- 대시보드에 `WalletSection` 추가(보유 캐시, 가격표, 최근 거래내역)
+
+**결제 승인 흐름을 원본과 다르게 설계함(중요)**: 원본은 "웹훅이 오면
+캐시 지급"이었는데, **토스페이먼츠의 일반 결제 상태 웹훅에는 서명
+헤더가 없다**(서명은 `payout.changed`/`seller.changed` 웹훅에만 존재 —
+공식 문서 확인). 서명 없는 웹훅만 믿고 캐시를 지급하면 위조 위험이 있어,
+토스가 문서에서 권장하는 표준 패턴으로 바꿨다:
+- `/api/payments/confirm` — 결제창에서 성공 리다이렉트로 돌아올 때
+  `paymentKey`/`orderId`/`amount`를 받아, **서버가 직접 토스 결제승인
+  API를 우리 SECRET_KEY로 호출**해 진짜 결제인지 확인한 뒤에만 캐시
+  지급. 주문 금액도 `purchase_orders`에 미리 저장해둔 값과 대조해
+  클라이언트발 금액 조작을 막는다 (캐시 지급의 **주 경로**)
+- `/api/payments/webhook` — 결제 취소 등 비동기 상태 변경만 반영하는
+  **보조** 경로로 격하. 이미 completed된 주문은 여기서 건드리지 않음
+
+**빌드 이슈 수정**: 원본 코드는 API 라우트 파일 최상단에서 바로
+`createClient()`를 호출하고 있었는데, 이러면 `SUPABASE_SERVICE_ROLE_KEY`
+같은 환경변수가 아직 없는 상태로 빌드할 때 **`next build` 자체가
+실패**한다(이 결제 기능과 무관한 페이지들까지 전부 배포 불가능해짐).
+요청 처리 시점에만 클라이언트를 생성하도록 지연시켜 해결했다 — 이
+기능을 설정하지 않은 상태에서도 사이트 전체 빌드는 항상 성공한다.
+
+**아직 안 한 것 (다음 단계)**:
+- 정밀 사주 리포트 / 심층 궁합 분석 / 대운·세운 해석 — **실제 콘텐츠
+  자체가 아직 없음**. `/result`는 이미 무료로 전체 공개 중이고,
+  `/compatibility`는 AI 호출 없는 규칙 기반 계산이며, 대운·세운은
+  계산 로직 자체가 구현돼 있지 않다. 결제 인프라는 준비됐지만 "팔
+  콘텐츠"를 만드는 게 다음 단계
+- 대운·세운 계산 엔진 신규 설계 필요 (전통 명리학의 대운수 산출 로직)
+- 충전하기(`/mypage/charge` 등) 실제 결제창 연동 페이지 미구현 — 지금은
+  버튼만 있고 클릭 시 동작 없음
+- 토스페이먼츠 가입 → `TOSS_SECRET_KEY` 발급 필요 (코드는 준비됐지만
+  실제 키 없이는 결제 불가, 미설정 시 503로 안전하게 막힘)
+- Google Ad Manager 리워드 광고 승인 신청 필요 (`NEXT_PUBLIC_GAM_REWARDED_AD_UNIT`)
+
+**보안 참고**: 캐시 결제·잔액 위조 방지 설계는 완료됐지만, 실제로 사용자에게
+선불 캐시를 판매하는 것은 한국 법상 선불전자지급수단 관련 규제 검토가
+필요할 수 있다 — 이건 법률 자문이 필요한 영역이라 별도로 확인 권장.
