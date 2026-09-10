@@ -29,7 +29,7 @@
 
 import { calculateSaju as ssajuCalculateSaju, lunarToSolar, solarToLunar } from "@/lib/saju-engine/calculate";
 import { BasicInfo } from "@/types/user";
-import { Element, EarthlyBranch, HeavenlyStem, Pillar, SajuChart, TenGod } from "@/types/saju";
+import { Element, EarthlyBranch, HeavenlyStem, Pillar, SajuChart, TenGod, DaeunSeyunData } from "@/types/saju";
 
 const SEOUL_LONGITUDE = 126.9784;
 
@@ -125,11 +125,12 @@ function toPillar(detail: SsajuPillarDetail): Pillar {
 }
 
 /**
- * 기본 정보(BasicInfo)로부터 사주 챠트를 계산한다.
- * 음력 입력은 먼저 양력으로 변환한 뒤(역사적 표준시 보정 판단을 위해), 보정된
- * 시각을 ssaju에 전달한다.
+ * BasicInfo를 ssaju 라이브러리가 요구하는 정규화된 입력으로 변환하고,
+ * 계산 결과 전체(result)를 그대로 반환한다. calculateSaju()와
+ * calculateDaeunSeyun() 양쪽에서 공유해, 역사적 표준시 보정 등의 로직이
+ * 두 곳에서 따로 관리되며 어긋나는 일을 막는다.
  */
-export function calculateSaju(basicInfo: BasicInfo): SajuChart {
+function runSsajuCalculation(basicInfo: BasicInfo) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(basicInfo.birthDate)) {
     throw new Error(`calculateSaju: 올바르지 않은 생년월일 형식입니다 (${basicInfo.birthDate})`);
   }
@@ -152,13 +153,11 @@ export function calculateSaju(basicInfo: BasicInfo): SajuChart {
     minute = Number(mm);
   }
 
-  // 1) 입력이 음력이면 먼저 양력으로 변환 (역사적 표준시 보정 판단에 실제 양력 날짜가 필요)
   const solar =
     basicInfo.calendarType === "lunar"
       ? lunarToSolar(inputYear, inputMonth, inputDay, false)
       : { year: inputYear, month: inputMonth, day: inputDay };
 
-  // 2) 역사적 표준시(UTC+8:30) 기간이면 +30분 보정
   const historicalOffset = getHistoricalOffsetMinutes(solar.year, solar.month, solar.day);
   const corrected = addMinutes(
     { year: solar.year, month: solar.month, day: solar.day, hour, minute },
@@ -172,11 +171,22 @@ export function calculateSaju(basicInfo: BasicInfo): SajuChart {
     hour: corrected.hour,
     minute: corrected.minute,
     gender: basicInfo.gender === "male" ? "남" : "여",
-    calendar: "solar", // 이미 양력으로 변환·보정했으므로 항상 solar로 전달
+    calendar: "solar",
     timezone: "Asia/Seoul",
     applyLocalMeanTime: basicInfo.applyLocalMeanTime,
     longitude: basicInfo.applyLocalMeanTime ? SEOUL_LONGITUDE : undefined,
   });
+
+  return { result, hasTime };
+}
+
+/**
+ * 기본 정보(BasicInfo)로부터 사주 챠트를 계산한다.
+ * 음력 입력은 먼저 양력으로 변환한 뒤(역사적 표준시 보정 판단을 위해), 보정된
+ * 시각을 ssaju에 전달한다.
+ */
+export function calculateSaju(basicInfo: BasicInfo): SajuChart {
+  const { result, hasTime } = runSsajuCalculation(basicInfo);
 
   const yearPillar = toPillar(result.pillarDetails.year);
   const monthPillar = toPillar(result.pillarDetails.month);
@@ -219,6 +229,51 @@ export function calculateSaju(basicInfo: BasicInfo): SajuChart {
         ? { stem: result.tenGods.hour.stem as TenGod, branch: result.tenGods.hour.branch as TenGod }
         : null,
     },
+  };
+}
+
+/**
+ * 대운·세운을 계산한다. 이미 vendored된 ssaju 엔진(src/lib/saju-engine)에
+ * 이 계산 로직이 정확히 구현되어 있어(전통 명리학의 대운수 산출 방식 —
+ * 연간 음양+성별로 순행/역행 판단, 절기까지의 정밀 일수÷3으로 시작 나이
+ * 산출) 새로 만들 필요 없이 그대로 가져다 매핑만 한다.
+ *
+ * 유료 콘텐츠(정밀 리포트 결제 후 노출)로 쓰인다 — lib/report.ts의
+ * 기본 무료 리포트에는 포함하지 않는다.
+ */
+export function calculateDaeunSeyun(basicInfo: BasicInfo): DaeunSeyunData {
+  const { result } = runSsajuCalculation(basicInfo);
+
+  const periods = result.daeun.list.map((item) => ({
+    startAge: item.startAge,
+    endAge: item.endAge,
+    startYear: item.startYear,
+    ganzhi: item.ganzhi,
+    stem: item.stem,
+    branch: item.branch,
+    stemTenGod: item.stemTenGod as TenGod,
+    branchTenGod: item.branchTenGod as TenGod,
+    stage12: item.stage12,
+    isCurrent: result.daeun.current?.ganzhi === item.ganzhi && result.daeun.current?.startAge === item.startAge,
+  }));
+
+  const currentYear = new Date().getFullYear();
+  const years = result.seyun.map((item) => ({
+    year: item.year,
+    ganzhi: item.ganzhi,
+    stem: item.stem,
+    branch: item.branch,
+    tenGodStem: item.tenGodStem as TenGod,
+    tenGodBranch: item.tenGodBranch as TenGod,
+    stage12: item.stage12,
+    isCurrent: item.year === currentYear,
+  }));
+
+  return {
+    startAge: result.daeun.startAge,
+    direction: result.daeun.basis.direction,
+    periods,
+    years,
   };
 }
 

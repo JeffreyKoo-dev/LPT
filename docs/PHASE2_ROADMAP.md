@@ -644,3 +644,70 @@ SQL Editor에서 실행.
 **보안 참고**: 캐시 결제·잔액 위조 방지 설계는 완료됐지만, 실제로 사용자에게
 선불 캐시를 판매하는 것은 한국 법상 선불전자지급수단 관련 규제 검토가
 필요할 수 있다 — 이건 법률 자문이 필요한 영역이라 별도로 확인 권장.
+
+---
+
+## 21. 대운·세운 계산 엔진 (2단계)
+
+**예상보다 훨씬 가볍게 끝났다** — 처음엔 대운수 산출(절기까지의 정밀
+일수÷3), 순행/역행 판단(연간 음양+성별), 60갑자 순행/역행 등을 전부
+새로 설계해야 할 거라 예상했는데, **이미 가져다 쓰고 있던 ssaju 엔진
+(`src/lib/saju-engine`)에 이 계산 로직이 전부 정확히 구현돼 있었다**
+(`analyze.ts`의 `calculateDaeun`/`calculateSeyun`/`calculateWolun`,
+정밀 절기 계산은 `manse.ts`의 `resolveNearestMajorSolarTermUTC` —
+실제 태양 황경 계산 기반). 저희 앱이 지금까지 이 부분을 그냥 안 쓰고
+있었을 뿐이다.
+
+**구현**:
+- `types/saju.ts`에 `DaeunPeriod`, `SeyunYear`, `DaeunSeyunData` 타입 추가
+- `lib/saju.ts`: 기존 `calculateSaju()`와 정규화 로직(음력→양력 변환,
+  역사적 표준시 보정)을 `runSsajuCalculation()`으로 공통 추출해 중복
+  방지, 새 함수 `calculateDaeunSeyun(basicInfo)` 추가 — ssaju 결과의
+  `daeun`/`seyun`을 우리 타입으로 매핑만 한다
+- 유료 콘텐츠 전용 함수로 설계 — 기존 무료 `/result` 리포트에는
+  포함하지 않음(3단계에서 결제 게이팅과 함께 노출 예정)
+
+**검증**: 1974-08-16 13:05(원광만세력으로 이미 검증된 생년월일)으로
+직접 계산해, 대운 방향(양남=순행)과 60갑자 순행 순서(계유→갑술→을해),
+2026년 세운(병오, 수식으로 직접 재검산해 일치 확인)까지 정확함을
+확인했다.
+
+**다음(3단계)**: 이 데이터를 AI로 해석하는 문장 생성 + 정밀
+리포트/심층 궁합분석과 함께 결제 게이팅 UI로 노출.
+
+---
+
+## 22. 3개 AI 유료 콘텐츠 생성 + 결제 게이팅 UI (3단계 — 완료)
+
+**구조**: 결제(캐시 차감)와 AI 생성을 분리했다. 결제 성공 후 생성이
+실패해도 캐시가 사라지지 않고, `wallet_transactions`의 차감 기록을
+서버가 재확인해 재결제 없이 재시도할 수 있다.
+
+- `supabase/functions/generate-premium-content` — Anthropic API(Haiku
+  4.5) 호출, 상품별 프롬프트 3종 분기. 전부 "~일 수 있어요" 경향/가능성
+  톤을 프롬프트에 명시(사이트 전체 톤 원칙과 일관)
+- **정밀 사주 리포트 / 대운·세운 해석**: 본인 소유 데이터라
+  `premium_content` 테이블에 캐싱 — 재조회 시 재생성 없이 재사용
+- **심층 궁합 분석**: 상대방 정보를 저장하지 않는다는 `/compatibility`
+  기존 원칙과 일관되게, **서버에 저장하지 않고 매번 그 자리에서만
+  생성**(재확인하려면 다시 결제)
+- `lib/premiumContent.ts` — 결제 여부 확인, 캐시 조회, 생성 요청 클라이언트 헬퍼
+- `components/wallet/PremiumUnlockCard.tsx` — 잠김/생성중/결과표시 3단계
+  범용 컴포넌트, `/result`(정밀 리포트·대운세운)와 `/compatibility`
+  (심층 궁합분석)에 연결
+
+**검증**: Supabase 미설정 환경에서 결제 여부 확인·캐시 조회가 안전하게
+`false`/`null`로 폴백하는 것을 확인했다. 실제 AI 생성은 `ANTHROPIC_API_KEY`
+설정 후 실기기 테스트 필요.
+
+**필요 작업**:
+1. `supabase/migrations/010_premium_content.sql`을 SQL Editor에서 실행
+2. `generate-premium-content` Edge Function 배포(Supabase 대시보드 →
+   Edge Functions → Via Editor 권장) + Secrets에 `ANTHROPIC_API_KEY` 등록
+   (moderate-content와 동일한 키 재사용 가능)
+
+**이걸로 지갑/결제 인프라(1단계) → 대운세운 계산(2단계) → AI 유료
+콘텐츠 3종(3단계)까지 전체 완료됐다.** 남은 건 토스페이먼츠 가입 →
+`TOSS_SECRET_KEY` 발급, 충전 페이지(`/mypage/charge`) 실제 결제창
+연동, GAM 리워드 광고 승인 신청 — 전부 외부 계정 준비가 먼저 필요한
+항목들이다.

@@ -11,6 +11,7 @@ import { BirthTimeField } from "@/components/form/BirthTimeField";
 import { SegmentedControl } from "@/components/form/SegmentedControl";
 import { Checkbox } from "@/components/form/Checkbox";
 import { CompatibilityResultCard } from "@/components/result/CompatibilityResultCard";
+import { PremiumUnlockCard } from "@/components/wallet/PremiumUnlockCard";
 import { useGrowthSession } from "@/lib/useGrowthSession";
 import { calculateSaju } from "@/lib/saju";
 import { computeCompatibility, CompatibilityResult } from "@/lib/compatibility";
@@ -29,6 +30,7 @@ export default function CompatibilityPage() {
   const [applyLocalMeanTimeB, setApplyLocalMeanTimeB] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CompatibilityResult | null>(null);
+  const [partnerChart, setPartnerChart] = useState<ReturnType<typeof calculateSaju> | null>(null);
 
   if (session.status === "loading") {
     return (
@@ -73,6 +75,7 @@ export default function CompatibilityPage() {
         session.report!.lptType.quadrant
       );
       setResult(compat);
+      setPartnerChart(chartB);
     } catch {
       setError("입력하신 정보로 계산하지 못했어요. 날짜를 다시 확인해주세요.");
     }
@@ -156,11 +159,27 @@ export default function CompatibilityPage() {
             nicknameB={nicknameB || "상대방"}
             result={result}
           />
+
+          {partnerChart && (
+            <PremiumUnlockCard
+              productCode="compatibility_deep"
+              title="심층 궁합 분석"
+              teaser="두 분의 일간과 오행이 어떻게 상호작용하는지 조금 더 깊이 있게 풀어드려요."
+              noCache
+              buildContext={() => ({
+                myChart: session.report!.sajuChart,
+                partnerChart,
+                existingResult: { score: result.score, headline: result.headline },
+              })}
+            />
+          )}
+
           <Button
             variant="ghost"
             className="mt-6 w-full"
             onClick={() => {
               setResult(null);
+              setPartnerChart(null);
               setError(null);
             }}
           >

@@ -69,3 +69,41 @@ export interface SajuChart {
     hour: PillarTenGods | null;
   };
 }
+
+/** 대운(大運) 한 시기 — 약 10년 단위로 이어지는 큰 흐름의 간지 */
+export interface DaeunPeriod {
+  startAge: number;
+  endAge: number;
+  startYear: number;
+  ganzhi: string;
+  stem: string;
+  branch: string;
+  stemTenGod: TenGod | string;
+  branchTenGod: TenGod | string;
+  stage12: string;
+  /** 현재 나이가 이 대운 시기에 해당하는지 여부 */
+  isCurrent: boolean;
+}
+
+/** 세운(歲運) 한 해 — 매년 바뀌는 흐름의 간지 */
+export interface SeyunYear {
+  year: number;
+  ganzhi: string;
+  stem: string;
+  branch: string;
+  tenGodStem: TenGod | string;
+  tenGodBranch: TenGod | string;
+  stage12: string;
+  isCurrent: boolean;
+}
+
+/** 대운·세운 전체 — 유료 콘텐츠(정밀 리포트 결제 후 조회)로 노출 */
+export interface DaeunSeyunData {
+  /** 대운이 시작되는 나이 (만세력 기준, 절기까지의 일수÷3으로 산출) */
+  startAge: number;
+  /** 대운 진행 방향 — 순행(forward)/역행(backward) */
+  direction: "forward" | "backward";
+  periods: DaeunPeriod[];
+  /** 현재 시점 기준 앞뒤 10년치 세운 */
+  years: SeyunYear[];
+}

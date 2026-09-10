@@ -19,10 +19,11 @@ import { getStorage, STORAGE_KEYS } from "@/lib/storage";
 import { getLptTypeMeta } from "@/data/lptTypes";
 import { getFantasyClass } from "@/data/fantasyClasses";
 import { computeLifestyleIndicator } from "@/lib/indicator";
-import { getLunarDate, LunarDate } from "@/lib/saju";
+import { getLunarDate, LunarDate, calculateDaeunSeyun } from "@/lib/saju";
 import { getRelatedTypes } from "@/lib/compatibility";
 import { RelatedTypesPanel } from "@/components/result/RelatedTypesPanel";
 import { PageHeading } from "@/components/common/PageHeading";
+import { PremiumUnlockCard } from "@/components/wallet/PremiumUnlockCard";
 
 type LoadState = "loading" | "missing-basic-info" | "missing-survey" | "ready";
 
@@ -147,6 +148,28 @@ export default function ResultPage() {
         <Card variant="ledger">
           <TenGodsPanel sajuChart={report.sajuChart} />
         </Card>
+
+        <PremiumUnlockCard
+          productCode="premium_report"
+          title="정밀 사주 리포트"
+          teaser="오행 균형, 십성 조합이 보여주는 성향의 결을 더 깊이 있게 풀어드려요."
+          buildContext={() => ({
+            sajuChart: report.sajuChart,
+            lptType: { name: typeMeta.name, tagline: typeMeta.tagline },
+          })}
+        />
+
+        <PremiumUnlockCard
+          productCode="daeun_seun"
+          title="대운·세운 해석"
+          teaser="지금의 큰 흐름과 올해·내년의 세운을 참고할 수 있는 이야기로 풀어드려요."
+          buildContext={() => ({
+            daeunSeyun: calculateDaeunSeyun(
+              getStorage().get<BasicInfo>(STORAGE_KEYS.basicInfo)!
+            ),
+            lptType: { name: typeMeta.name },
+          })}
+        />
 
         <Card>
           <SynergyPanel typeMeta={typeMeta} />
