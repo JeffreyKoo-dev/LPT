@@ -1,7 +1,13 @@
 "use client";
 
 /**
- * 토스페이먼츠 SDK v2(결제창형) 로더 + 결제 요청 헬퍼.
+ * 토스페이먼츠 SDK v2(주문서형) 로더 + 결제 위젯 헬퍼.
+ *
+ * v2에서는 결제수단을 코드로 바로 선택할 수 없고, 실제로 화면에
+ * "결제수단 선택 UI"(renderPaymentMethods)와 "약관 동의 UI"
+ * (renderAgreement)를 렌더링해서 사용자가 직접 골라야 한다. 이 두
+ * 렌더링이 끝난 뒤에만 requestPayment()가 정상 동작한다 — 이 순서를
+ * 빠뜨리면 "결제수단이 선택되지 않았어요" 에러가 난다(실제로 겪은 문제).
  *
  * NEXT_PUBLIC_TOSS_CLIENT_KEY가 없으면(가입 전) isTossPaymentsConfigured()가
  * false를 반환하고, 충전 화면은 "준비 중" 상태로 자연스럽게 대체된다.
@@ -15,6 +21,8 @@ declare global {
 
 interface TossWidgets {
   setAmount: (amount: { value: number; currency: "KRW" }) => Promise<void>;
+  renderPaymentMethods: (params: { selector: string; variantKey?: string }) => Promise<unknown>;
+  renderAgreement: (params: { selector: string; variantKey?: string }) => Promise<unknown>;
   requestPayment: (params: {
     orderId: string;
     orderName: string;
@@ -30,6 +38,8 @@ interface TossPaymentsInstance {
 }
 
 const SDK_URL = "https://js.tosspayments.com/v2/standard";
+const PAYMENT_METHOD_SELECTOR = "#toss-payment-method";
+const AGREEMENT_SELECTOR = "#toss-agreement";
 
 let sdkLoadPromise: Promise<void> | null = null;
 
@@ -53,21 +63,15 @@ function loadTossSdk(): Promise<void> {
   return sdkLoadPromise;
 }
 
-export interface StartChargeParams {
-  orderId: string;
-  amount: number;
-  orderName: string;
-  customerKey: string;
-  customerEmail?: string;
-  customerName?: string;
-}
-
 /**
- * 결제창을 띄운다(Redirect 방식) — 성공 시 successUrl로, 실패/취소 시
- * failUrl로 브라우저가 이동한다. 이 함수 자체는 페이지 이동이 일어나므로
- * 반환값을 기다릴 필요가 없다.
+ * 결제 위젯을 초기화하고, 결제수단 선택 UI + 약관 동의 UI를 화면에
+ * 렌더링한다. 호출 전에 반드시 #toss-payment-method, #toss-agreement
+ * id를 가진 요소가 DOM에 있어야 한다.
  */
-export async function startCharge(params: StartChargeParams): Promise<void> {
+export async function initChargeWidgets(params: {
+  customerKey: string;
+  amount: number;
+}): Promise<TossWidgets> {
   if (!isTossPaymentsConfigured()) {
     throw new Error("결제 기능이 아직 설정되지 않았습니다.");
   }
@@ -79,12 +83,13 @@ export async function startCharge(params: StartChargeParams): Promise<void> {
   const widgets = tossPayments.widgets({ customerKey: params.customerKey });
 
   await widgets.setAmount({ value: params.amount, currency: "KRW" });
-  await widgets.requestPayment({
-    orderId: params.orderId,
-    orderName: params.orderName,
-    successUrl: `${window.location.origin}/charge/success`,
-    failUrl: `${window.location.origin}/charge/fail`,
-    customerEmail: params.customerEmail,
-    customerName: params.customerName,
-  });
+  await Promise.all([
+    widgets.renderPaymentMethods({ selector: PAYMENT_METHOD_SELECTOR, variantKey: "DEFAULT" }),
+    widgets.renderAgreement({ selector: AGREEMENT_SELECTOR, variantKey: "AGREEMENT" }),
+  ]);
+
+  return widgets;
 }
+
+export { PAYMENT_METHOD_SELECTOR, AGREEMENT_SELECTOR };
+export type { TossWidgets };

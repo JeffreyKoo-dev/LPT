@@ -754,3 +754,25 @@ SQL Editor에서 실행.
 없으면 `/charge`가 "준비 중" 화면만 보여주고 실제 결제는 못 한다.
 가입 전에는 토스 샌드박스(테스트) 키로 먼저 전체 흐름을 검증하는 걸
 권장한다.
+
+---
+
+## 24. 충전 페이지 수정 — 결제수단 선택 UI 누락 버그
+
+**문제**: 처음 만든 버전은 `widgets.requestPayment()`를 곧바로 호출했는데,
+실제로는 그 전에 **결제수단 선택 UI와 약관 동의 UI를 화면에 렌더링**해서
+사용자가 직접 골라야 하는 구조였다(토스페이먼츠 v2 "주문서형" 결제의
+필수 단계). 이 단계를 빠뜨려서 실기기 테스트에서 "결제수단이 아직
+선택되지 않았어요" 에러가 났다.
+
+**수정**:
+- `lib/tossPayments.ts`를 `initChargeWidgets()` 중심으로 재작성 —
+  `setAmount()` → `renderPaymentMethods({selector, variantKey})` →
+  `renderAgreement({selector, variantKey})` 순서로 호출(v2 JS SDK는
+  이 세 메서드 모두 **오브젝트 파라미터** 형태다 — v1/Flutter/React
+  Native SDK의 위치 인자 형태와 다르다는 걸 확인하고 맞춰 구현)
+- `/charge` 페이지에 `#toss-payment-method`, `#toss-agreement` DOM
+  요소를 실제로 두고, 금액을 선택하면 그 자리에 결제수단·약관 UI가
+  렌더링되도록 함. 렌더링이 끝나기 전에는 "결제하기" 버튼이 비활성화됨
+- 이 과정에서 토스페이먼츠 문서에 공개된 **테스트 연동 키**(가입 전에도
+  쓸 수 있는 체험 상점 키)로 실제 배포 후 테스트해 위 버그를 발견했다
