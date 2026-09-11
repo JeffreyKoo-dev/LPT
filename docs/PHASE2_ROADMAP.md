@@ -711,3 +711,46 @@ SQL Editor에서 실행.
 `TOSS_SECRET_KEY` 발급, 충전 페이지(`/mypage/charge`) 실제 결제창
 연동, GAM 리워드 광고 승인 신청 — 전부 외부 계정 준비가 먼저 필요한
 항목들이다.
+
+---
+
+## 23. 충전 페이지 결제창 연동
+
+토스페이먼츠 v2 SDK(결제창형, `widgets()` 방식)로 실제 캐시 충전 플로우를
+구현했다. `/api/payments/confirm`(이전 단계에서 이미 구현)과 자연스럽게
+이어진다.
+
+**구현**:
+- `lib/tossPayments.ts` — SDK 로더 + `startCharge()` (widgets → setAmount
+  → requestPayment). `NEXT_PUBLIC_TOSS_CLIENT_KEY` 미설정 시
+  `isTossPaymentsConfigured()`가 false를 반환해 충전 화면이 "준비 중"으로
+  자연스럽게 대체된다
+- `lib/chargeOptions.ts` — 충전 금액↔지급 캐시(보너스 포함) 매핑을
+  **클라이언트(`/charge`)와 서버(`/api/payments/confirm`) 양쪽이 공유하는
+  중립 파일로 분리**했다. 원래 두 곳에 따로 하드코딩돼 있던 걸 하나로
+  합쳐, 두 값이 어긋나 결제 금액과 지급 캐시가 불일치하는 위험을 없앴다
+- `lib/wallet.ts`에 `createPendingOrder()` 추가 — 결제 시작 전
+  `purchase_orders`에 `status='pending'` 행을 미리 남겨, confirm 라우트가
+  나중에 "우리가 시작한 결제가 맞는지 + 금액이 조작되지 않았는지" 대조할
+  기준으로 쓴다
+- `/charge` — 충전 금액 선택 UI, 로그인 필수(`useRequireLogin`)
+- `/charge/success`, `/charge/fail` — 토스 결제창에서 돌아오는 리다이렉트
+  처리 페이지. `useSearchParams()`를 쓰는 페이지라 Next.js 요구사항대로
+  `<Suspense>`로 감쌌다(안 감싸면 정적 빌드 자체가 실패한다 — 실제로
+  이 문제로 빌드가 한 번 깨졌었다)
+- 대시보드 `WalletSection`의 "충전하기" 버튼을 `/charge`로 연결
+
+**빌드 중 발견·수정한 버그 2건**:
+1. `useRequireLogin()`은 가드 컴포넌트를 반환하는 게 아니라 세션 상태
+   객체를 반환하는 훅인데, 이를 착각해 `if (authGate) return authGate`로
+   써서 "객체를 그대로 렌더링하려 함" 빌드 에러가 났다. 기존 페이지들의
+   패턴(`authGate.loading || authGate.redirecting`으로 조건 분기)에 맞춰
+   수정했다
+2. `useSearchParams()`를 쓰는 페이지는 Suspense 경계 없이는 Next.js
+   정적 빌드가 실패한다 — 두 페이지 모두 감싸서 해결
+
+**아직 안 한 것**: 토스페이먼츠 실제 가입 → `TOSS_SECRET_KEY`,
+`NEXT_PUBLIC_TOSS_CLIENT_KEY` 발급 필요. 코드는 준비됐지만 이 키들이
+없으면 `/charge`가 "준비 중" 화면만 보여주고 실제 결제는 못 한다.
+가입 전에는 토스 샌드박스(테스트) 키로 먼저 전체 흐름을 검증하는 걸
+권장한다.

@@ -16,6 +16,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { CHARGE_OPTIONS } from "@/lib/chargeOptions";
 
 const TOSS_SECRET_KEY = process.env.TOSS_SECRET_KEY;
 
@@ -32,15 +33,6 @@ function getSupabaseAdmin() {
     process.env.SUPABASE_SERVICE_ROLE_KEY! // 서버 전용, 절대 클라이언트에 노출 금지
   );
 }
-
-// 충전 단위별 지급 캐시 (보너스 포함). 프로모션이 잦아지면 DB화 고려
-// (docs/PHASE2_ROADMAP.md의 cash_charge_options 초안 참고).
-const CHARGE_OPTIONS: Record<number, number> = {
-  1000: 1000,
-  3000: 3300,
-  5000: 5750,
-  10000: 12000,
-};
 
 export async function POST(req: NextRequest) {
   if (!TOSS_SECRET_KEY) {

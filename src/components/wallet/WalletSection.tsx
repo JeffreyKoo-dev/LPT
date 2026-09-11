@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
 import {
@@ -63,7 +64,9 @@ export function WalletSection() {
             {(balance ?? 0).toLocaleString()} 캐시
           </p>
         </div>
-        <Button variant="secondary">충전하기</Button>
+        <Link href="/charge">
+          <Button variant="secondary">충전하기</Button>
+        </Link>
       </div>
 
       {prices.length > 0 && (

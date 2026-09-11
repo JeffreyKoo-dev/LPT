@@ -1,4 +1,5 @@
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { CHARGE_OPTIONS } from "@/lib/chargeOptions";
 
 /**
  * 캐시 지갑 클라이언트 래퍼. 모든 잔액 변경은 Supabase RPC(SECURITY DEFINER
@@ -171,4 +172,38 @@ export function isAdUnlockable(prices: ProductPrice[], code: ProductCode): boole
 
 export function getProductPrice(prices: ProductPrice[], code: ProductCode): ProductPrice | undefined {
   return prices.find((p) => p.product_code === code);
+}
+
+/**
+ * 결제 시작 전, 결제할 주문을 미리 DB에 남겨둔다(status='pending'). 이 값을
+ * /api/payments/confirm이 나중에 조회해 "실제로 우리가 시작한 결제인지",
+ * "금액이 조작되지 않았는지"를 대조하는 기준으로 쓴다.
+ */
+export async function createPendingOrder(krwAmount: number): Promise<{ orderId: string } | null> {
+  if (!isSupabaseConfigured()) return null;
+  const cashAmount = CHARGE_OPTIONS[krwAmount];
+  if (!cashAmount) throw new Error(`등록되지 않은 충전 금액: ${krwAmount}`);
+
+  try {
+    const supabase = getSupabaseClient();
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) throw new Error("로그인이 필요합니다.");
+
+    const { data, error } = await supabase
+      .from("purchase_orders")
+      .insert({
+        user_id: userData.user.id,
+        krw_amount: krwAmount,
+        cash_amount: cashAmount,
+        pg_provider: "tosspayments",
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+    return { orderId: data.id };
+  } catch (error) {
+    console.error("[wallet] 주문 생성 실패", error);
+    return null;
+  }
 }

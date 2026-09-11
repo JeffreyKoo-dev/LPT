@@ -21,7 +21,11 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const TONE_GUIDE =
   "말투 원칙: 모든 문장은 '~일 수 있어요', '~한 경향이 있어요'처럼 경향과 가능성으로 " +
   "표현하세요. '반드시', '확실히', '~할 것이다'처럼 단정하는 표현은 쓰지 마세요. " +
-  "따뜻하고 존중하는 톤으로, 2인칭 존댓말('~님')을 사용하세요.";
+  "따뜻하고 존중하는 톤으로, 2인칭 존댓말('~님')을 사용하세요.\n" +
+  "형식 원칙: 마크다운 문법을 절대 쓰지 마세요 — #으로 시작하는 제목, **로 감싸는 " +
+  "굵은 글씨, 목록(-, 1. 등)을 전부 쓰지 마세요. 소제목이나 구분선 없이, 자연스럽게 " +
+  "이어지는 문단(순수 텍스트)으로만 작성하세요. 강조하고 싶은 단어가 있어도 특수문자로 " +
+  "감싸지 말고 문장 구조나 어순으로 자연스럽게 강조하세요.";
 
 Deno.serve(async (req: Request) => {
   const corsHeaders = {
@@ -42,10 +46,11 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    // 호출자 확인용 클라이언트: 사용자의 JWT로 "누가 호출했는지"만 검증한다.
+    const callerClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: userData, error: userError } = await supabase.auth.getUser();
+    const { data: userData, error: userError } = await callerClient.auth.getUser();
     if (userError || !userData.user) {
       return new Response(JSON.stringify({ error: "인증이 유효하지 않습니다." }), {
         status: 401,
@@ -53,6 +58,13 @@ Deno.serve(async (req: Request) => {
       });
     }
     const userId = userData.user.id;
+
+    // 관리자 클라이언트: 이후 모든 DB 읽기/쓰기는 이 클라이언트로만 수행한다.
+    // (Authorization 헤더를 호출자 것으로 덮어쓰면 안 된다 — 그러면 RLS가
+    // service_role이 아니라 호출자 권한으로 적용돼, premium_content처럼
+    // 클라이언트 직접 write를 막아둔 테이블에 쓰기가 실패한다. 실제로 이
+    // 문제로 500 에러가 발생했었다.)
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const { productCode, context } = await req.json();
 
@@ -172,5 +184,21 @@ async function callClaude(prompt: string): Promise<string> {
   }
 
   const data = await response.json();
-  return data.content?.[0]?.text ?? "";
+  const rawText = data.content?.[0]?.text ?? "";
+  return stripMarkdown(rawText);
+}
+
+/**
+ * 프롬프트로 마크다운을 쓰지 말라고 지시해도 가끔 새어나올 수 있어, 마지막
+ * 안전장치로 흔한 마크다운 기호를 제거한다. #제목, **굵게**, *기울임*,
+ * 목록(-, 1. 등) 표시를 걷어내고 순수 텍스트만 남긴다.
+ */
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/^#{1,6}\s+/gm, "") // # 제목
+    .replace(/\*\*(.+?)\*\*/g, "$1") // **굵게**
+    .replace(/\*(.+?)\*/g, "$1") // *기울임*
+    .replace(/^[-*+]\s+/gm, "") // - 목록
+    .replace(/^\d+\.\s+/gm, "") // 1. 목록
+    .trim();
 }
