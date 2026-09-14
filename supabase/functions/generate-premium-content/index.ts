@@ -1,13 +1,17 @@
 // Supabase Edge Function: generate-premium-content
 //
 // 캐시 결제가 완료된 유료 콘텐츠(정밀 사주 리포트 / 심층 궁합 분석 /
-// 대운·세운 해석)의 AI 해석문을 생성한다. 결제(purchase_product RPC)와
-// 생성은 분리된 단계라, 결제 성공 후 이 함수 호출이 실패해도 캐시가
-// 사라지지 않는다 — 클라이언트는 재결제 없이 이 함수만 다시 호출하면
-// 된다 (lib/premiumContent.ts의 hasPurchased()로 결제 여부를 별도 확인).
+// 대운·세운 해석 / 이번 달 운세)의 AI 해석문을 생성한다. 결제
+// (purchase_product RPC)와 생성은 분리된 단계라, 결제 성공 후 이 함수
+// 호출이 실패해도 캐시가 사라지지 않는다 — 클라이언트는 재결제 없이 이
+// 함수만 다시 호출하면 된다 (lib/premiumContent.ts의 hasPurchased()로
+// 결제 여부를 별도 확인).
 //
-// premium_report / daeun_seun: 본인 소유 데이터라 결과를 premium_content
-// 테이블에 저장해 재조회 시 재사용한다.
+// premium_report / daeun_seun / monthly_fortune: 본인 소유 데이터라 결과를
+// premium_content 테이블에 저장해 재조회 시 재사용한다. monthly_fortune만
+// "이번 달에 한해서만" 유효한 결제/캐시로 취급한다 — 매달 바뀌는
+// 콘텐츠라는 상품의 핵심 가치라, 지난달 결제·캐시로는 이번 달 콘텐츠를
+// 못 본다 (lib/premiumContent.ts의 hasPurchasedThisMonth와 대칭).
 // compatibility_deep: 상대방 생년월일 등은 저장하지 않는다는 기존 원칙
 // (/compatibility 페이지에 명시)과 일관되게, 이 상품은 저장하지 않고
 // 매번 그 자리에서 생성해 응답만 반환한다.
@@ -26,6 +30,11 @@ const TONE_GUIDE =
   "굵은 글씨, 목록(-, 1. 등)을 전부 쓰지 마세요. 소제목이나 구분선 없이, 자연스럽게 " +
   "이어지는 문단(순수 텍스트)으로만 작성하세요. 강조하고 싶은 단어가 있어도 특수문자로 " +
   "감싸지 말고 문장 구조나 어순으로 자연스럽게 강조하세요.";
+
+function getCurrentYearMonth(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
 
 Deno.serve(async (req: Request) => {
   const corsHeaders = {
@@ -77,13 +86,23 @@ Deno.serve(async (req: Request) => {
 
     // 결제 여부 확인 — wallet_transactions에 해당 상품의 차감 기록이 있어야만 생성 진행
     // (service_role 클라이언트라 RLS 우회, 여기서 직접 조건을 검사한다)
-    const { data: txRows } = await supabase
+    // monthly_fortune은 "이번 달에" 결제한 기록만 유효하다 — 지난달 결제로는
+    // 이번 달 콘텐츠를 생성할 수 없다.
+    let txQuery = supabase
       .from("wallet_transactions")
       .select("id")
       .eq("user_id", userId)
       .eq("product_code", productCode)
-      .eq("type", "spend")
-      .limit(1);
+      .eq("type", "spend");
+
+    if (productCode === "monthly_fortune") {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      txQuery = txQuery.gte("created_at", startOfMonth.toISOString());
+    }
+
+    const { data: txRows } = await txQuery.limit(1);
 
     if (!txRows || txRows.length === 0) {
       return new Response(JSON.stringify({ error: "결제 내역을 찾을 수 없습니다." }), {
@@ -92,7 +111,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // premium_report / daeun_seun: 이미 생성해둔 캐시가 있으면 그대로 반환
+    // premium_report / daeun_seun / monthly_fortune: 이미 생성해둔 캐시가 있으면 그대로 반환
     if (productCode !== "compatibility_deep") {
       const { data: cached } = await supabase
         .from("premium_content")
@@ -100,7 +119,13 @@ Deno.serve(async (req: Request) => {
         .eq("user_id", userId)
         .eq("product_code", productCode)
         .maybeSingle();
-      if (cached) {
+
+      // monthly_fortune은 캐시가 이번 달 것일 때만 유효하다 (지난달 캐시 무시)
+      const cacheIsValid =
+        cached &&
+        (productCode !== "monthly_fortune" || cached.content?.yearMonth === getCurrentYearMonth());
+
+      if (cacheIsValid) {
         return new Response(JSON.stringify({ content: cached.content, source: "cache" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -109,7 +134,10 @@ Deno.serve(async (req: Request) => {
 
     const prompt = buildPrompt(productCode, context);
     const generatedText = await callClaude(prompt);
-    const content = { text: generatedText, generatedAt: new Date().toISOString() };
+    const content: Record<string, unknown> = { text: generatedText, generatedAt: new Date().toISOString() };
+    if (productCode === "monthly_fortune") {
+      content.yearMonth = (context as { yearMonth?: string })?.yearMonth ?? getCurrentYearMonth();
+    }
 
     if (productCode !== "compatibility_deep") {
       await supabase.from("premium_content").upsert({ user_id: userId, product_code: productCode, content });
@@ -157,6 +185,17 @@ function buildPrompt(productCode: string, context: Record<string, unknown>): str
       `대운 시기와 올해·내년의 세운이 어떤 결의 시기일 수 있는지, 어떤 부분에 신경 쓰면 ` +
       `좋을지를 6~10문장으로 자연스럽게 풀어주세요. 특정 사건을 예측하듯 단정하지 말고, ` +
       `"이런 흐름을 참고할 수 있어요" 수준으로 작성하세요.\n\n` +
+      `데이터: ${JSON.stringify(context)}`
+    );
+  }
+
+  if (productCode === "monthly_fortune") {
+    return (
+      `${TONE_GUIDE}\n\n` +
+      `아래는 한 사람의 이번 달 월운(月運) 데이터입니다. 이번 달이 어떤 결의 흐름일 ` +
+      `수 있는지, 일과 관계와 컨디션 중 어느 쪽에 조금 더 마음 써보면 좋을지를 ` +
+      `5~8문장으로 자연스럽게 풀어주세요. 이번 달"에 한정된" 이야기라는 걸 은근히 ` +
+      `느끼게 해주세요(다음 달엔 또 다른 흐름일 수 있다는 뉘앙스).\n\n` +
       `데이터: ${JSON.stringify(context)}`
     );
   }

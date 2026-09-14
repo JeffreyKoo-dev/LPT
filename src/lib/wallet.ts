@@ -12,7 +12,8 @@ export type ProductCode =
   | "daily_card_unlock"
   | "premium_report"
   | "compatibility_deep"
-  | "daeun_seun";
+  | "daeun_seun"
+  | "monthly_fortune";
 
 export interface ProductPrice {
   product_code: ProductCode;

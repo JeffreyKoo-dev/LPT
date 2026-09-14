@@ -931,3 +931,43 @@ SQL Editor에서 실행.
 **필요 작업**: `supabase/migrations/014_code_review_fixes.sql`을
 SQL Editor에서 실행. (`schema.sql` 갱신분은 새 프로젝트 세팅 시에만
 의미 있어 기존 운영 DB에는 반영 불필요.)
+
+---
+
+## 30. "이번 달 운세" — 반복 수익 모델 보완
+
+**배경**: 정밀 사주 리포트·대운세운 해석은 한 번 사면 평생 캐싱되어
+재구매 유인이 구조적으로 없다는 지적이 있었다(사주 자체가 평생 안
+바뀌므로). 대운·세운 때처럼, **이미 vendored된 ssaju 엔진에 월운(月運)
+계산 로직도 이미 구현되어 있었는데** 전혀 안 쓰고 있었다. 월운은
+매달 실제로 바뀌는 값이라, 이걸 상품화하면 정밀 리포트와 달리
+자연스러운 재구매 이유가 생긴다.
+
+**구현**:
+- `types/saju.ts`에 `MonthlyFortuneData` 타입, `lib/saju.ts`에
+  `calculateMonthlyFortune()` 추가 — 현재 KST 기준 이번 달에 해당하는
+  월운만 추출(검증: 실제로 2026년 9월 기준 정확한 값이 나오는 것 확인)
+- 신규 상품 `monthly_fortune`(700원) — 다른 상품보다 낮은 가격으로
+  매달 부담 없이 재구매하게 설계
+- **"평생 한 번"이 아니라 "이번 달에 한 번"** 결제/캐시 유효성을
+  확인하는 새 로직: `hasPurchasedThisMonth()`(이번 달 1일 0시 이후
+  결제 기록만 유효), `getCachedContent()`가 monthly_fortune일 때
+  캐시된 콘텐츠의 `yearMonth`가 이번 달과 다르면 무효 처리. Edge
+  Function(`generate-premium-content`)도 결제 확인·캐시 조회 양쪽에
+  동일한 월 단위 기준 적용
+- `PremiumUnlockCard`에 `monthly` prop 추가 — 이 prop이 있으면
+  "평생 결제 확인" 대신 "이번 달 결제 확인" 로직을 쓴다
+- `/result` 페이지 맨 위(가장 접근성 높은 위치, 낮은 가격으로 첫
+  유료 콘텐츠 경험 유도)에 배치
+
+**함께 정리한 상품 포지셔닝**: 정밀 사주 리포트는 "최초 구매 유도용
+입문 상품"으로, 이번 달 운세는 "낮은 가격의 반복 수익 핵심 상품"으로
+역할을 나눴다. 심층 궁합 분석(상대가 바뀔 때마다 재구매 가능)과
+오늘의 카드(일일 반복)는 기존 구조 유지.
+
+**검증**: Supabase 미설정 환경에서 `hasPurchasedThisMonth`/
+`getCachedContent`가 안전하게 false/null로 폴백하는 것을 확인했다.
+
+**필요 작업**: `supabase/migrations/015_monthly_fortune.sql`을 SQL
+Editor에서 실행 + `generate-premium-content` Edge Function을 최신
+코드로 재배포.

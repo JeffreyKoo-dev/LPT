@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
 import { purchaseProduct, getProductPrices, getProductPrice, ProductCode, ProductPrice } from "@/lib/wallet";
-import { hasPurchased, getCachedContent, generatePremiumContent, PremiumContent } from "@/lib/premiumContent";
+import {
+  hasPurchased,
+  hasPurchasedThisMonth,
+  getCachedContent,
+  generatePremiumContent,
+  PremiumContent,
+} from "@/lib/premiumContent";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 
 interface PremiumUnlockCardProps {
@@ -18,6 +24,11 @@ interface PremiumUnlockCardProps {
    * false면(premium_report, daeun_seun 등) 한 번 생성한 뒤 재사용한다.
    */
   noCache?: boolean;
+  /**
+   * true면(monthly_fortune) "평생 한 번"이 아니라 "이번 달에 한 번" 결제
+   * 여부를 확인한다 — 지난달에 결제했어도 이번 달은 다시 잠긴 상태로 보인다.
+   */
+  monthly?: boolean;
 }
 
 type Stage = "checking" | "locked" | "unlockedNoContent" | "generating" | "content" | "error";
@@ -28,6 +39,7 @@ export function PremiumUnlockCard({
   teaser,
   buildContext,
   noCache = false,
+  monthly = false,
 }: PremiumUnlockCardProps) {
   const [stage, setStage] = useState<Stage>("checking");
   const [content, setContent] = useState<PremiumContent | null>(null);
@@ -41,7 +53,9 @@ export function PremiumUnlockCard({
       return;
     }
 
-    Promise.all([hasPurchased(productCode), getProductPrices()]).then(([purchased, prices]) => {
+    const checkPurchased = monthly ? hasPurchasedThisMonth(productCode) : hasPurchased(productCode);
+
+    Promise.all([checkPurchased, getProductPrices()]).then(([purchased, prices]) => {
       setPrice(getProductPrice(prices, productCode));
       if (!purchased) {
         setStage("locked");
@@ -60,7 +74,7 @@ export function PremiumUnlockCard({
         }
       });
     });
-  }, [productCode, noCache]);
+  }, [productCode, noCache, monthly]);
 
   async function handlePurchase() {
     setErrorMessage(null);

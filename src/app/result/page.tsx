@@ -19,7 +19,7 @@ import { getStorage, STORAGE_KEYS } from "@/lib/storage";
 import { getLptTypeMeta } from "@/data/lptTypes";
 import { getFantasyClass } from "@/data/fantasyClasses";
 import { computeLifestyleIndicator } from "@/lib/indicator";
-import { getLunarDate, LunarDate, calculateDaeunSeyun } from "@/lib/saju";
+import { getLunarDate, LunarDate, calculateDaeunSeyun, calculateMonthlyFortune } from "@/lib/saju";
 import { getRelatedTypes } from "@/lib/compatibility";
 import { RelatedTypesPanel } from "@/components/result/RelatedTypesPanel";
 import { PageHeading } from "@/components/common/PageHeading";
@@ -148,6 +148,19 @@ export default function ResultPage() {
         <Card variant="ledger">
           <TenGodsPanel sajuChart={report.sajuChart} />
         </Card>
+
+        <PremiumUnlockCard
+          productCode="monthly_fortune"
+          title="이번 달 운세"
+          teaser="이번 달의 흐름을 참고할 수 있는 이야기로 풀어드려요. 매달 새로 확인할 수 있어요."
+          monthly
+          buildContext={() => ({
+            monthlyFortune: calculateMonthlyFortune(
+              getStorage().get<BasicInfo>(STORAGE_KEYS.basicInfo)!
+            ),
+            lptType: { name: typeMeta.name },
+          })}
+        />
 
         <PremiumUnlockCard
           productCode="premium_report"

@@ -107,3 +107,21 @@ export interface DaeunSeyunData {
   /** 현재 시점 기준 앞뒤 10년치 세운 */
   years: SeyunYear[];
 }
+
+/**
+ * 월운(月運) 이번 달 — 세운·대운과 달리 매달 바뀌는 값이라, "이번 달
+ * 운세" 유료 콘텐츠가 매달 자연스럽게 재구매될 이유가 된다(캐시가
+ * 영구적이지 않고 월 단위로 갱신됨).
+ */
+export interface MonthlyFortuneData {
+  /** "2026-09" 형식 — 이 콘텐츠가 어느 달 것인지 구분하는 기준 */
+  yearMonth: string;
+  year: number;
+  month: number;
+  ganzhi: string;
+  stem: string;
+  branch: string;
+  tenGodStem: TenGod | string;
+  tenGodBranch: TenGod | string;
+  stage12: string;
+}

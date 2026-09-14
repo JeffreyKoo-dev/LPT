@@ -29,7 +29,7 @@
 
 import { calculateSaju as ssajuCalculateSaju, lunarToSolar, solarToLunar } from "@/lib/saju-engine/calculate";
 import { BasicInfo } from "@/types/user";
-import { Element, EarthlyBranch, HeavenlyStem, Pillar, SajuChart, TenGod, DaeunSeyunData } from "@/types/saju";
+import { Element, EarthlyBranch, HeavenlyStem, Pillar, SajuChart, TenGod, DaeunSeyunData, MonthlyFortuneData } from "@/types/saju";
 
 const SEOUL_LONGITUDE = 126.9784;
 
@@ -274,6 +274,37 @@ export function calculateDaeunSeyun(basicInfo: BasicInfo): DaeunSeyunData {
     direction: result.daeun.basis.direction,
     periods,
     years,
+  };
+}
+
+/**
+ * 이번 달 운세(월운)를 계산한다. 대운·세운과 달리 **매달 바뀌는 값**이라,
+ * "이번 달 운세" 유료 콘텐츠는 캐시를 영구 보관하지 않고 매달 다시
+ * 결제하도록 설계한다(lib/premiumContent.ts의 hasPurchasedThisMonth 참고).
+ * 정밀 리포트/대운세운처럼 "한 번 사면 평생 안 사는" 문제를, 실제로
+ * 달마다 내용이 바뀌는 이 데이터로 보완한다.
+ */
+export function calculateMonthlyFortune(basicInfo: BasicInfo): MonthlyFortuneData {
+  const { result } = runSsajuCalculation(basicInfo);
+
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const thisMonth = result.wolun.find((item) => item.month === currentMonth);
+
+  if (!thisMonth) {
+    throw new Error("이번 달 월운 데이터를 찾을 수 없습니다.");
+  }
+
+  return {
+    yearMonth: `${now.getFullYear()}-${String(currentMonth).padStart(2, "0")}`,
+    year: now.getFullYear(),
+    month: currentMonth,
+    ganzhi: thisMonth.ganzhi,
+    stem: thisMonth.stem,
+    branch: thisMonth.branch,
+    tenGodStem: thisMonth.stemTenGod as TenGod,
+    tenGodBranch: thisMonth.branchTenGod as TenGod,
+    stage12: thisMonth.stage12,
   };
 }
 
