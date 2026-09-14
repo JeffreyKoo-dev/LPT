@@ -195,6 +195,16 @@ function LinkedIdentitiesSection() {
     supabase.auth.getUserIdentities().then((res: { data: { identities: { provider: string }[] } | null }) => {
       setHasKakao(!!res.data?.identities.some((i) => i.provider === "kakao"));
     });
+
+    // 카카오 로그인 페이지로 갔다가 뒤로가기로 돌아오면, 브라우저가 페이지를 새로
+    // 불러오지 않고 이전 상태(연결 시도 중이던 화면)를 그대로 복원하는 경우가 있다
+    // (bfcache). 이때 "연결하는 중…"에 멈춰있지 않도록, 복원 이벤트에서 상태를
+    // 초기화한다.
+    function handlePageShow(event: PageTransitionEvent) {
+      if (event.persisted) setStatus("idle");
+    }
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
   }, []);
 
   async function handleLinkKakao() {
