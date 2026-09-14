@@ -889,3 +889,45 @@ SQL Editor에서 실행.
 1. `supabase/migrations/013_account_features.sql`을 SQL Editor에서 실행
 2. 카카오 계정 연결 기능을 쓰려면, Supabase 대시보드 → Authentication →
    Settings에서 "Manual Linking" 활성화 필요
+
+---
+
+## 29. 전체 코드 리뷰
+
+**심각(수정 완료)**: `charge_cash_from_pg`(결제 완료 시 캐시 지급 함수)에
+멱등성 보장이 없었다. 애플리케이션 레벨 체크(`/api/payments/confirm`의
+`status='pending'` 확인)만으로는, 정확히 동시에 들어오는 두 요청까지는
+완전히 막지 못하는 레이스 컨디션 여지가 있었다. `wallet_transactions
+(reference_id)`에 부분 unique 인덱스를 추가해 **DB 레벨에서 같은
+결제(paymentKey)가 두 번 캐시를 지급하는 걸 원천 차단**하도록
+고쳤다(`unique_violation` 발생 시 방금 더한 캐시를 되돌리고 기존 처리
+결과를 그대로 반환).
+
+**중간(위험도 낮음, 참고만)**: `/api/payments/webhook`에 인증 검증이
+없다. 토스페이먼츠 일반 결제 웹훅엔 서명 헤더가 없어 완벽한 검증
+자체가 불가능하지만(공식 문서 확인 — Phase 3 20절 참고), 실제 피해
+범위는 제한적이다 — 이 라우트는 `pending` 상태 주문만 건드리고
+`completed`는 절대 안 건드리므로, 캐시 위조 지급은 불가능하다.
+최악의 경우도 "정상 결제 대기 주문이 취소 표시됨"(사용자가 confirm
+흐름을 타면 다시 정상 처리) 정도라 방치해도 무방하다고 판단, 설계
+의도(보조 신호로만 사용)를 문서에 명확히 남겨뒀다.
+
+**낮음(수정 완료)**: `schema.sql`(새 프로젝트를 한 번에 세팅하는 통합
+스키마 파일)에 `moderation_reports`, `coupang_product_cache` 두
+테이블이 누락되어 있었다(개별 마이그레이션 파일에만 존재). 추가해서
+15개 테이블 전부 `schema.sql` 하나로 처음부터 세팅 가능하도록 맞췄다.
+
+**확인 완료(문제없음)**:
+- 모든 `/api/admin/*` 라우트가 `verifyAdmin()`을 거침
+- 클라이언트 코드에 서버 전용 키(SERVICE_ROLE, SECRET_KEY 등) 노출 없음
+- `product_prices`는 조회만 가능(authenticated), 클라이언트가 가격
+  조작 불가
+- `purchase_product()`는 가격을 클라이언트가 아니라 서버(`product_prices`
+  테이블)에서 직접 조회하고, `auth.uid()`로 호출자를 서버가 직접
+  확인하며, `for update` 행 잠금으로 동시성까지 방어 — 잘 설계되어 있음
+- `dangerouslySetInnerHTML`은 홈페이지 JSON-LD 한 곳뿐이고 정적
+  객체만 렌더링해 XSS 위험 없음
+
+**필요 작업**: `supabase/migrations/014_code_review_fixes.sql`을
+SQL Editor에서 실행. (`schema.sql` 갱신분은 새 프로젝트 세팅 시에만
+의미 있어 기존 운영 DB에는 반영 불필요.)

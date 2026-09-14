@@ -485,6 +485,13 @@ grant execute on function purchase_product to authenticated;
 -- 4) PG 결제 완료 후 캐시 충전 (service_role 전용 — 웹훅 서버만 호출 가능)
 --    authenticated 유저는 이 함수를 직접 호출할 수 없음 (클라이언트發 캐시 위조 방지)
 -- ------------------------------------------------------------
+
+-- 같은 결제(paymentKey)로 두 번 캐시가 지급되는 걸 DB 레벨에서 확실히 막는다
+-- (애플리케이션 레벨 체크만으로는 동시 요청 레이스 컨디션을 완전히 못 막음).
+create unique index if not exists idx_wallet_tx_charge_reference
+  on wallet_transactions(reference_id)
+  where type = 'charge' and reference_id is not null;
+
 create or replace function charge_cash_from_pg(
   p_user_id uuid,
   p_krw_amount integer,
@@ -507,11 +514,21 @@ begin
   where user_id = p_user_id
   returning cash_balance into v_balance;
 
-  insert into wallet_transactions(user_id, type, amount, balance_after, reference_id, description)
-  values (
-    p_user_id, 'charge', p_cash_amount, v_balance, p_pg_transaction_id,
-    format('%s원 결제 → %s캐시 충전', p_krw_amount, p_cash_amount)
-  );
+  begin
+    insert into wallet_transactions(user_id, type, amount, balance_after, reference_id, description)
+    values (
+      p_user_id, 'charge', p_cash_amount, v_balance, p_pg_transaction_id,
+      format('%s원 결제 → %s캐시 충전', p_krw_amount, p_cash_amount)
+    );
+  exception when unique_violation then
+    update wallets set cash_balance = cash_balance - p_cash_amount, updated_at = now()
+    where user_id = p_user_id;
+
+    select balance_after into v_balance
+    from wallet_transactions
+    where reference_id = p_pg_transaction_id and type = 'charge'
+    limit 1;
+  end;
 
   return query select v_balance;
 end;
@@ -656,3 +673,39 @@ alter table shared_profiles
 create policy "본인 공유 프로필만 삭제" on shared_profiles
   for delete using (auth.uid() = user_id);
 
+
+-- ============================================================
+-- moderation_reports: 콘텐츠 감수(Audit) 신고 테이블 (Phase 3)
+--    코드 리뷰 중 발견 — 원래 migrations/003에만 있고 이 통합 스키마
+--    파일에는 누락되어 있었다 (새 프로젝트를 이 파일 하나로 세팅할 때
+--    빠지는 문제가 있어 추가한다).
+-- ============================================================
+create table if not exists moderation_reports (
+  id bigint generated always as identity primary key,
+  field_name text not null,
+  content_snippet text not null,
+  category text not null,
+  severity text not null default 'flagged',
+  user_id uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+alter table moderation_reports enable row level security;
+
+create policy "감수 신고 insert만 허용" on moderation_reports
+  for insert with check (true);
+
+-- ============================================================
+-- coupang_product_cache: 쿠팡파트너스 상품검색 캐시 (Phase 3)
+--    코드 리뷰 중 발견 — migrations/005에만 있고 누락되어 있었다.
+-- ============================================================
+create table if not exists coupang_product_cache (
+  keyword text primary key,
+  products jsonb not null,
+  fetched_at timestamptz not null default now()
+);
+
+alter table coupang_product_cache enable row level security;
+
+create policy "쿠팡 캐시 공개 조회" on coupang_product_cache
+  for select using (true);
