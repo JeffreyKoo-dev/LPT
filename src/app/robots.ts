@@ -26,6 +26,7 @@ export default function robots(): MetadataRoute.Robots {
         "/share",
         "/login",
         "/charge",
+        "/admin",
       ],
     },
     sitemap: "https://questofme.com/sitemap.xml",
