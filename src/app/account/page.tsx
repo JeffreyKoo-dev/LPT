@@ -23,6 +23,14 @@ const SHARE_KIND_LABEL: Record<string, string> = {
   badge: "뱃지 카드",
 };
 
+/** Supabase Auth가 리다이렉트에 담아 보내는 에러 코드를 사람이 읽을 문구로 바꾼다. */
+function describeAuthError(code: string): string {
+  if (code === "identity_already_exists") {
+    return "이 카카오 계정은 이미 다른 계정에 연결되어 있어요. 그 계정에서 먼저 연결을 해제하거나, 다른 카카오 계정을 사용해주세요.";
+  }
+  return "연결 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.";
+}
+
 export default function AccountPage() {
   const router = useRouter();
   const authGate = useRequireLogin();
@@ -196,6 +204,17 @@ function LinkedIdentitiesSection() {
       setHasKakao(!!res.data?.identities.some((i) => i.provider === "kakao"));
     });
 
+    // 카카오 연결이 실패하면(이미 다른 계정에 연결된 카카오 등) Supabase가
+    // 이 페이지로 되돌아오면서 쿼리/해시에 에러 정보를 담아준다. 조용히
+    // 홈으로 튕기지 않도록, 여기서 파싱해 이유를 보여주고 URL을 정리한다.
+    const params = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const errorCode = params.get("error_code") ?? hashParams.get("error_code");
+    if (errorCode) {
+      setError(describeAuthError(errorCode));
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+
     // 카카오 로그인 페이지로 갔다가 뒤로가기로 돌아오면, 브라우저가 페이지를 새로
     // 불러오지 않고 이전 상태(연결 시도 중이던 화면)를 그대로 복원하는 경우가 있다
     // (bfcache). 이때 "연결하는 중…"에 멈춰있지 않도록, 복원 이벤트에서 상태를
@@ -212,7 +231,10 @@ function LinkedIdentitiesSection() {
     setStatus("working");
     try {
       const supabase = getSupabaseClient();
-      const { error: linkError } = await supabase.auth.linkIdentity({ provider: "kakao" });
+      const { error: linkError } = await supabase.auth.linkIdentity({
+        provider: "kakao",
+        options: { redirectTo: `${window.location.origin}/account` },
+      });
       if (linkError) throw linkError;
       // 성공 시 카카오 인증 페이지로 리다이렉트되므로 이후 코드는 보통 실행되지 않는다.
     } catch (err) {
