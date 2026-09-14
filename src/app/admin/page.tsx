@@ -310,6 +310,7 @@ function UserLookupSection() {
 
 function UserResultCard({ user }: { user: UserLookupResult }) {
   const [balance, setBalance] = useState(user.cashBalance);
+  const [transactions, setTransactions] = useState(user.recentTransactions);
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [status, setStatus] = useState<"idle" | "saving">("idle");
@@ -327,6 +328,17 @@ function UserResultCard({ user }: { user: UserLookupResult }) {
     try {
       const result = await adjustUserCash(user.user_id, parsed, reason);
       setBalance(result.newBalance);
+      // 새로고침 없이도 바로 보이도록, 방금 적용한 조정 내역을 목록 맨 위에 즉시 추가한다.
+      setTransactions((prev) => [
+        {
+          type: parsed >= 0 ? "refund" : "spend",
+          amount: parsed,
+          balance_after: result.newBalance,
+          description: reason || "관리자 수동 조정",
+          created_at: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
       setAmount("");
       setReason("");
       setDone(true);
@@ -350,9 +362,9 @@ function UserResultCard({ user }: { user: UserLookupResult }) {
         <p className="text-sm font-semibold text-foreground">{balance.toLocaleString()}캐시</p>
       </div>
 
-      {user.recentTransactions.length > 0 && (
+      {transactions.length > 0 && (
         <div className="mt-3 flex flex-col gap-1 border-t border-border pt-2">
-          {user.recentTransactions.slice(0, 5).map((tx, i) => (
+          {transactions.slice(0, 5).map((tx, i) => (
             <div key={i} className="flex justify-between text-xs text-muted">
               <span>
                 {new Date(tx.created_at).toLocaleDateString("ko-KR")} · {tx.description ?? tx.type}

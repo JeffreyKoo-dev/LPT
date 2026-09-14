@@ -30,7 +30,7 @@ begin
   insert into wallet_transactions (user_id, type, amount, balance_after, description)
   values (
     p_user_id,
-    case when p_amount >= 0 then 'refund' else 'spend' end,
+    (case when p_amount >= 0 then 'refund' else 'spend' end)::wallet_tx_type,
     p_amount,
     v_new_balance,
     coalesce(p_reason, '관리자 수동 조정')
