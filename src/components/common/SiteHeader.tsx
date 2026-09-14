@@ -19,7 +19,9 @@ export function SiteHeader() {
           {session.configured && session.user && <NavLink href="/friends">친구</NavLink>}
           <NavLink href="/start">시작하기</NavLink>
           {session.configured && (
-            <NavLink href="/login">{session.user ? "내 계정" : "로그인"}</NavLink>
+            <NavLink href={session.user ? "/account" : "/login"}>
+              {session.user ? "내 계정" : "로그인"}
+            </NavLink>
           )}
         </nav>
       </div>

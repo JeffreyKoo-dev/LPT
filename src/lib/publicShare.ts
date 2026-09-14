@@ -15,6 +15,8 @@ export async function publishSharedProfile(data: ShareCardData): Promise<string 
 
   try {
     const supabase = getSupabaseClient();
+    const { data: userData } = await supabase.auth.getUser();
+
     const { error } = await supabase.from("shared_profiles").insert({
       id,
       kind: data.kind,
@@ -24,12 +26,58 @@ export async function publishSharedProfile(data: ShareCardData): Promise<string 
       badge_label: data.badge,
       illustration_slug: data.illustrationSlug ?? null,
       icon_element: data.icon.kind === "element" ? data.icon.element : null,
+      user_id: userData.user?.id ?? null,
     });
     if (error) throw error;
     return id;
   } catch (error) {
     console.error("[publicShare] 공개 공유 생성 실패", error);
     return null;
+  }
+}
+
+export interface MySharedLink {
+  id: string;
+  kind: ShareCardData["kind"];
+  heading: string;
+  created_at: string;
+}
+
+/** 로그인한 사용자가 지금까지 만든 공개 공유 링크 목록을 가져온다. */
+export async function listMySharedProfiles(): Promise<MySharedLink[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  try {
+    const supabase = getSupabaseClient();
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return [];
+
+    const { data, error } = await supabase
+      .from("shared_profiles")
+      .select("id, kind, heading, created_at")
+      .eq("user_id", userData.user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return (data ?? []) as MySharedLink[];
+  } catch (error) {
+    console.error("[publicShare] 공유 링크 목록 조회 실패", error);
+    return [];
+  }
+}
+
+/** 공개 공유 링크를 비활성화(삭제)한다. 본인 소유가 아니면 RLS가 막는다. */
+export async function revokeSharedProfile(id: string): Promise<boolean> {
+  if (!isSupabaseConfigured()) return false;
+
+  try {
+    const supabase = getSupabaseClient();
+    const { error } = await supabase.from("shared_profiles").delete().eq("id", id);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error("[publicShare] 공유 링크 삭제 실패", error);
+    return false;
   }
 }
 

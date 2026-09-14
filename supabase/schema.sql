@@ -622,3 +622,37 @@ $$;
 -- 일반 사용자는 이 함수를 직접 호출할 수 없다 (service_role만 실행 가능하도록 명시적으로 차단)
 revoke execute on function admin_adjust_cash(uuid, integer, text) from public, authenticated, anon;
 
+-- Phase 3 — 닉네임 검수(AI) 결과 캐싱, Anthropic API 호출 비용 절감
+--
+-- 똑같은 문자열이 여러 사람에게서 반복 입력되는 경우(흔한 시도값, 장난
+-- 입력 등)가 실제로 많다. 정규화한 텍스트의 해시를 키로, 한 번 판정한
+-- 결과를 캐싱해 같은 입력에 대해 매번 AI를 새로 호출하지 않게 한다.
+-- 원문은 저장하지 않는다(해시만) — 문제로 판정된 원문은 이미
+-- moderation_reports에 따로 남는다.
+
+create table if not exists moderation_cache (
+  text_hash  text primary key,   -- sha256(정규화된 텍스트)
+  category   text not null,      -- 'none' 포함, classifyText()의 판정 결과
+  created_at timestamptz not null default now()
+);
+
+alter table moderation_cache enable row level security;
+-- 클라이언트는 이 테이블에 접근할 필요가 없다 (Edge Function이 service_role로만
+-- 읽고 쓴다) — 별도 정책을 만들지 않아 RLS 기본값(전체 차단)을 그대로 둔다.
+
+-- Phase 3 — "내 계정" 화면 기능 지원 (공유 링크 소유자 추적 + 삭제 권한)
+--
+-- 지금까지 shared_profiles는 "누가 만들었는지" 기록하지 않았다(비로그인도
+-- 만들 수 있는 기능이라 원래 그렇게 설계함). "내 계정 > 공유 링크 관리"
+-- 화면에서 본인이 만든 링크만 골라 보여주고 지울 수 있으려면, 로그인한
+-- 상태로 만든 링크에 한해 소유자를 남겨야 한다. 비로그인으로 만든 링크는
+-- user_id가 null로 남고, 계정 화면에는 당연히 나타나지 않는다(원래도
+-- 추적 불가능한 게 맞다 — 비로그인 공유의 특성).
+
+alter table shared_profiles
+  add column if not exists user_id uuid references auth.users(id) on delete set null;
+
+-- 본인이 만든 공유 링크는 직접 삭제(공개 비활성화)할 수 있게 한다.
+create policy "본인 공유 프로필만 삭제" on shared_profiles
+  for delete using (auth.uid() = user_id);
+

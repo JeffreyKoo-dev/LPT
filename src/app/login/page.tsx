@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/common/Button";
-import { Card, CardDescription, CardTitle } from "@/components/common/Card";
+import { Card } from "@/components/common/Card";
 import { GuardScreen } from "@/components/common/GuardScreen";
 import { TextField } from "@/components/form/TextField";
 import { PageHeading } from "@/components/common/PageHeading";
@@ -51,8 +51,8 @@ function LoginPageInner() {
 
   useEffect(() => {
     if (!initialCheckDone.current) return;
-    if (session.user && !wasLoggedInOnLoad.current) {
-      router.push(redirectPath);
+    if (session.user) {
+      router.push(wasLoggedInOnLoad.current ? "/account" : redirectPath);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.user]);
@@ -70,21 +70,8 @@ function LoginPageInner() {
 
   if (session.user) {
     return (
-      <div className="mx-auto max-w-md px-5 py-24 text-center">
-        <Card>
-          <CardTitle>이미 로그인되어 있어요</CardTitle>
-          <CardDescription className="mt-2">
-            {session.user.email ?? "카카오 계정"}으로 로그인된 상태입니다.
-          </CardDescription>
-          <div className="mt-5 flex flex-col gap-3">
-            <Button className="w-full" onClick={() => router.push(redirectPath)}>
-              대시보드로 이동
-            </Button>
-            <Button variant="ghost" onClick={session.signOut}>
-              로그아웃
-            </Button>
-          </div>
-        </Card>
+      <div className="mx-auto max-w-xl px-5 py-24 text-center text-sm text-muted">
+        이동하는 중입니다…
       </div>
     );
   }

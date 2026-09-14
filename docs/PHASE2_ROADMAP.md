@@ -828,3 +828,64 @@ SQL Editor에서 실행.
 
 **필요 작업**: `supabase/migrations/011_admin_functions.sql`을 SQL
 Editor에서 실행.
+
+---
+
+## 27. AI 검수 캐싱으로 비용 절감
+
+**분석**: 실제 비용이 발생하는 외부 API 호출은 Anthropic 2곳뿐이었다
+(`moderate-content`, `generate-premium-content`). `generate-premium-content`는
+정밀 리포트/대운세운이 이미 영구 캐싱되어 있고, 심층 궁합은 유료 상품이라
+매번 수익이 발생해 문제없다. **닉네임 검수(`moderate-content`)만 같은
+문자열이 반복 입력돼도 매번 새로 AI를 호출하고 있었다.**
+
+**구현**: `moderation_cache` 테이블(정규화된 텍스트의 SHA-256 해시 →
+판정 결과) 추가. AI 호출 전에 먼저 이 캐시를 조회해, 이미 판정한 적
+있는 입력이면 **AI를 호출하지 않고 캐시된 결과를 그대로 사용**한다.
+정규화는 공백 제거+소문자 변환만 적용(과도한 정규화로 의도가 다른
+텍스트가 같은 캐시를 잘못 맞는 것 방지).
+
+**검증**: 정규화 로직이 공백 차이만 있는 동일 텍스트는 같은 해시를,
+다른 텍스트는 다른 해시를 만드는 것을 직접 확인했다.
+
+**필요 작업**: Supabase 대시보드에서 `moderate-content` 함수 코드를
+최신 버전으로 재배포 + `supabase/migrations/012_moderation_cache.sql`을
+SQL Editor에서 실행.
+
+---
+
+## 28. "내 계정" 화면 전면 구현
+
+기존엔 로그인 방식 표시 + 로그아웃, 이 두 가지뿐이었다. 추천했던 기능
+전부를 실제로 구현하고, `/login`에 섞여있던 계정 화면을 별도 페이지
+`/account`로 분리했다 (로그인 폼과 계정 관리를 명확히 나눔).
+
+**구현된 기능**:
+- **닉네임 변경**: 기존 회원가입 때와 동일한 검수(로컬 키워드 + AI)를
+  그대로 통과해야 함. 로그인 상태면 클라우드(user_profiles)와 로컬 둘
+  다 갱신
+- **캐시 잔액 + 최근 거래 요약**: 기존 `lib/wallet.ts` 재사용
+- **연결된 로그인 수단**: 카카오 계정 연결 여부 표시 + 연결 버튼
+  (`supabase.auth.linkIdentity`). **Supabase 대시보드에서 "Manual
+  Linking" 설정을 별도로 켜야 동작한다** — 기본값은 꺼져 있음
+- **공개한 공유 링크 관리**: `shared_profiles`에 `user_id` 컬럼을
+  새로 추가(기존엔 소유자를 추적하지 않았음 — 비로그인도 만들 수 있는
+  기능이라 원래 그렇게 설계했었음)하고, 본인 소유 링크만 삭제할 수 있는
+  RLS 정책 추가. 로그인 상태로 만든 공유 링크만 "내 계정"에 나타나고
+  삭제(공개 취소) 가능
+- **내 데이터 내보내기**: 로컬(사주 분석, 성장 기록) + 클라우드(닉네임,
+  유형, 캐시 잔액) 데이터를 합쳐 JSON 파일로 다운로드
+- **계정 탈퇴**: `/api/account/delete` — 호출자 본인 확인 후 Supabase
+  Admin API로 `auth.users` 삭제. 모든 개인 데이터 테이블이 `on delete
+  cascade`로 연결되어 있어 자동 정리됨(공유 링크만 예외로 `set null` —
+  이미 공개된 콘텐츠는 계정 삭제 후에도 유지, 소유자 표시만 사라짐).
+  화면에서 "탈퇴"라고 정확히 입력해야 진행되는 확인 단계 추가
+
+**검증**: 새로 추가한 함수들(`exportMyData`, `listMySharedProfiles`,
+`revokeSharedProfile`)이 Supabase 미설정 환경에서 안전하게 폴백하는
+것을 확인했다.
+
+**필요 작업**:
+1. `supabase/migrations/013_account_features.sql`을 SQL Editor에서 실행
+2. 카카오 계정 연결 기능을 쓰려면, Supabase 대시보드 → Authentication →
+   Settings에서 "Manual Linking" 활성화 필요

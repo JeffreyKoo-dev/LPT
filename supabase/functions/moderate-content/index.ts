@@ -4,6 +4,10 @@
 // 종교적 문제, 성적 비하, 인종적 문제, 장애 관련 비하 표현이 감지되면
 // moderation_reports 테이블에 기록하고 차단 응답을 반환한다.
 //
+// 비용 절감: 정규화한 텍스트의 해시로 moderation_cache를 먼저 조회해,
+// 이미 판정한 적 있는 입력이면 AI를 다시 호출하지 않고 캐시된 결과를
+// 그대로 쓴다 (moderation_cache.text_hash가 primary key).
+//
 // 배포 방법 (Supabase CLI 필요):
 //   supabase functions deploy moderate-content
 //   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
@@ -29,6 +33,7 @@ const CATEGORIES = [
   "other",
   "none",
 ] as const;
+type Category = (typeof CATEGORIES)[number];
 
 Deno.serve(async (req: Request) => {
   const corsHeaders = {
@@ -59,14 +64,32 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const classification = await classifyText(text);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const textHash = await hashText(text);
 
-    if (classification.category !== "none") {
-      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    // 1) 캐시 조회 — 이미 판정한 적 있는 입력이면 AI 호출 없이 바로 응답
+    const { data: cached } = await supabase
+      .from("moderation_cache")
+      .select("category")
+      .eq("text_hash", textHash)
+      .maybeSingle();
+
+    let category: Category;
+
+    if (cached) {
+      category = cached.category as Category;
+    } else {
+      // 2) 캐시 미스 — 실제 AI 호출 후 결과를 캐시에 저장
+      const classification = await classifyText(text);
+      category = classification.category;
+      await supabase.from("moderation_cache").upsert({ text_hash: textHash, category });
+    }
+
+    if (category !== "none") {
       await supabase.from("moderation_reports").insert({
         field_name: fieldName ?? "unknown",
         content_snippet: text.slice(0, 500),
-        category: classification.category,
+        category,
         severity: "blocked",
         user_id: userId ?? null,
       });
@@ -89,7 +112,21 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-async function classifyText(text: string): Promise<{ category: (typeof CATEGORIES)[number] }> {
+/** 공백 제거 + 소문자 변환만 적용 — 지나치게 정규화하면 의도가 다른 텍스트가
+ * 같은 캐시를 잘못 맞을 위험이 있어, 완전히 같은 입력만 캐시 히트되게 한다. */
+function normalizeText(text: string): string {
+  return text.trim().toLowerCase().replace(/\s+/g, "");
+}
+
+async function hashText(text: string): Promise<string> {
+  const data = new TextEncoder().encode(normalizeText(text));
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function classifyText(text: string): Promise<{ category: Category }> {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
