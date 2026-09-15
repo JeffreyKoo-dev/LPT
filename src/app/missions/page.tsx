@@ -16,6 +16,8 @@ import {
 
 const METRIC_LABEL: Record<string, string> = {
   friend_invites: "친구초대",
+  level_reached: "레벨 달성",
+  badges_collected: "뱃지 수집",
 };
 
 export default function MissionsPage() {
@@ -119,6 +121,16 @@ export default function MissionsPage() {
             {metricType === "friend_invites" && (
               <Button variant="secondary" className="mt-4 w-full" onClick={() => router.push("/friends")}>
                 친구 초대하러 가기
+              </Button>
+            )}
+            {metricType === "level_reached" && (
+              <Button variant="secondary" className="mt-4 w-full" onClick={() => router.push("/quests")}>
+                퀘스트 하러 가기
+              </Button>
+            )}
+            {metricType === "badges_collected" && (
+              <Button variant="secondary" className="mt-4 w-full" onClick={() => router.push("/badges")}>
+                뱃지 목록 보기
               </Button>
             )}
           </Card>
