@@ -1,0 +1,24 @@
+# 紐⑤뱺 ?띿뒪???뚯씪? Git?먯꽌 LF濡?愿由?
+* text=auto eol=lf
+
+# Windows?먯꽌??Git??泥댄겕?꾩썐????LF ?좎?
+*.sh text eol=lf
+*.py text eol=lf
+*.sql text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# 諛붿씠?덈━ ?뚯씪
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
