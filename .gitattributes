@@ -1,7 +1,7 @@
-# 紐⑤뱺 ?띿뒪???뚯씪? Git?먯꽌 LF濡?愿由?
+# Keep all text files in LF format
 * text=auto eol=lf
 
-# Windows?먯꽌??Git??泥댄겕?꾩썐????LF ?좎?
+# Keep source and configuration files in LF format
 *.sh text eol=lf
 *.py text eol=lf
 *.sql text eol=lf
@@ -15,7 +15,7 @@
 *.yml text eol=lf
 *.yaml text eol=lf
 
-# 諛붿씠?덈━ ?뚯씪
+# Binary files
 *.png binary
 *.jpg binary
 *.jpeg binary
