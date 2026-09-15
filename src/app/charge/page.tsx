@@ -8,7 +8,8 @@ import { Button } from "@/components/common/Button";
 import { GuardScreen } from "@/components/common/GuardScreen";
 import { useRequireLogin } from "@/lib/useRequireLogin";
 import { createPendingOrder } from "@/lib/wallet";
-import { CHARGE_OPTIONS } from "@/lib/chargeOptions";
+import { getChargeOptions, ChargeOption } from "@/lib/chargeOptions";
+import { getSupabaseClient } from "@/lib/supabase/client";
 import {
   initChargeWidgets,
   isTossPaymentsConfigured,
@@ -21,6 +22,7 @@ export default function ChargePage() {
   const router = useRouter();
   const authGate = useRequireLogin();
   const [selected, setSelected] = useState<number | null>(null);
+  const [chargeOptions, setChargeOptions] = useState<ChargeOption[]>([]);
   const [widgetsReady, setWidgetsReady] = useState(false);
   const [status, setStatus] = useState<"idle" | "rendering" | "paying">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +30,12 @@ export default function ChargePage() {
   const widgetsRef = useRef<TossWidgets | null>(null);
   const orderIdRef = useRef<string | null>(null);
   const customerKeyRef = useRef<string>(crypto.randomUUID());
+
+  useEffect(() => {
+    getChargeOptions(getSupabaseClient())
+      .then(setChargeOptions)
+      .catch((err) => setError(err instanceof Error ? err.message : "충전 옵션을 불러오지 못했어요."));
+  }, []);
 
   // 금액을 선택하면, 그 금액으로 결제수단·약관 UI를 새로 렌더링한다.
   useEffect(() => {
@@ -86,7 +94,7 @@ export default function ChargePage() {
 
       await widgetsRef.current.requestPayment({
         orderId: order.orderId,
-        orderName: `LPT 캐시 충전 ${CHARGE_OPTIONS[selected].toLocaleString()}캐시`,
+        orderName: `LPT 캐시 충전 ${chargeOptions.find((o) => o.krwAmount === selected)?.cashAmount.toLocaleString() ?? ""}캐시`,
         successUrl: `${window.location.origin}/charge/success`,
         failUrl: `${window.location.origin}/charge/fail`,
       });
@@ -103,22 +111,21 @@ export default function ChargePage() {
 
       <Card>
         <div className="flex flex-col gap-2">
-          {Object.entries(CHARGE_OPTIONS).map(([krw, cash]) => {
-            const krwNum = Number(krw);
-            const bonus = cash - krwNum;
+          {chargeOptions.map(({ krwAmount, cashAmount }) => {
+            const bonus = cashAmount - krwAmount;
             return (
               <button
-                key={krw}
-                onClick={() => setSelected(krwNum)}
+                key={krwAmount}
+                onClick={() => setSelected(krwAmount)}
                 className={`flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors ${
-                  selected === krwNum
+                  selected === krwAmount
                     ? "border-fate bg-fate-soft"
                     : "border-border bg-surface-2 hover:border-fate/40"
                 }`}
               >
-                <span className="font-medium text-foreground">{krwNum.toLocaleString()}원</span>
+                <span className="font-medium text-foreground">{krwAmount.toLocaleString()}원</span>
                 <span className="text-sm text-muted">
-                  {cash.toLocaleString()}캐시
+                  {cashAmount.toLocaleString()}캐시
                   {bonus > 0 && <span className="ml-1 text-growth">(+{bonus.toLocaleString()} 보너스)</span>}
                 </span>
               </button>

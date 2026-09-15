@@ -7,7 +7,7 @@ import { isKakaoShareConfigured, shareToKakao } from "@/lib/kakaoShare";
 import { buildFacebookShareUrl, buildXShareUrl, buildSmsShareUrl } from "@/lib/shareLinks";
 
 interface ShareActionsProps {
-  targetRef: RefObject<HTMLDivElement>;
+  targetRef: RefObject<HTMLDivElement | null>;
   fileName: string;
   shareTitle: string;
   shareDescription: string;

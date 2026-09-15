@@ -9,6 +9,7 @@ import { TextField } from "@/components/form/TextField";
 import { GuardScreen } from "@/components/common/GuardScreen";
 import { useRequireLogin } from "@/lib/useRequireLogin";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import type { UserIdentity } from "@supabase/supabase-js";
 import { checkNicknameLocally } from "@/lib/contentModeration";
 import { checkContentWithAi } from "@/lib/moderationApi";
 import { updateNickname, exportMyData, deleteMyAccount } from "@/lib/account";
@@ -194,15 +195,19 @@ function WalletSummarySection() {
 
 /** 연결된 로그인 수단(카카오 연결/해제) — Supabase 대시보드의 "Manual Linking" 설정이 켜져 있어야 동작한다 */
 function LinkedIdentitiesSection() {
-  const [hasKakao, setHasKakao] = useState<boolean | null>(null);
+  const [identities, setIdentities] = useState<UserIdentity[] | null>(null);
   const [status, setStatus] = useState<"idle" | "working">("idle");
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  function loadIdentities() {
     const supabase = getSupabaseClient();
-    supabase.auth.getUserIdentities().then((res: { data: { identities: { provider: string }[] } | null }) => {
-      setHasKakao(!!res.data?.identities.some((i) => i.provider === "kakao"));
+    supabase.auth.getUserIdentities().then((res: { data: { identities: UserIdentity[] } | null }) => {
+      setIdentities(res.data?.identities ?? []);
     });
+  }
+
+  useEffect(() => {
+    loadIdentities();
 
     // 카카오 연결이 실패하면(이미 다른 계정에 연결된 카카오 등) Supabase가
     // 이 페이지로 되돌아오면서 쿼리/해시에 에러 정보를 담아준다. 조용히
@@ -247,7 +252,30 @@ function LinkedIdentitiesSection() {
     }
   }
 
-  if (hasKakao === null) return null;
+  async function handleUnlinkKakao(identity: UserIdentity) {
+    // 마지막 남은 로그인 수단은 해제할 수 없다 — 해제하면 로그인 자체가
+    // 불가능해지므로, 반드시 다른 수단이 하나 이상 남아있어야 한다.
+    if ((identities?.length ?? 0) <= 1) {
+      setError("마지막 남은 로그인 수단은 해제할 수 없어요. 먼저 다른 방법을 연결해주세요.");
+      return;
+    }
+    setError(null);
+    setStatus("working");
+    try {
+      const supabase = getSupabaseClient();
+      const { error: unlinkError } = await supabase.auth.unlinkIdentity(identity);
+      if (unlinkError) throw unlinkError;
+      loadIdentities();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "연결 해제에 실패했어요.");
+    } finally {
+      setStatus("idle");
+    }
+  }
+
+  if (identities === null) return null;
+
+  const kakaoIdentity = identities.find((i) => i.provider === "kakao");
 
   return (
     <Card className="mt-6">
@@ -257,8 +285,10 @@ function LinkedIdentitiesSection() {
       </CardDescription>
       <div className="mt-3 flex items-center justify-between text-sm">
         <span className="text-foreground">카카오</span>
-        {hasKakao ? (
-          <span className="text-emerald-700">연결됨</span>
+        {kakaoIdentity ? (
+          <Button variant="ghost" onClick={() => handleUnlinkKakao(kakaoIdentity)} disabled={status === "working"}>
+            {status === "working" ? "처리 중…" : "연결 해제"}
+          </Button>
         ) : (
           <Button variant="secondary" onClick={handleLinkKakao} disabled={status === "working"}>
             {status === "working" ? "연결하는 중…" : "연결하기"}

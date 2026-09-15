@@ -16,7 +16,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-import { CHARGE_OPTIONS } from "@/lib/chargeOptions";
+import { getChargeCashAmount } from "@/lib/chargeOptions";
 
 const TOSS_SECRET_KEY = process.env.TOSS_SECRET_KEY;
 
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 3) 승인 확인됨 — 캐시 지급 (service_role 전용 함수, 클라이언트는 직접 호출 불가)
-  const cashAmount = CHARGE_OPTIONS[amount];
+  const cashAmount = await getChargeCashAmount(supabaseAdmin, amount);
   if (!cashAmount) {
     return NextResponse.json({ error: `등록되지 않은 충전 금액: ${amount}` }, { status: 400 });
   }

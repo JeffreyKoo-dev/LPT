@@ -971,3 +971,36 @@ SQL Editor에서 실행. (`schema.sql` 갱신분은 새 프로젝트 세팅 시�
 **필요 작업**: `supabase/migrations/015_monthly_fortune.sql`을 SQL
 Editor에서 실행 + `generate-premium-content` Edge Function을 최신
 코드로 재배포.
+
+---
+
+## 31. 남은 항목 일괄 진행 (1차) — 카카오 해제, 충전단위 DB화, 웰컴캐시, SEO 유형페이지
+
+**카카오 연결 해제**: `/account`에서 연결뿐 아니라 해제도 가능하게 했다.
+마지막 남은 로그인 수단은 해제 못 하도록 막아, 로그인 불가 상태가
+되는 걸 방지한다(`identities.length <= 1`이면 차단).
+
+**캐시 충전 단위 DB화**: `lib/chargeOptions.ts`에 하드코딩돼 있던
+충전 금액↔지급 캐시 매핑을 `cash_charge_options` 테이블로 이전했다.
+`lib/wallet.ts`(createPendingOrder), `/api/payments/confirm`, `/charge`
+페이지 셋 다 이제 DB에서 조회 — 프로모션 실험을 코드 재배포 없이
+SQL 한 줄로 할 수 있다.
+
+**신규 가입 웰컴 캐시**: `handle_new_user_wallet()` 트리거가 지갑을
+0이 아니라 500캐시로 초기화하도록 수정. 가입만 해도 "오늘의 카드"는
+바로 체험 가능하고 "이번 달 운세"는 200원만 충전하면 되는 낮은
+진입장벽을 만들어, 유료 콘텐츠 첫 체험 전환율을 높이려는 목적.
+
+**SEO 유형 소개 페이지**: `/types/[typeId]` 12개 — LPT 12유형 각각의
+이름·태그라인·설명·강점·성장포인트를 개인정보 없이 소개하는 정적
+페이지(`generateStaticParams`로 빌드 타임에 전부 미리 생성). 검색으로
+"이 유형이 뭐지?"를 찾아오는 유입을 노리고, 각 페이지 하단에 "내 유형
+알아보기" CTA로 `/start`를 유도한다. `robots.ts`/`sitemap.ts`에 반영해
+검색 노출을 허용했다(개인 데이터가 없는 페이지라 기존 "기본 차단"
+원칙의 예외).
+
+**건너뛴 것**: 코드 리뷰에서 나온 "미사용 함수 정리"는 재확인 결과
+위험(오탐 가능성) 대비 실익이 낮아 보류.
+
+**필요 작업**: `016_charge_options_db.sql`, `017_welcome_cash.sql`을
+SQL Editor에서 순서대로 실행.

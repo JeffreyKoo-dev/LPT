@@ -1,5 +1,5 @@
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { CHARGE_OPTIONS } from "@/lib/chargeOptions";
+import { getChargeCashAmount } from "@/lib/chargeOptions";
 
 /**
  * 캐시 지갑 클라이언트 래퍼. 모든 잔액 변경은 Supabase RPC(SECURITY DEFINER
@@ -182,11 +182,12 @@ export function getProductPrice(prices: ProductPrice[], code: ProductCode): Prod
  */
 export async function createPendingOrder(krwAmount: number): Promise<{ orderId: string } | null> {
   if (!isSupabaseConfigured()) return null;
-  const cashAmount = CHARGE_OPTIONS[krwAmount];
-  if (!cashAmount) throw new Error(`등록되지 않은 충전 금액: ${krwAmount}`);
 
   try {
     const supabase = getSupabaseClient();
+    const cashAmount = await getChargeCashAmount(supabase, krwAmount);
+    if (!cashAmount) throw new Error(`등록되지 않은 충전 금액: ${krwAmount}`);
+
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) throw new Error("로그인이 필요합니다.");
 
