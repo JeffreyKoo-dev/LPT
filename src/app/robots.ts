@@ -28,6 +28,7 @@ export default function robots(): MetadataRoute.Robots {
         "/charge",
         "/account",
         "/admin",
+        "/missions",
       ],
     },
     sitemap: "https://questofme.com/sitemap.xml",

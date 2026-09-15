@@ -1004,3 +1004,37 @@ SQL 한 줄로 할 수 있다.
 
 **필요 작업**: `016_charge_options_db.sql`, `017_welcome_cash.sql`을
 SQL Editor에서 순서대로 실행.
+
+---
+
+## 32. 마일스톤 미션 — 구간별 차등 보상 수익모델
+
+목표를 달성해나가면서 구간별로 점점 커지는 보상을 주는 구조. 친구초대부터
+구현하고, 나중에 다른 지표(레벨 달성, 결제 누적 등)를 추가하기 쉽도록
+확장 가능하게 설계했다.
+
+**설계**:
+- `milestone_definitions` — 미션 종류(`metric_type`)별 단계(threshold)와
+  보상(reward_cash) 정의. 새 미션 추가는 SQL 한 줄(`metric_type`이
+  기존에 없던 새 지표면 계산 로직도 추가 필요)
+- `user_milestone_claims` — 중복 수령 방지
+- `get_user_metric_value()` — 사용자의 실제 달성 수치를 **서버가 직접
+  계산**(클라이언트가 "이만큼 했다"고 주장하는 값을 신뢰하지 않음).
+  friend_invites는 `friendships`에서 본인이 `requester_id`이고
+  `status='accepted'`인 행 개수로 계산
+- `claim_milestone_reward()` — 달성 여부·중복 수령 여부를 서버가
+  재확인한 뒤에만 캐시 지급
+
+**친구초대 마일스톤 시드**(차등 커지는 구조):
+1명→200캐시, 3명→500캐시, 5명→1,000캐시, 10명→2,500캐시,
+20명→6,000캐시
+
+**UI**: `/missions` — 지표별로 그룹핑해 진행도(N/threshold)와 단계별
+보상을 보여주고, 달성한 항목만 "받기" 버튼 활성화. 헤더 네비게이션에
+"미션" 메뉴 추가(로그인 상태에서만 노출).
+
+**검증**: Supabase 미설정 환경에서 조회 함수들은 안전하게 빈 값 폴백,
+수령 함수는 명확한 에러로 실패하는 것을 확인했다.
+
+**필요 작업**: `supabase/migrations/018_milestone_missions.sql`을
+SQL Editor에서 실행.
