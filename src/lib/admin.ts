@@ -55,6 +55,7 @@ export interface UserLookupResult {
   xp: number;
   created_at: string;
   cashBalance: number;
+  bonusBalance: number;
   recentTransactions: {
     type: string;
     amount: number;

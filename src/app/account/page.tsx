@@ -13,7 +13,7 @@ import type { UserIdentity } from "@supabase/supabase-js";
 import { checkNicknameLocally } from "@/lib/contentModeration";
 import { checkContentWithAi } from "@/lib/moderationApi";
 import { updateNickname, exportMyData, deleteMyAccount } from "@/lib/account";
-import { getWalletBalance, getWalletTransactions, WalletTransaction } from "@/lib/wallet";
+import { getWalletBalances, getWalletTransactions, WalletTransaction } from "@/lib/wallet";
 import { listMySharedProfiles, revokeSharedProfile, MySharedLink } from "@/lib/publicShare";
 import { getStorage, STORAGE_KEYS } from "@/lib/storage";
 import { BasicInfo } from "@/types/user";
@@ -153,13 +153,15 @@ function NicknameSection() {
 
 /** 캐시 잔액 + 최근 거래 요약 (대시보드의 WalletSection보다 간단한 버전) */
 function WalletSummarySection() {
-  const [balance, setBalance] = useState<number | null>(null);
+  const [cashBalance, setCashBalance] = useState(0);
+  const [bonusBalance, setBonusBalance] = useState(0);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    Promise.all([getWalletBalance(), getWalletTransactions(3)]).then(([bal, tx]) => {
-      setBalance(bal);
+    Promise.all([getWalletBalances(), getWalletTransactions(3)]).then(([balances, tx]) => {
+      setCashBalance(balances?.cashBalance ?? 0);
+      setBonusBalance(balances?.bonusBalance ?? 0);
       setTransactions(tx);
       setLoaded(true);
     });
@@ -171,8 +173,13 @@ function WalletSummarySection() {
     <Card className="mt-6">
       <div className="flex items-center justify-between">
         <CardTitle>보유 캐시</CardTitle>
-        <p className="text-lg font-semibold text-foreground">{(balance ?? 0).toLocaleString()}캐시</p>
+        <p className="text-lg font-semibold text-foreground">
+          {(cashBalance + bonusBalance).toLocaleString()}캐시
+        </p>
       </div>
+      <p className="mt-0.5 text-xs text-muted">
+        실제캐시 {cashBalance.toLocaleString()} · 보너스캐시 {bonusBalance.toLocaleString()}
+      </p>
       {transactions.length > 0 && (
         <div className="mt-3 flex flex-col gap-1 border-t border-border pt-3">
           {transactions.map((tx) => (

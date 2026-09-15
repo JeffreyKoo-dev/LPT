@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 
   const userIds = profile.map((p) => p.user_id);
   const [{ data: wallets }, { data: transactions }] = await Promise.all([
-    supabase.from("wallets").select("user_id, cash_balance").in("user_id", userIds),
+    supabase.from("wallets").select("user_id, cash_balance, bonus_balance").in("user_id", userIds),
     supabase
       .from("wallet_transactions")
       .select("user_id, type, amount, balance_after, description, created_at")
@@ -31,11 +31,15 @@ export async function GET(req: NextRequest) {
       .limit(50),
   ]);
 
-  const users = profile.map((p) => ({
-    ...p,
-    cashBalance: wallets?.find((w) => w.user_id === p.user_id)?.cash_balance ?? 0,
-    recentTransactions: (transactions ?? []).filter((t) => t.user_id === p.user_id).slice(0, 10),
-  }));
+  const users = profile.map((p) => {
+    const wallet = wallets?.find((w) => w.user_id === p.user_id);
+    return {
+      ...p,
+      cashBalance: wallet?.cash_balance ?? 0,
+      bonusBalance: wallet?.bonus_balance ?? 0,
+      recentTransactions: (transactions ?? []).filter((t) => t.user_id === p.user_id).slice(0, 10),
+    };
+  });
 
   return NextResponse.json({ users });
 }

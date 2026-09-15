@@ -359,7 +359,10 @@ function UserResultCard({ user }: { user: UserLookupResult }) {
             {user.lpt_type_id ?? "유형 미확정"} · 가입 {new Date(user.created_at).toLocaleDateString("ko-KR")}
           </p>
         </div>
-        <p className="text-sm font-semibold text-foreground">{balance.toLocaleString()}캐시</p>
+        <div className="text-right">
+          <p className="text-sm font-semibold text-foreground">{balance.toLocaleString()}캐시</p>
+          <p className="text-xs text-muted">보너스캐시 {user.bonusBalance.toLocaleString()}</p>
+        </div>
       </div>
 
       {transactions.length > 0 && (
@@ -381,7 +384,7 @@ function UserResultCard({ user }: { user: UserLookupResult }) {
       <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-end">
         <div className="flex-1">
           <TextField
-            label="조정 금액"
+            label="실제캐시 조정 금액"
             name={`amount-${user.user_id}`}
             placeholder="+1000 또는 -500"
             value={amount}

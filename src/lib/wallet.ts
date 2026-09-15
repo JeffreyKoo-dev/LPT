@@ -40,14 +40,34 @@ export async function getProductPrices(): Promise<ProductPrice[]> {
 }
 
 /** 현재 유저 캐시 잔액 조회. 로그인 상태가 아니거나 실패하면 null. */
-export async function getWalletBalance(): Promise<number | null> {
+export interface WalletBalances {
+  cashBalance: number;
+  bonusBalance: number;
+  totalBalance: number;
+}
+
+/**
+ * 두 잔액을 함께 반환한다 — cashBalance(실제 결제로 충전한 캐시, 모든
+ * 상품에 사용 가능)와 bonusBalance(웰컴캐시·마일스톤·광고리워드로 받은
+ * 캐시, AI 원가가 있는 상품에는 쓸 수 없음). 화면에는 둘 다 보여주되,
+ * 결제 가능 여부 판단은 서버(purchase_product 등)가 최종적으로 한다.
+ */
+export async function getWalletBalances(): Promise<WalletBalances | null> {
   if (!isSupabaseConfigured()) return null;
 
   try {
     const supabase = getSupabaseClient();
-    const { data, error } = await supabase.from("wallets").select("cash_balance").maybeSingle();
+    const { data, error } = await supabase
+      .from("wallets")
+      .select("cash_balance, bonus_balance")
+      .maybeSingle();
     if (error) throw error;
-    return data?.cash_balance ?? null;
+    if (!data) return null;
+    return {
+      cashBalance: data.cash_balance,
+      bonusBalance: data.bonus_balance,
+      totalBalance: data.cash_balance + data.bonus_balance,
+    };
   } catch (error) {
     console.error("[wallet] 잔액 조회 실패", error);
     return null;
@@ -60,6 +80,7 @@ export interface WalletTransaction {
   type: "charge" | "spend" | "ad_reward" | "refund";
   amount: number;
   balance_after: number;
+  bonus_balance_after: number | null;
   description: string | null;
   created_at: string;
 }
@@ -71,7 +92,7 @@ export async function getWalletTransactions(limit = 10): Promise<WalletTransacti
     const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from("wallet_transactions")
-      .select("id, type, amount, balance_after, description, created_at")
+      .select("id, type, amount, balance_after, bonus_balance_after, description, created_at")
       .order("created_at", { ascending: false })
       .limit(limit);
     if (error) throw error;
