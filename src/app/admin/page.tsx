@@ -44,7 +44,7 @@ const PRODUCT_LABEL: Record<string, string> = {
   daily_card_unlock: "오늘의 카드 즉시해제",
   premium_report: "정밀 사주 리포트",
   compatibility_deep: "심층 궁합 분석",
-  daeun_seun: "대운·세운 해석",
+  daeun_seun: "대운세운 해석",
 };
 
 type LoadState = "loading" | "forbidden" | "ready" | "error";
@@ -162,8 +162,9 @@ export default function AdminPage() {
             {productSales.map((s) => (
               <div key={s.productCode} className="flex items-center justify-between text-sm">
                 <span className="text-foreground">{PRODUCT_LABEL[s.productCode] ?? s.productCode}</span>
-                <span className="text-muted">
-                  {s.count.toLocaleString()}건 · {s.totalCash.toLocaleString()}캐시
+                <span className="text-right text-muted">
+                  <span className="block">{s.count.toLocaleString()}건</span>
+                  <span className="block">{s.totalCash.toLocaleString()}보석</span>
                 </span>
               </div>
             ))}
@@ -215,10 +216,10 @@ export default function AdminPage() {
               >
                 <div>
                   <p className="text-foreground">
-                    {o.krw_amount.toLocaleString()}원 → {o.cash_amount.toLocaleString()}캐시
+                    {o.krw_amount.toLocaleString()}원 → {o.cash_amount.toLocaleString()}보석
                   </p>
                   <p className="text-xs text-muted">
-                    {o.pg_provider} · {new Date(o.created_at).toLocaleString("ko-KR")}
+                    {o.pg_provider} ({new Date(o.created_at).toLocaleString("ko-KR")})
                   </p>
                 </div>
                 <span
@@ -250,7 +251,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** 회원 조회 + 수동 캐시 조정. "결제했는데 캐시가 안 들어왔어요" 같은 CS 대응용. */
+/** 회원 조회 + 보석 수동 조정. "결제했는데 보석이 안 들어왔어요" 같은 CS 대응용. */
 function UserLookupSection() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<UserLookupResult[] | null>(null);
@@ -274,9 +275,9 @@ function UserLookupSection() {
 
   return (
     <Card className="mt-6">
-      <CardTitle>회원 조회 / 캐시 수동 조정</CardTitle>
+      <CardTitle>회원 조회 및 보석 수동 조정</CardTitle>
       <CardDescription className="mt-1">
-        닉네임으로 찾아서, 보유 캐시와 최근 거래내역을 확인하고 필요하면 직접 조정할 수 있어요.
+        닉네임으로 찾아서, 보유 자산과 최근 거래내역을 확인하고 필요하면 직접 조정할 수 있어요.
       </CardDescription>
 
       <form onSubmit={handleSearch} className="mt-4 flex gap-2">
@@ -356,12 +357,12 @@ function UserResultCard({ user }: { user: UserLookupResult }) {
         <div>
           <p className="font-medium text-foreground">{user.nickname}</p>
           <p className="text-xs text-muted">
-            {user.lpt_type_id ?? "유형 미확정"} · 가입 {new Date(user.created_at).toLocaleDateString("ko-KR")}
+            {user.lpt_type_id ?? "유형 미확정"} (가입일 {new Date(user.created_at).toLocaleDateString("ko-KR")})
           </p>
         </div>
         <div className="text-right">
-          <p className="text-sm font-semibold text-foreground">{balance.toLocaleString()}캐시</p>
-          <p className="text-xs text-muted">보너스캐시 {user.bonusBalance.toLocaleString()}</p>
+          <p className="text-sm font-semibold text-foreground">보석 {balance.toLocaleString()}개</p>
+          <p className="text-xs text-muted">별조각 {user.bonusBalance.toLocaleString()}개</p>
         </div>
       </div>
 
@@ -370,7 +371,7 @@ function UserResultCard({ user }: { user: UserLookupResult }) {
           {transactions.slice(0, 5).map((tx, i) => (
             <div key={i} className="flex justify-between text-xs text-muted">
               <span>
-                {new Date(tx.created_at).toLocaleDateString("ko-KR")} · {tx.description ?? tx.type}
+                {new Date(tx.created_at).toLocaleDateString("ko-KR")}: {tx.description ?? tx.type}
               </span>
               <span>
                 {tx.amount > 0 ? "+" : ""}
@@ -384,7 +385,7 @@ function UserResultCard({ user }: { user: UserLookupResult }) {
       <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-end">
         <div className="flex-1">
           <TextField
-            label="실제캐시 조정 금액"
+            label="보석 조정 수량"
             name={`amount-${user.user_id}`}
             placeholder="+1000 또는 -500"
             value={amount}

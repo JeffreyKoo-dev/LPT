@@ -113,7 +113,7 @@ export function PremiumUnlockCard({
         <>
           <CardDescription className="mt-2">{teaser}</CardDescription>
           <Button className="mt-4 w-full" onClick={handlePurchase}>
-            {price ? `${price.cash_price.toLocaleString()}캐시로 열어보기` : "열어보기"}
+            {price ? `보석 ${price.cash_price.toLocaleString()}개로 열어보기` : "열어보기"}
           </Button>
           {errorMessage && <p className="mt-2 text-xs text-red-600">{errorMessage}</p>}
         </>

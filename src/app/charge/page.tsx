@@ -75,7 +75,7 @@ export default function ChargePage() {
   if (!isTossPaymentsConfigured()) {
     return (
       <GuardScreen
-        title="캐시 충전 준비 중이에요"
+        title="보석 충전 준비 중이에요"
         description="결제 기능이 아직 연결되지 않았어요. 조금만 기다려주세요."
         actionLabel="대시보드로"
         onAction={() => router.push("/dashboard")}
@@ -94,7 +94,7 @@ export default function ChargePage() {
 
       await widgetsRef.current.requestPayment({
         orderId: order.orderId,
-        orderName: `LPT 캐시 충전 ${chargeOptions.find((o) => o.krwAmount === selected)?.cashAmount.toLocaleString() ?? ""}캐시`,
+        orderName: `LPT 보석 충전 ${chargeOptions.find((o) => o.krwAmount === selected)?.cashAmount.toLocaleString() ?? ""}개`,
         successUrl: `${window.location.origin}/charge/success`,
         failUrl: `${window.location.origin}/charge/fail`,
       });
@@ -107,7 +107,7 @@ export default function ChargePage() {
 
   return (
     <div className="mx-auto max-w-md px-5 py-14">
-      <PageHeading label="캐시 충전" title="필요한 만큼 채워보세요" />
+      <PageHeading label="보석 충전" title="필요한 만큼 채워보세요" />
 
       <Card>
         <div className="flex flex-col gap-2">
@@ -125,7 +125,7 @@ export default function ChargePage() {
               >
                 <span className="font-medium text-foreground">{krwAmount.toLocaleString()}원</span>
                 <span className="text-sm text-muted">
-                  {cashAmount.toLocaleString()}캐시
+                  {cashAmount.toLocaleString()}개
                   {bonus > 0 && <span className="ml-1 text-growth">(+{bonus.toLocaleString()} 보너스)</span>}
                 </span>
               </button>

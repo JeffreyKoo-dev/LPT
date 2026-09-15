@@ -1,9 +1,9 @@
 // src/app/api/payments/confirm/route.ts
 //
-// 캐시 충전 결제 승인 엔드포인트. 토스페이먼츠 결제창(SDK)에서 결제가
+// 보석 충전 결제 승인 엔드포인트. 토스페이먼츠 결제창(SDK)에서 결제가
 // 끝나면 브라우저가 successUrl로 리다이렉트되며 paymentKey/orderId/amount를
 // 쿼리로 넘겨준다. 이 라우트가 바로 그 값을 받아 "서버가 직접" 토스
-// 결제승인 API를 호출해 진짜 결제인지 확인한 뒤에만 캐시를 지급한다.
+// 결제승인 API를 호출해 진짜 결제인지 확인한 뒤에만 보석을 지급한다.
 //
 // 이 방식을 쓰는 이유: 토스페이먼츠 결제 상태 웹훅에는 서명 헤더가 없다
 // (서명은 payout.changed/seller.changed 웹훅에만 존재 — 토스 공식 문서
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 3) 승인 확인됨 — 캐시 지급 (service_role 전용 함수, 클라이언트는 직접 호출 불가)
+  // 3) 승인 확인됨 — 보석 지급 (service_role 전용 함수, 클라이언트는 직접 호출 불가)
   const cashAmount = await getChargeCashAmount(supabaseAdmin, amount);
   if (!cashAmount) {
     return NextResponse.json({ error: `등록되지 않은 충전 금액: ${amount}` }, { status: 400 });
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     console.error("[payments/confirm] charge_cash_from_pg 실패", error);
-    return NextResponse.json({ error: "캐시 지급 중 오류가 발생했습니다." }, { status: 500 });
+    return NextResponse.json({ error: "보석 지급 중 오류가 발생했습니다." }, { status: 500 });
   }
 
   await supabaseAdmin

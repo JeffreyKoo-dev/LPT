@@ -1,5 +1,5 @@
 // src/components/ads/RewardedAdButton.tsx
-// "광고 보고 무료로 열기" / "광고 보고 캐시 받기" 버튼.
+// "광고 보고 무료로 열기" / "광고 보고 별조각 받기" 버튼.
 // ad_unlockable=false인 상품에는 이 버튼을 아예 렌더링하지 말 것 (부모 컴포넌트에서 필터링).
 
 "use client";
@@ -46,7 +46,7 @@ export function RewardedAdButton(props: Props) {
 
   const label =
     props.mode === "cash_reward"
-      ? `광고 보고 ${props.rewardAmount ?? 100}캐시 받기`
+      ? `광고 보고 별조각 ${props.rewardAmount ?? 100}개 받기`
       : "광고 보고 무료로 열기";
 
   return (

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdmin, getAdminDbClient } from "@/lib/adminAuth";
 
-/** 관리자가 특정 사용자의 캐시를 수동으로 지급/차감한다 (CS 대응용). */
+/** 관리자가 특정 사용자의 보석을 수동으로 지급/차감한다 (CS 대응용). */
 export async function POST(req: NextRequest) {
   const { authorized, email } = await verifyAdmin(req);
   if (!authorized) return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });

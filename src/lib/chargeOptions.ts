@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
- * 충전 단위별 지급 캐시(보너스 포함) — cash_charge_options 테이블에서 조회한다.
+ * 충전 단위별 지급 보석(보너스 포함) — cash_charge_options 테이블에서 조회한다.
  * 예전엔 이 파일에 하드코딩돼 있었는데, 프로모션 실험(충전 이벤트 등)을
  * 코드 재배포 없이 SQL로 바로 반영할 수 있도록 DB로 옮겼다.
  *
@@ -30,7 +30,7 @@ export async function getChargeOptions(
   return (data ?? []).map((row) => ({ krwAmount: row.krw_amount, cashAmount: row.cash_amount }));
 }
 
-/** 특정 충전 금액에 대응하는 지급 캐시만 필요할 때 (없으면 null) */
+/** 특정 충전 금액에 대응하는 지급 보석만 필요할 때 (없으면 null) */
 export async function getChargeCashAmount(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: SupabaseClient<any, "public", any>,

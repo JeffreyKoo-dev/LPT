@@ -70,7 +70,7 @@ function ChargeSuccessContent() {
             <CardTitle>충전이 완료됐어요</CardTitle>
             {newBalance !== null && (
               <CardDescription className="mt-2">
-                현재 보유 캐시: {newBalance.toLocaleString()}캐시
+                현재 보유 보석: {newBalance.toLocaleString()}개
               </CardDescription>
             )}
             <Button className="mt-5 w-full" onClick={() => router.push("/dashboard")}>
@@ -84,7 +84,7 @@ function ChargeSuccessContent() {
             <CardTitle>결제 확인에 실패했어요</CardTitle>
             <CardDescription className="mt-2">{errorMessage}</CardDescription>
             <p className="mt-2 text-xs text-muted">
-              결제가 실제로 됐다면 캐시가 곧 반영될 수 있어요. 계속 문제가 있으면 문의해주세요.
+              결제가 실제로 됐다면 보석이 곧 반영될 수 있어요. 계속 문제가 있으면 문의해주세요.
             </p>
             <Button variant="secondary" className="mt-5 w-full" onClick={() => router.push("/charge")}>
               다시 시도하기

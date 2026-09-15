@@ -117,7 +117,7 @@ export function TodayRecommendationPanel({
                 <p className="truncate text-sm font-medium text-foreground">{liveProduct.productName}</p>
                 <p className="mt-0.5 text-xs text-muted">
                   {liveProduct.productPrice.toLocaleString()}원
-                  {liveProduct.isRocket && " · 로켓배송"}
+                  {liveProduct.isRocket && " (로켓배송)"}
                 </p>
               </div>
             </a>

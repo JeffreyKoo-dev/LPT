@@ -77,7 +77,7 @@ export async function getCachedContent(productCode: ProductCode): Promise<Premiu
     if (error) throw error;
     const content = (data?.content as PremiumContent) ?? null;
 
-    // monthly_fortune은 캐시가 이번 달 것일 때만 유효하다 — 지난달 캐시가
+    // monthly_fortune은 콘텐츠가 이번 달 것일 때만 유효하다 — 지난달 콘텐츠가
     // 남아있어도 그대로 보여주면 안 된다(상품의 핵심 가치를 해침).
     if (content && productCode === "monthly_fortune" && content.yearMonth !== getCurrentYearMonth()) {
       return null;

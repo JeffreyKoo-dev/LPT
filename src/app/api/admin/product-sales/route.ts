@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdmin, getAdminDbClient } from "@/lib/adminAuth";
 
-/** 어떤 유료 콘텐츠가 실제로 잘 팔리는지, 상품 코드별 판매 건수·캐시 매출을 집계한다. */
+/** 어떤 유료 콘텐츠가 실제로 잘 팔리는지, 상품 코드별 판매 건수와 보석 매출을 집계한다. */
 export async function GET(req: NextRequest) {
   const { authorized } = await verifyAdmin(req);
   if (!authorized) return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });

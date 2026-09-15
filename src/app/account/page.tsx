@@ -151,7 +151,7 @@ function NicknameSection() {
   );
 }
 
-/** 캐시 잔액 + 최근 거래 요약 (대시보드의 WalletSection보다 간단한 버전) */
+/** 보유 자산(보석·별조각) + 최근 거래 요약 (대시보드의 WalletSection보다 간단한 버전) */
 function WalletSummarySection() {
   const [cashBalance, setCashBalance] = useState(0);
   const [bonusBalance, setBonusBalance] = useState(0);
@@ -171,15 +171,17 @@ function WalletSummarySection() {
 
   return (
     <Card className="mt-6">
-      <div className="flex items-center justify-between">
-        <CardTitle>보유 캐시</CardTitle>
-        <p className="text-lg font-semibold text-foreground">
-          {(cashBalance + bonusBalance).toLocaleString()}캐시
-        </p>
+      <CardTitle>보유 자산</CardTitle>
+      <div className="mt-3 flex gap-4">
+        <div>
+          <p className="text-xs text-muted">보석</p>
+          <p className="text-lg font-semibold text-foreground">{cashBalance.toLocaleString()}개</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted">별조각</p>
+          <p className="text-lg font-semibold text-foreground">{bonusBalance.toLocaleString()}개</p>
+        </div>
       </div>
-      <p className="mt-0.5 text-xs text-muted">
-        실제캐시 {cashBalance.toLocaleString()} · 보너스캐시 {bonusBalance.toLocaleString()}
-      </p>
       {transactions.length > 0 && (
         <div className="mt-3 flex flex-col gap-1 border-t border-border pt-3">
           {transactions.map((tx) => (
@@ -187,14 +189,14 @@ function WalletSummarySection() {
               <span>{new Date(tx.created_at).toLocaleDateString("ko-KR")}</span>
               <span>
                 {tx.amount > 0 ? "+" : ""}
-                {tx.amount.toLocaleString()}캐시
+                {tx.amount.toLocaleString()}
               </span>
             </div>
           ))}
         </div>
       )}
       <a href="/charge" className="mt-3 block text-center text-sm text-fate underline underline-offset-2">
-        캐시 충전하기
+        보석 충전하기
       </a>
     </Card>
   );
@@ -340,7 +342,7 @@ function SharedLinksSection() {
               <div>
                 <p className="text-foreground">{SHARE_KIND_LABEL[link.kind] ?? link.kind}</p>
                 <p className="text-xs text-muted">
-                  {link.heading} · {new Date(link.created_at).toLocaleDateString("ko-KR")}
+                  {link.heading} ({new Date(link.created_at).toLocaleDateString("ko-KR")})
                 </p>
               </div>
               <Button variant="ghost" onClick={() => handleRevoke(link.id)}>
@@ -415,7 +417,7 @@ function DangerZoneSection() {
     <Card className="mt-6 border-t-2 border-t-red-600/40">
       <CardTitle>계정 탈퇴</CardTitle>
       <CardDescription className="mt-1">
-        탈퇴하면 사주 분석, 성장 기록, 캐시 잔액을 포함한 모든 데이터가 삭제되며 되돌릴 수 없어요.
+        탈퇴하면 사주 분석, 성장 기록, 보유 자산을 포함한 모든 데이터가 삭제되며 되돌릴 수 없어요.
       </CardDescription>
 
       {!confirming ? (

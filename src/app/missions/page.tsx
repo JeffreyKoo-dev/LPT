@@ -74,7 +74,11 @@ export default function MissionsPage() {
 
   return (
     <div className="mx-auto max-w-md px-5 py-14">
-      <PageHeading label="미션" title="목표를 달성하고 캐시를 받아보세요" />
+      <PageHeading label="미션" title="목표를 달성하고 별조각을 받아보세요" />
+      <p className="mb-2 text-xs text-muted">
+        미션 보상은 별조각으로 지급돼요. 오늘의 카드 같은 콘텐츠에 자유롭게 쓸 수 있고,
+        정밀 리포트 등 AI 분석 콘텐츠는 보석으로만 결제할 수 있어요.
+      </p>
 
       {Object.entries(grouped).map(([metricType, milestones]) => {
         const currentValue = progress[metricType] ?? 0;
@@ -101,7 +105,7 @@ export default function MissionsPage() {
                     <div>
                       <p className="text-sm font-medium text-foreground">{m.title}</p>
                       <p className="text-xs text-muted">
-                        {m.threshold}회 달성 · {m.reward_cash.toLocaleString()}캐시
+                        {m.threshold}회 달성 시 별조각 {m.reward_cash.toLocaleString()}개
                       </p>
                     </div>
                     {isClaimed ? (

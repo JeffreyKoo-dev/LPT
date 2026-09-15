@@ -2,7 +2,7 @@ import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { getChargeCashAmount } from "@/lib/chargeOptions";
 
 /**
- * 캐시 지갑 클라이언트 래퍼. 모든 잔액 변경은 Supabase RPC(SECURITY DEFINER
+ * 보석·별조각 지갑 클라이언트 래퍼. 모든 잔액 변경은 Supabase RPC(SECURITY DEFINER
  * 함수)를 통해서만 이뤄지며, 이 파일에서 테이블을 직접 insert/update하지
  * 않는다. Supabase 미설정 환경에서는 각 함수가 null/빈 값으로 안전하게
  * 반환되어 서비스 흐름을 막지 않는다.
@@ -39,7 +39,7 @@ export async function getProductPrices(): Promise<ProductPrice[]> {
   }
 }
 
-/** 현재 유저 캐시 잔액 조회. 로그인 상태가 아니거나 실패하면 null. */
+/** 현재 유저 보유 자산 조회. 로그인 상태가 아니거나 실패하면 null. */
 export interface WalletBalances {
   cashBalance: number;
   bonusBalance: number;
@@ -47,9 +47,9 @@ export interface WalletBalances {
 }
 
 /**
- * 두 잔액을 함께 반환한다 — cashBalance(실제 결제로 충전한 캐시, 모든
- * 상품에 사용 가능)와 bonusBalance(웰컴캐시·마일스톤·광고리워드로 받은
- * 캐시, AI 원가가 있는 상품에는 쓸 수 없음). 화면에는 둘 다 보여주되,
+ * 두 잔액을 함께 반환한다 — cashBalance(실제 결제로 충전한 보석, 모든
+ * 상품에 사용 가능)와 bonusBalance(웰컴·마일스톤·광고리워드로 받은
+ * 별조각, AI 원가가 있는 상품에는 쓸 수 없음). 화면에는 둘 다 보여주되,
  * 결제 가능 여부 판단은 서버(purchase_product 등)가 최종적으로 한다.
  */
 export async function getWalletBalances(): Promise<WalletBalances | null> {
@@ -145,7 +145,7 @@ export async function unlockDailyContent(
   return { unlocked: row?.unlocked ?? false, newBalance: row?.new_balance ?? 0 };
 }
 
-/** 정밀 리포트/궁합분석/대운세운 등 일반 상품 캐시 결제 (광고 해제 경로 없음) */
+/** 정밀 리포트/궁합분석/대운세운 등 일반 상품 보석 결제 (광고 해제 경로 없음) */
 export async function purchaseProduct(
   productCode: ProductCode,
   referenceId?: string
