@@ -1136,3 +1136,31 @@ SQL Editor에서 실행.
 
 **필요 작업**: `supabase/migrations/021_gem_star_naming.sql`을 SQL
 Editor에서 실행 (020 다음 순서로).
+
+---
+
+## 36. schema.sql 함수 중복 정리
+
+여러 마이그레이션(007→008→014→017→018→019→020→021)에 걸쳐
+`create or replace function`이 반복 추가되면서, `schema.sql`(새
+프로젝트를 한 번에 세팅하는 통합 스키마 파일) 안에 같은 함수의 예전
+버전이 최대 3벌까지 남아있었다. `create or replace`가 순서대로
+실행되면 마지막 정의가 남으므로 기능적으로는 문제없었지만, 파일이
+지저분해서 나중에 새로 세팅할 때 혼란을 줄 수 있었다.
+
+**정리 내용**: 함수별로 마지막(최종) 정의만 남기고 예전 버전과 그
+직전 설명 주석을 제거. `handle_new_user_wallet`(3벌→1),
+`grant_ad_cash_reward`(3벌→1), `unlock_daily_content`(3벌→1),
+`purchase_product`(3벌→1), `charge_cash_from_pg`(2벌→1),
+`claim_milestone_reward`(3벌→1) — 총 1610줄 → 1043줄로 정리.
+
+**검증**: 정리 스크립트에서 함수 종료 패턴을 `$$;`로만 가정했다가
+`set_updated_at`(`$$ language plpgsql;`로 끝나는 다른 형태)을
+잘못 건너뛰는 버그가 있었던 걸 발견해 수정 — 각 함수가 정확히
+1번씩만 남았는지, 남은 버전이 전부 최종(가장 최신) 로직인지 하나씩
+직접 대조해 확인했다. `begin`/`end;` 10쌍 균형, 타입체크·린트·빌드
+전부 정상 통과.
+
+**참고**: 이 정리는 `schema.sql`(새 프로젝트 세팅용) 파일에만
+해당하며, 실제 운영 중인 Supabase 프로젝트에는 이미 각 함수의 최종
+버전이 적용되어 있어 별도 반영이 필요 없다.
