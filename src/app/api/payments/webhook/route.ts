@@ -8,11 +8,13 @@
 // (서명이 있는 건 payout.changed/seller.changed뿐 — 토스 공식 문서 확인)
 // "웹훅이 왔다"는 사실만으로 보석을 지급하는 건 위조 위험이 있다.
 //
-// 이 라우트는 결제 취소·실패처럼 confirm 흐름 이후 비동기로 발생하는
-// 상태 변경을 purchase_orders에 반영하는 보조 용도로만 쓴다. 이미
-// completed된 주문의 보석을 취소하는 로직은 아직 없다 — 필요해지면
-// refund 트랜잭션 타입(wallet_transactions.type='refund')으로
-// 별도 처리할 것.
+// 이 라우트는 비동기로 발생하는 상태 변경을 처리하는 보조 경로다:
+// - "결제 대기 중" 주문이 취소되면: 단순히 주문 상태만 취소로 바꾼다
+//   (아직 보석을 지급 안 했으므로 회수할 것도 없음)
+// - "이미 완료된" 주문이 나중에 취소·환불(차지백 등)되면:
+//   process_payment_refund()로 남아있는 보석만큼 회수하고, 이미 소비돼
+//   회수 못 한 금액은 payment_refund_events에 기록해 관리자가 확인할 수
+//   있게 한다 (/admin에 노출됨)
 
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
@@ -37,11 +39,25 @@ export async function POST(req: NextRequest) {
   }
 
   if (eventType === "PAYMENT_STATUS_CHANGED" && eventData.status === "CANCELED") {
-    await supabaseAdmin
+    const { data: pendingUpdate } = await supabaseAdmin
       .from("purchase_orders")
       .update({ status: "cancelled" })
       .eq("id", eventData.orderId)
-      .eq("status", "pending"); // 이미 completed된 주문은 여기서 건드리지 않는다
+      .eq("status", "pending")
+      .select("id");
+
+    // pending 주문이 아니었다면(이미 completed였다면), 자산 회수 처리를 시도한다.
+    if (!pendingUpdate || pendingUpdate.length === 0) {
+      const { error } = await supabaseAdmin.rpc("process_payment_refund", {
+        p_order_id: eventData.orderId,
+      });
+      if (error) {
+        // "완료된 주문을 찾을 수 없음"(예: 애초에 존재하지 않는 주문)이나
+        // "이미 처리된 환불"은 정상적인 상황일 수 있어 에러 로그만 남기고
+        // 웹훅 자체는 200으로 응답한다(토스가 재시도하지 않도록).
+        console.error("[payments/webhook] 환불 처리 실패", error.message);
+      }
+    }
   }
 
   return NextResponse.json({ ok: true });

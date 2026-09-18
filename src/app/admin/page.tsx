@@ -14,6 +14,8 @@ import {
   getPurchaseOrders,
   getSystemStatus,
   getProductSales,
+  getRefundEvents,
+  markRefundEventReviewed,
   searchUsers,
   adjustUserCash,
   AdminOverview,
@@ -21,6 +23,7 @@ import {
   PurchaseOrderRow,
   SystemStatusItem,
   ProductSalesRow,
+  RefundEventRow,
   UserLookupResult,
 } from "@/lib/admin";
 
@@ -58,6 +61,7 @@ export default function AdminPage() {
   const [orders, setOrders] = useState<PurchaseOrderRow[]>([]);
   const [systemStatus, setSystemStatus] = useState<SystemStatusItem[]>([]);
   const [productSales, setProductSales] = useState<ProductSalesRow[]>([]);
+  const [refundEvents, setRefundEvents] = useState<RefundEventRow[]>([]);
 
   useEffect(() => {
     if (!authGate.configured || authGate.loading || authGate.redirecting) return;
@@ -68,13 +72,15 @@ export default function AdminPage() {
       getPurchaseOrders(),
       getSystemStatus(),
       getProductSales(),
+      getRefundEvents(),
     ])
-      .then(([overviewData, reportsData, ordersData, statusData, salesData]) => {
+      .then(([overviewData, reportsData, ordersData, statusData, salesData, refundData]) => {
         setOverview(overviewData);
         setReports(reportsData);
         setOrders(ordersData);
         setSystemStatus(statusData);
         setProductSales(salesData);
+        setRefundEvents(refundData);
         setState("ready");
       })
       .catch((err) => {
@@ -133,6 +139,7 @@ export default function AdminPage() {
         <StatCard label="최근 7일 가입" value={overview.recentSignups.toLocaleString()} />
         <StatCard label="누적 결제 건수" value={overview.totalOrders.toLocaleString()} />
         <StatCard label="누적 결제 금액" value={`${overview.totalRevenue.toLocaleString()}원`} />
+        <StatCard label="미확인 환불" value={overview.unreviewedRefundCount.toLocaleString()} />
       </div>
 
       <Card className="mt-6">
@@ -238,7 +245,72 @@ export default function AdminPage() {
           </div>
         )}
       </Card>
+
+      <RefundEventsSection events={refundEvents} onEventUpdate={setRefundEvents} />
     </div>
+  );
+}
+
+/** 결제 취소·환불(차지백)로 자산을 회수한 내역. 미회수액(shortfall)이 있으면 특히 확인 필요. */
+function RefundEventsSection({
+  events,
+  onEventUpdate,
+}: {
+  events: RefundEventRow[];
+  onEventUpdate: (events: RefundEventRow[]) => void;
+}) {
+  async function handleReview(eventId: number) {
+    try {
+      await markRefundEventReviewed(eventId);
+      onEventUpdate(events.map((e) => (e.id === eventId ? { ...e, reviewed: true } : e)));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "처리에 실패했어요.");
+    }
+  }
+
+  return (
+    <Card className="mt-6">
+      <CardTitle>결제 취소·환불 내역</CardTitle>
+      <CardDescription className="mt-1">
+        이미 완료된 결제가 나중에 취소되면(차지백 등), 남아있는 자산만 회수돼요. 이미 소비된
+        만큼(미회수액)은 확인이 필요해요.
+      </CardDescription>
+      {events.length === 0 ? (
+        <p className="mt-4 text-sm text-muted">환불 처리된 내역이 없어요.</p>
+      ) : (
+        <div className="mt-4 flex flex-col gap-2">
+          {events.map((e) => (
+            <div
+              key={e.id}
+              className={`rounded-lg border px-3 py-2 text-sm ${
+                e.shortfall > 0 ? "border-red-600/40 bg-red-50" : "border-border bg-surface-2"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-foreground">
+                  {e.krw_amount.toLocaleString()}원 결제 취소 (지급 {e.cash_amount_granted.toLocaleString()}
+                  , 회수 {e.cash_amount_recovered.toLocaleString()})
+                </p>
+                {!e.reviewed && (
+                  <Button variant="ghost" onClick={() => handleReview(e.id)}>
+                    확인함
+                  </Button>
+                )}
+              </div>
+              {e.shortfall > 0 && (
+                <p className="mt-1 text-xs text-red-600">
+                  미회수액 {e.shortfall.toLocaleString()} (이미 소비됨 — 별도 조치 검토 필요)
+                </p>
+              )}
+              <p className="mt-1 text-xs text-muted">
+                {new Date(e.created_at).toLocaleString("ko-KR")}
+                {e.reviewed && " (확인 완료)"}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }
 

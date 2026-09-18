@@ -6,6 +6,7 @@ export interface AdminOverview {
   totalRevenue: number;
   totalOrders: number;
   reportCount: number;
+  unreviewedRefundCount: number;
 }
 
 export interface ModerationReportRow {
@@ -107,3 +108,21 @@ export interface ProductSalesRow {
 
 export const getProductSales = () =>
   adminFetch<{ sales: ProductSalesRow[] }>("/api/admin/product-sales").then((r) => r.sales);
+
+export interface RefundEventRow {
+  id: number;
+  order_id: string;
+  user_id: string;
+  krw_amount: number;
+  cash_amount_granted: number;
+  cash_amount_recovered: number;
+  shortfall: number;
+  reviewed: boolean;
+  created_at: string;
+}
+
+export const getRefundEvents = () =>
+  adminFetch<{ events: RefundEventRow[] }>("/api/admin/refund-events").then((r) => r.events);
+
+export const markRefundEventReviewed = (eventId: number) =>
+  adminPost<{ ok: boolean }>("/api/admin/refund-events", { eventId });

@@ -7,16 +7,22 @@ export async function GET(req: NextRequest) {
 
   const supabase = getAdminDbClient();
 
-  const [{ count: totalUsers }, { count: recentSignups }, { data: completedOrders }, { count: reportCount }] =
-    await Promise.all([
-      supabase.from("user_profiles").select("*", { count: "exact", head: true }),
-      supabase
-        .from("user_profiles")
-        .select("*", { count: "exact", head: true })
-        .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
-      supabase.from("purchase_orders").select("krw_amount").eq("status", "completed"),
-      supabase.from("moderation_reports").select("*", { count: "exact", head: true }),
-    ]);
+  const [
+    { count: totalUsers },
+    { count: recentSignups },
+    { data: completedOrders },
+    { count: reportCount },
+    { count: unreviewedRefundCount },
+  ] = await Promise.all([
+    supabase.from("user_profiles").select("*", { count: "exact", head: true }),
+    supabase
+      .from("user_profiles")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+    supabase.from("purchase_orders").select("krw_amount").eq("status", "completed"),
+    supabase.from("moderation_reports").select("*", { count: "exact", head: true }),
+    supabase.from("payment_refund_events").select("*", { count: "exact", head: true }).eq("reviewed", false),
+  ]);
 
   const totalRevenue = (completedOrders ?? []).reduce((sum, row) => sum + (row.krw_amount ?? 0), 0);
 
@@ -26,5 +32,6 @@ export async function GET(req: NextRequest) {
     totalRevenue,
     totalOrders: completedOrders?.length ?? 0,
     reportCount: reportCount ?? 0,
+    unreviewedRefundCount: unreviewedRefundCount ?? 0,
   });
 }
