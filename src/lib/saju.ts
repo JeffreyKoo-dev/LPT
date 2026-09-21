@@ -29,7 +29,7 @@
 
 import { calculateSaju as ssajuCalculateSaju, lunarToSolar, solarToLunar } from "@/lib/saju-engine/calculate";
 import { BasicInfo } from "@/types/user";
-import { Element, EarthlyBranch, HeavenlyStem, Pillar, SajuChart, TenGod, DaeunSeyunData, MonthlyFortuneData } from "@/types/saju";
+import { Element, EarthlyBranch, HeavenlyStem, Pillar, SajuChart, TenGod, DaeunSeyunData, MonthlyFortuneData, YearlyFortuneData } from "@/types/saju";
 
 const SEOUL_LONGITUDE = 126.9784;
 
@@ -305,6 +305,31 @@ export function calculateMonthlyFortune(basicInfo: BasicInfo): MonthlyFortuneDat
     tenGodStem: thisMonth.stemTenGod as TenGod,
     tenGodBranch: thisMonth.branchTenGod as TenGod,
     stage12: thisMonth.stage12,
+  };
+}
+
+/**
+ * 올해의 운세(세운)를 계산한다. 월운과 같은 원리로 매년 바뀌는 값이라,
+ * "올해의 운세" 유료 콘텐츠가 매년(특히 새해 시즌) 재구매될 이유가 된다.
+ */
+export function calculateYearlyFortune(basicInfo: BasicInfo): YearlyFortuneData {
+  const { result } = runSsajuCalculation(basicInfo);
+
+  const currentYear = new Date().getFullYear();
+  const thisYear = result.seyun.find((item) => item.year === currentYear);
+
+  if (!thisYear) {
+    throw new Error("올해 세운 데이터를 찾을 수 없습니다.");
+  }
+
+  return {
+    year: currentYear,
+    ganzhi: thisYear.ganzhi,
+    stem: thisYear.stem,
+    branch: thisYear.branch,
+    tenGodStem: thisYear.tenGodStem as TenGod,
+    tenGodBranch: thisYear.tenGodBranch as TenGod,
+    stage12: thisYear.stage12,
   };
 }
 

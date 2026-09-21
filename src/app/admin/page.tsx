@@ -16,6 +16,8 @@ import {
   getProductSales,
   getRefundEvents,
   markRefundEventReviewed,
+  getRetentionStats,
+  getUsersList,
   searchUsers,
   adjustUserCash,
   AdminOverview,
@@ -24,6 +26,8 @@ import {
   SystemStatusItem,
   ProductSalesRow,
   RefundEventRow,
+  RetentionStats,
+  UserListItem,
   UserLookupResult,
 } from "@/lib/admin";
 
@@ -62,6 +66,7 @@ export default function AdminPage() {
   const [systemStatus, setSystemStatus] = useState<SystemStatusItem[]>([]);
   const [productSales, setProductSales] = useState<ProductSalesRow[]>([]);
   const [refundEvents, setRefundEvents] = useState<RefundEventRow[]>([]);
+  const [retention, setRetention] = useState<RetentionStats | null>(null);
 
   useEffect(() => {
     if (!authGate.configured || authGate.loading || authGate.redirecting) return;
@@ -73,14 +78,16 @@ export default function AdminPage() {
       getSystemStatus(),
       getProductSales(),
       getRefundEvents(),
+      getRetentionStats(),
     ])
-      .then(([overviewData, reportsData, ordersData, statusData, salesData, refundData]) => {
+      .then(([overviewData, reportsData, ordersData, statusData, salesData, refundData, retentionData]) => {
         setOverview(overviewData);
         setReports(reportsData);
         setOrders(ordersData);
         setSystemStatus(statusData);
         setProductSales(salesData);
         setRefundEvents(refundData);
+        setRetention(retentionData);
         setState("ready");
       })
       .catch((err) => {
@@ -178,6 +185,37 @@ export default function AdminPage() {
           </div>
         )}
       </Card>
+
+      {retention && (
+        <Card className="mt-6">
+          <CardTitle>이번 달 운세 재구매율</CardTitle>
+          <CardDescription className="mt-1">
+            지속 수익 모델이 실제로 잘 작동하는지 보여주는 핵심 지표예요 — 지난달에 산 사람이
+            이번 달에도 다시 사는 비율이에요.
+          </CardDescription>
+          <div className="mt-3 flex gap-5">
+            <div>
+              <p className="text-xs text-muted">지난달 구매자</p>
+              <p className="text-lg font-semibold text-foreground">{retention.lastMonthBuyers.toLocaleString()}명</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">이번 달 구매자</p>
+              <p className="text-lg font-semibold text-foreground">{retention.thisMonthBuyers.toLocaleString()}명</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">재구매율</p>
+              <p className="text-lg font-semibold text-foreground">
+                {retention.retentionRate === null ? "—" : `${retention.retentionRate}%`}
+              </p>
+            </div>
+          </div>
+          {retention.lastMonthBuyers === 0 && (
+            <p className="mt-2 text-xs text-muted">아직 비교할 지난달 데이터가 충분하지 않아요.</p>
+          )}
+        </Card>
+      )}
+
+      <AllUsersSection />
 
       <UserLookupSection />
 
@@ -320,6 +358,73 @@ function StatCard({ label, value }: { label: string; value: string }) {
       <p className="text-xs text-muted">{label}</p>
       <p className="mt-1 text-lg font-semibold text-foreground">{value}</p>
     </div>
+  );
+}
+
+/** 전체 가입자 목록을 페이지네이션으로 훑어본다. */
+function AllUsersSection() {
+  const [page, setPage] = useState(0);
+  const [users, setUsers] = useState<UserListItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    getUsersList(page).then((res) => {
+      setUsers(res.users);
+      setTotal(res.total);
+      setLoading(false);
+    });
+  }, [page]);
+
+  const pageSize = 20;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  return (
+    <Card className="mt-6">
+      <CardTitle>전체 가입자 목록</CardTitle>
+      <CardDescription className="mt-1">총 {total.toLocaleString()}명</CardDescription>
+
+      {loading ? (
+        <p className="mt-4 text-sm text-muted">불러오는 중…</p>
+      ) : (
+        <div className="mt-4 flex flex-col gap-2">
+          {users.map((u) => (
+            <div
+              key={u.user_id}
+              className="flex items-center justify-between rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
+            >
+              <div>
+                <p className="text-foreground">{u.nickname}</p>
+                <p className="text-xs text-muted">
+                  {u.lpt_type_id ?? "유형 미확정"} (가입일 {new Date(u.created_at).toLocaleDateString("ko-KR")})
+                </p>
+              </div>
+              <div className="text-right text-xs text-muted">
+                <p>보석 {u.cashBalance.toLocaleString()}</p>
+                <p>별조각 {u.bonusBalance.toLocaleString()}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-4 flex items-center justify-between">
+        <Button variant="ghost" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>
+          이전
+        </Button>
+        <span className="text-xs text-muted">
+          {page + 1} / {totalPages} 페이지
+        </span>
+        <Button
+          variant="ghost"
+          onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+          disabled={page >= totalPages - 1}
+        >
+          다음
+        </Button>
+      </div>
+    </Card>
   );
 }
 

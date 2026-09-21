@@ -6,11 +6,17 @@ export interface PremiumContent {
   generatedAt: string;
   /** monthly_fortune 전용 — 이 콘텐츠가 어느 달 것인지("2026-09"). 다른 상품은 비워둠. */
   yearMonth?: string;
+  /** yearly_fortune 전용 — 이 콘텐츠가 어느 해 것인지("2026"). 다른 상품은 비워둠. */
+  year?: string;
 }
 
 function getCurrentYearMonth(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function getCurrentYear(): string {
+  return String(new Date().getFullYear());
 }
 
 /** 해당 상품을 이미 결제했는지 확인한다 (wallet_transactions의 차감 기록 존재 여부) */
@@ -63,7 +69,30 @@ export async function hasPurchasedThisMonth(productCode: ProductCode): Promise<b
   }
 }
 
-/** premium_report / daeun_seun / monthly_fortune 전용 — 이미 생성해둔 콘텐츠가 있으면 가져온다 */
+/** yearly_fortune 전용 — "올해" 결제한 적 있는지 확인한다 (hasPurchasedThisMonth와 동일한 원리, 연 단위). */
+export async function hasPurchasedThisYear(productCode: ProductCode): Promise<boolean> {
+  if (!isSupabaseConfigured()) return false;
+
+  try {
+    const supabase = getSupabaseClient();
+    const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+
+    const { data, error } = await supabase
+      .from("wallet_transactions")
+      .select("id")
+      .eq("product_code", productCode)
+      .eq("type", "spend")
+      .gte("created_at", startOfYear.toISOString())
+      .limit(1);
+    if (error) throw error;
+    return (data?.length ?? 0) > 0;
+  } catch (error) {
+    console.error("[premiumContent] 올해 결제 여부 확인 실패", error);
+    return false;
+  }
+}
+
+/** premium_report / daeun_seun / monthly_fortune / yearly_fortune 전용 — 이미 생성해둔 콘텐츠가 있으면 가져온다 */
 export async function getCachedContent(productCode: ProductCode): Promise<PremiumContent | null> {
   if (!isSupabaseConfigured()) return null;
 
@@ -76,10 +105,14 @@ export async function getCachedContent(productCode: ProductCode): Promise<Premiu
       .maybeSingle();
     if (error) throw error;
     const content = (data?.content as PremiumContent) ?? null;
+    if (!content) return null;
 
-    // monthly_fortune은 콘텐츠가 이번 달 것일 때만 유효하다 — 지난달 콘텐츠가
-    // 남아있어도 그대로 보여주면 안 된다(상품의 핵심 가치를 해침).
-    if (content && productCode === "monthly_fortune" && content.yearMonth !== getCurrentYearMonth()) {
+    // monthly_fortune / yearly_fortune은 콘텐츠가 이번 기간 것일 때만 유효하다
+    // — 지난 기간 콘텐츠가 남아있어도 그대로 보여주면 안 된다(상품의 핵심 가치를 해침).
+    if (productCode === "monthly_fortune" && content.yearMonth !== getCurrentYearMonth()) {
+      return null;
+    }
+    if (productCode === "yearly_fortune" && content.year !== getCurrentYear()) {
       return null;
     }
 

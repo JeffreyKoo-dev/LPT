@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/common/Button";
-import { Card } from "@/components/common/Card";
+import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { GuardScreen } from "@/components/common/GuardScreen";
 import { TextField } from "@/components/form/TextField";
 import { BirthDateField } from "@/components/form/BirthDateField";
@@ -15,6 +15,7 @@ import { PremiumUnlockCard } from "@/components/wallet/PremiumUnlockCard";
 import { useGrowthSession } from "@/lib/useGrowthSession";
 import { calculateSaju } from "@/lib/saju";
 import { computeCompatibility, CompatibilityResult } from "@/lib/compatibility";
+import { getVoucherCount, purchaseBundle, redeemVoucher } from "@/lib/compatibilityVoucher";
 import { CalendarType } from "@/types/user";
 import { PageHeading } from "@/components/common/PageHeading";
 
@@ -31,6 +32,26 @@ export default function CompatibilityPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CompatibilityResult | null>(null);
   const [partnerChart, setPartnerChart] = useState<ReturnType<typeof calculateSaju> | null>(null);
+  const [voucherCount, setVoucherCount] = useState(0);
+  const [bundleStatus, setBundleStatus] = useState<"idle" | "buying">("idle");
+  const [bundleError, setBundleError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getVoucherCount().then(setVoucherCount);
+  }, []);
+
+  async function handleBuyBundle() {
+    setBundleError(null);
+    setBundleStatus("buying");
+    try {
+      const { vouchers } = await purchaseBundle();
+      setVoucherCount(vouchers);
+    } catch (err) {
+      setBundleError(err instanceof Error ? err.message : "구매에 실패했어요.");
+    } finally {
+      setBundleStatus("idle");
+    }
+  }
 
   if (session.status === "loading") {
     return (
@@ -90,6 +111,23 @@ export default function CompatibilityPage() {
           description="상대방 정보는 이 계산에만 사용되며 저장되지 않습니다."
         />
       </div>
+
+      {voucherCount > 0 && (
+        <Card className="mb-4">
+          <CardDescription>보유 궁합권 {voucherCount}개 — 심층 궁합 분석에 바로 쓸 수 있어요.</CardDescription>
+        </Card>
+      )}
+
+      <Card className="mb-6">
+        <CardTitle>심층 궁합 분석 3인 세트</CardTitle>
+        <CardDescription className="mt-1">
+          여러 명과의 궁합이 궁금하다면, 3건을 한 번에 저렴하게 준비해두세요.
+        </CardDescription>
+        <Button variant="secondary" className="mt-3 w-full" onClick={handleBuyBundle} disabled={bundleStatus === "buying"}>
+          {bundleStatus === "buying" ? "구매 중…" : "3인 세트로 구매하기"}
+        </Button>
+        {bundleError && <p className="mt-2 text-xs text-red-600">{bundleError}</p>}
+      </Card>
 
       {!result && (
         <Card>
@@ -162,10 +200,21 @@ export default function CompatibilityPage() {
 
           {partnerChart && (
             <PremiumUnlockCard
+              key={voucherCount} // 궁합권 개수가 바뀌면(구매 등) 카드 상태를 다시 계산하도록 강제 리마운트
               productCode="compatibility_deep"
               title="심층 궁합 분석"
               teaser="두 분의 일간과 오행이 어떻게 상호작용하는지 조금 더 깊이 있게 풀어드려요."
               noCache
+              customPurchase={
+                voucherCount > 0
+                  ? async () => {
+                      const { redeemed } = await redeemVoucher();
+                      if (!redeemed) throw new Error("궁합권이 부족해요.");
+                      setVoucherCount((c) => c - 1);
+                    }
+                  : undefined
+              }
+              purchaseButtonLabel={voucherCount > 0 ? `보유 궁합권으로 열어보기 (${voucherCount}개 남음)` : undefined}
               buildContext={() => ({
                 myChart: session.report!.sajuChart,
                 partnerChart,

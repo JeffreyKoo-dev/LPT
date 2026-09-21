@@ -12,6 +12,8 @@ import { useRequireLogin } from "@/lib/useRequireLogin";
 import { getLevelProgress } from "@/lib/growth";
 import { BADGES } from "@/data/badges";
 import { TodayRecommendationPanel } from "@/components/dashboard/TodayRecommendationPanel";
+import { MonthlyFortuneReminder } from "@/components/dashboard/MonthlyFortuneReminder";
+import { WeeklyPassSection } from "@/components/dashboard/WeeklyPassSection";
 import { WalletSection } from "@/components/wallet/WalletSection";
 import { PageHeading } from "@/components/common/PageHeading";
 
@@ -76,7 +78,11 @@ export default function DashboardPage() {
 
         <TodayRecommendationPanel report={report} profile={profile} fantasyClass={fantasyClass} />
 
+        <MonthlyFortuneReminder />
+
         <WalletSection />
+
+        <WeeklyPassSection />
 
         <Card>
           <CardTitle>스탯</CardTitle>

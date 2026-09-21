@@ -13,7 +13,10 @@ export type ProductCode =
   | "premium_report"
   | "compatibility_deep"
   | "daeun_seun"
-  | "monthly_fortune";
+  | "monthly_fortune"
+  | "yearly_fortune"
+  | "compatibility_bundle_3"
+  | "weekly_pass";
 
 export interface ProductPrice {
   product_code: ProductCode;

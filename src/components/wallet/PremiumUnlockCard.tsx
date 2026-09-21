@@ -7,6 +7,7 @@ import { purchaseProduct, getProductPrices, getProductPrice, ProductCode, Produc
 import {
   hasPurchased,
   hasPurchasedThisMonth,
+  hasPurchasedThisYear,
   getCachedContent,
   generatePremiumContent,
   PremiumContent,
@@ -29,6 +30,16 @@ interface PremiumUnlockCardProps {
    * 여부를 확인한다 — 지난달에 결제했어도 이번 달은 다시 잠긴 상태로 보인다.
    */
   monthly?: boolean;
+  /** true면(yearly_fortune) "올해에 한 번" 결제 여부를 확인한다 — monthly와 동일한 원리의 연 단위 버전. */
+  yearly?: boolean;
+  /**
+   * 있으면 purchaseProduct(productCode) 대신 이 함수로 "구매됨" 처리를
+   * 한다 (예: compatibility_deep을 궁합권으로 대신 소모하는 경우). 이
+   * 함수가 실패(reject)하면 기존처럼 자산 부족 에러가 표시된다.
+   */
+  customPurchase?: () => Promise<void>;
+  /** 있으면 "보석 N개로 열어보기" 대신 이 문구를 버튼에 쓴다 (예: 궁합권 보유 시 "궁합권으로 열어보기"). */
+  purchaseButtonLabel?: string;
 }
 
 type Stage = "checking" | "locked" | "unlockedNoContent" | "generating" | "content" | "error";
@@ -40,6 +51,9 @@ export function PremiumUnlockCard({
   buildContext,
   noCache = false,
   monthly = false,
+  yearly = false,
+  customPurchase,
+  purchaseButtonLabel,
 }: PremiumUnlockCardProps) {
   const [stage, setStage] = useState<Stage>("checking");
   const [content, setContent] = useState<PremiumContent | null>(null);
@@ -53,7 +67,11 @@ export function PremiumUnlockCard({
       return;
     }
 
-    const checkPurchased = monthly ? hasPurchasedThisMonth(productCode) : hasPurchased(productCode);
+    const checkPurchased = monthly
+      ? hasPurchasedThisMonth(productCode)
+      : yearly
+        ? hasPurchasedThisYear(productCode)
+        : hasPurchased(productCode);
 
     Promise.all([checkPurchased, getProductPrices()]).then(([purchased, prices]) => {
       setPrice(getProductPrice(prices, productCode));
@@ -74,13 +92,17 @@ export function PremiumUnlockCard({
         }
       });
     });
-  }, [productCode, noCache, monthly]);
+  }, [productCode, noCache, monthly, yearly]);
 
   async function handlePurchase() {
     setErrorMessage(null);
     setStage("generating");
     try {
-      await purchaseProduct(productCode);
+      if (customPurchase) {
+        await customPurchase();
+      } else {
+        await purchaseProduct(productCode);
+      }
       await handleGenerate();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "구매에 실패했어요.");
@@ -113,7 +135,7 @@ export function PremiumUnlockCard({
         <>
           <CardDescription className="mt-2">{teaser}</CardDescription>
           <Button className="mt-4 w-full" onClick={handlePurchase}>
-            {price ? `보석 ${price.cash_price.toLocaleString()}개로 열어보기` : "열어보기"}
+            {purchaseButtonLabel ?? (price ? `보석 ${price.cash_price.toLocaleString()}개로 열어보기` : "열어보기")}
           </Button>
           {errorMessage && <p className="mt-2 text-xs text-red-600">{errorMessage}</p>}
         </>

@@ -1116,3 +1116,477 @@ begin
 end;
 $$;
 
+-- Phase 3 — 수익모델 강화: 친구→결제전환 보상 + 재구매 리마인더 지원
+--
+-- 배경: 기존 친구초대 마일스톤은 "초대만 하면" 보상을 준다. 이건
+-- 참여를 늘리는 데는 도움되지만, 실제 매출과는 직접 연결되지 않는다.
+-- 초대한 친구가 "실제로 돈을 내고 보석을 충전"했을 때만 인정되는 새
+-- 지표를 추가해, 추천 시스템이 실제 매출 성장에 더 직접 기여하게
+-- 만든다. 기존 friend_invites 마일스톤은 그대로 유지(참여 자체도
+-- 여전히 가치 있으므로), 이건 별개의 상위 마일스톤으로 추가한다.
+
+create or replace function get_user_metric_value(p_user_id uuid, p_metric_type text)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_value integer;
+  v_xp integer;
+begin
+  if p_metric_type = 'friend_invites' then
+    select count(distinct f.addressee_id) into v_value
+    from friendships f
+    join auth.users u on u.id = f.addressee_id
+    join user_profiles up on up.user_id = f.addressee_id
+    where f.requester_id = p_user_id
+      and f.status = 'accepted'
+      and up.lpt_type_id is not null
+      and u.created_at < now() - interval '1 day';
+
+  elsif p_metric_type = 'referred_paying_friends' then
+    -- 초대해서 친구가 된 사람 중, 실제로 결제(충전)까지 한 사람 수.
+    -- 계정 나이·결과 완료 조건은 이미 friend_invites 단계에서 걸러지므로
+    -- 여기서는 "결제 여부"만 추가로 확인한다.
+    select count(distinct f.addressee_id) into v_value
+    from friendships f
+    where f.requester_id = p_user_id
+      and f.status = 'accepted'
+      and exists (
+        select 1 from wallet_transactions wt
+        where wt.user_id = f.addressee_id and wt.type = 'charge' and wt.amount > 0
+      );
+
+  elsif p_metric_type = 'level_reached' then
+    select xp into v_xp from user_profiles where user_id = p_user_id;
+    v_value := case
+      when coalesce(v_xp, 0) >= 2700 then 10
+      when v_xp >= 2200 then 9
+      when v_xp >= 1750 then 8
+      when v_xp >= 1350 then 7
+      when v_xp >= 1000 then 6
+      when v_xp >= 700  then 5
+      when v_xp >= 450  then 4
+      when v_xp >= 250  then 3
+      when v_xp >= 100  then 2
+      else 1
+    end;
+
+  elsif p_metric_type = 'badges_collected' then
+    select coalesce(array_length(badges, 1), 0) into v_value
+    from user_profiles where user_id = p_user_id;
+
+  else
+    v_value := 0;
+  end if;
+
+  return coalesce(v_value, 0);
+end;
+$$;
+
+create or replace function get_my_milestone_progress()
+returns table(metric_type text, current_value integer)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid := auth.uid();
+begin
+  if v_user_id is null then
+    return;
+  end if;
+  return query
+    select 'friend_invites'::text, get_user_metric_value(v_user_id, 'friend_invites')
+    union all
+    select 'referred_paying_friends'::text, get_user_metric_value(v_user_id, 'referred_paying_friends')
+    union all
+    select 'level_reached'::text, get_user_metric_value(v_user_id, 'level_reached')
+    union all
+    select 'badges_collected'::text, get_user_metric_value(v_user_id, 'badges_collected');
+end;
+$$;
+
+-- 결제까지 이어진 친구는 "초대만" 한 것보다 훨씬 가치가 크므로, 보상도
+-- 그만큼 후하게 잡는다.
+insert into milestone_definitions (metric_type, threshold, reward_cash, title, description, sort_order)
+values
+  ('referred_paying_friends', 1, 1000, '결제 전환 친구 1명', '내가 초대한 친구가 처음 결제하면 받을 수 있어요.', 1),
+  ('referred_paying_friends', 3, 3000, '결제 전환 친구 3명', '내가 초대한 친구 3명이 결제하면 받을 수 있어요.', 2),
+  ('referred_paying_friends', 5, 6000, '결제 전환 친구 5명', '내가 초대한 친구 5명이 결제하면 받을 수 있어요.', 3)
+on conflict (metric_type, threshold) do update set
+  reward_cash = excluded.reward_cash,
+  title       = excluded.title,
+  description = excluded.description,
+  sort_order  = excluded.sort_order;
+
+-- Phase 3 — "올해의 운세" 상품 (연 단위 반복 수익, 새해 시즌 프로모션용)
+insert into product_prices (product_code, display_name, cash_price, ai_model, ad_unlockable, is_active)
+values
+  ('yearly_fortune', '올해의 운세', 3000, 'haiku-4.5', false, true)
+on conflict (product_code) do update set
+  display_name  = excluded.display_name,
+  cash_price    = excluded.cash_price,
+  ai_model      = excluded.ai_model,
+  ad_unlockable = excluded.ad_unlockable,
+  is_active     = excluded.is_active,
+  updated_at    = now();
+
+-- Phase 3 — 심층 궁합 분석 3인 세트 번들 할인
+--
+-- 심층 궁합 분석은 상대가 바뀔 때마다 재구매 가능한(관계마다 확인) 좋은
+-- 반복 상품이지만, 지금까지는 묶음 구매 유인이 없었다. 3건을 한 번에
+-- 싸게 사는 "궁합권"을 도입해 객단가를 올린다.
+
+create table if not exists compatibility_vouchers (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  remaining_count integer not null default 0 check (remaining_count >= 0),
+  updated_at timestamptz not null default now()
+);
+
+alter table compatibility_vouchers enable row level security;
+
+create policy "본인 궁합권만 조회" on compatibility_vouchers
+  for select using (auth.uid() = user_id);
+
+insert into product_prices (product_code, display_name, cash_price, ai_model, ad_unlockable, is_active)
+values
+  ('compatibility_bundle_3', '심층 궁합 분석 3인 세트', 6000, 'haiku-4.5', false, true)
+on conflict (product_code) do update set
+  display_name  = excluded.display_name,
+  cash_price    = excluded.cash_price,
+  ai_model      = excluded.ai_model,
+  ad_unlockable = excluded.ad_unlockable,
+  is_active     = excluded.is_active,
+  updated_at    = now();
+
+-- 번들 구매: 실제캐시(보석)로 결제하고 궁합권 3개를 적립한다.
+create or replace function purchase_compatibility_bundle()
+returns table(new_balance integer, vouchers integer)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_price integer;
+  v_cash_balance integer;
+  v_vouchers integer;
+begin
+  if v_user_id is null then
+    raise exception '인증되지 않은 요청입니다';
+  end if;
+
+  select cash_price into v_price from product_prices
+  where product_code = 'compatibility_bundle_3' and is_active = true;
+  if v_price is null then
+    raise exception '상품을 찾을 수 없습니다';
+  end if;
+
+  select cash_balance into v_cash_balance from wallets where user_id = v_user_id for update;
+  if coalesce(v_cash_balance, 0) < v_price then
+    raise exception '보석이 부족합니다 (보유: %, 필요: %)', coalesce(v_cash_balance, 0), v_price;
+  end if;
+
+  update wallets set cash_balance = cash_balance - v_price, updated_at = now()
+    where user_id = v_user_id
+    returning cash_balance into v_cash_balance;
+
+  insert into wallet_transactions(user_id, type, amount, balance_after, product_code, description)
+  values (v_user_id, 'spend', -v_price, v_cash_balance, 'compatibility_bundle_3', '심층 궁합 분석 3인 세트 구매');
+
+  insert into compatibility_vouchers(user_id, remaining_count)
+  values (v_user_id, 3)
+  on conflict (user_id) do update set remaining_count = compatibility_vouchers.remaining_count + 3, updated_at = now();
+
+  select remaining_count into v_vouchers from compatibility_vouchers where user_id = v_user_id;
+
+  return query select v_cash_balance, v_vouchers;
+end;
+$$;
+
+-- 궁합권 1개를 소모하고(있을 때만) 성공 여부를 반환한다. 결제(캐시 차감) 없이
+-- 진행되므로, 이미 번들로 결제가 끝난 상태를 소비하는 것뿐이다.
+create or replace function redeem_compatibility_voucher()
+returns table(redeemed boolean, remaining integer)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_remaining integer;
+begin
+  if v_user_id is null then
+    raise exception '인증되지 않은 요청입니다';
+  end if;
+
+  select remaining_count into v_remaining from compatibility_vouchers
+    where user_id = v_user_id for update;
+
+  if coalesce(v_remaining, 0) <= 0 then
+    return query select false, coalesce(v_remaining, 0);
+    return;
+  end if;
+
+  update compatibility_vouchers set remaining_count = remaining_count - 1, updated_at = now()
+    where user_id = v_user_id
+    returning remaining_count into v_remaining;
+
+  return query select true, v_remaining;
+end;
+$$;
+
+-- Phase 3 — 주간 이용권 (오늘의 카드 무제한, 단순 정기구독 대체안)
+--
+-- 진짜 자동결제(정기 빌링)는 별도 인프라(토스 빌링키, 주기적 과금 트리거)가
+-- 필요해 위험도가 높다. 대신 "일정 기간 이용권을 미리 사두는" 방식으로
+-- 구독과 비슷한 편의를 주되, 매번 사용자가 직접 갱신하게 한다 — 결제
+-- 로직은 기존 구매 인프라를 그대로 재사용할 수 있어 훨씬 안전하다.
+
+create table if not exists active_passes (
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  pass_type  text not null,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now(),
+  primary key (user_id, pass_type)
+);
+
+alter table active_passes enable row level security;
+
+create policy "본인 이용권만 조회" on active_passes
+  for select using (auth.uid() = user_id);
+
+insert into product_prices (product_code, display_name, cash_price, ai_model, ad_unlockable, is_active)
+values
+  ('weekly_pass', '주간 이용권(오늘의 카드 무제한)', 2900, null, false, true)
+on conflict (product_code) do update set
+  display_name  = excluded.display_name,
+  cash_price    = excluded.cash_price,
+  ad_unlockable = excluded.ad_unlockable,
+  is_active     = excluded.is_active,
+  updated_at    = now();
+
+create or replace function purchase_weekly_pass()
+returns table(new_balance integer, expires_at timestamptz)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_price integer;
+  v_cash_balance integer;
+  v_current_expiry timestamptz;
+  v_new_expiry timestamptz;
+begin
+  if v_user_id is null then
+    raise exception '인증되지 않은 요청입니다';
+  end if;
+
+  select cash_price into v_price from product_prices
+  where product_code = 'weekly_pass' and is_active = true;
+  if v_price is null then
+    raise exception '상품을 찾을 수 없습니다';
+  end if;
+
+  select cash_balance into v_cash_balance from wallets where user_id = v_user_id for update;
+  if coalesce(v_cash_balance, 0) < v_price then
+    raise exception '보석이 부족합니다 (보유: %, 필요: %)', coalesce(v_cash_balance, 0), v_price;
+  end if;
+
+  update wallets set cash_balance = cash_balance - v_price, updated_at = now()
+    where user_id = v_user_id
+    returning cash_balance into v_cash_balance;
+
+  insert into wallet_transactions(user_id, type, amount, balance_after, product_code, description)
+  values (v_user_id, 'spend', -v_price, v_cash_balance, 'weekly_pass', '주간 이용권 구매');
+
+  -- 이미 유효한 이용권이 남아있으면 그 만료일부터 7일 연장, 없으면 지금부터 7일
+  select expires_at into v_current_expiry from active_passes
+    where user_id = v_user_id and pass_type = 'weekly_pass';
+
+  v_new_expiry := greatest(coalesce(v_current_expiry, now()), now()) + interval '7 days';
+
+  insert into active_passes(user_id, pass_type, expires_at)
+  values (v_user_id, 'weekly_pass', v_new_expiry)
+  on conflict (user_id, pass_type) do update set expires_at = v_new_expiry;
+
+  return query select v_cash_balance, v_new_expiry;
+end;
+$$;
+
+-- 일일 콘텐츠 해제: 유효한 주간 이용권이 있으면(daily_card_unlock 한정)
+-- 결제 없이 자동으로 통과시킨다.
+create or replace function unlock_daily_content(p_product_code text, p_method text)
+returns table(unlocked boolean, new_balance integer)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_price integer;
+  v_ad_unlockable boolean;
+  v_is_active boolean;
+  v_today_ad_count integer;
+  v_bonus_balance integer;
+  v_cash_balance integer;
+  v_from_bonus integer;
+  v_from_cash integer;
+  v_has_pass boolean;
+begin
+  if v_user_id is null then
+    raise exception '인증되지 않은 요청입니다';
+  end if;
+
+  select cash_price, ad_unlockable, is_active
+  into v_price, v_ad_unlockable, v_is_active
+  from product_prices
+  where product_code = p_product_code;
+
+  if not found or not v_is_active then
+    raise exception '존재하지 않거나 비활성화된 상품입니다: %', p_product_code;
+  end if;
+
+  if exists (
+    select 1 from daily_unlocks
+    where user_id = v_user_id
+      and product_code = p_product_code
+      and unlock_date = current_date
+  ) then
+    raise exception '오늘 이미 해제된 콘텐츠입니다';
+  end if;
+
+  -- 주간 이용권이 유효하면 daily_card_unlock은 결제·광고 없이 바로 통과
+  if p_product_code = 'daily_card_unlock' then
+    select exists (
+      select 1 from active_passes
+      where user_id = v_user_id and pass_type = 'weekly_pass' and expires_at > now()
+    ) into v_has_pass;
+
+    if v_has_pass then
+      insert into daily_unlocks(user_id, product_code, method)
+      values (v_user_id, p_product_code, 'ad'); -- 이용권도 '무료 해제' 계열로 기록
+
+      select bonus_balance + cash_balance into v_bonus_balance from wallets where user_id = v_user_id;
+      return query select true, coalesce(v_bonus_balance, 0);
+      return;
+    end if;
+  end if;
+
+  if p_method = 'ad' then
+    if not v_ad_unlockable then
+      raise exception '이 콘텐츠는 광고로 해제할 수 없습니다. 보석으로 결제해주세요.';
+    end if;
+
+    select count(*) into v_today_ad_count
+    from ad_view_logs
+    where user_id = v_user_id and created_at::date = current_date;
+
+    if v_today_ad_count >= 3 then
+      raise exception '오늘의 광고 리워드 횟수(3회)를 모두 사용했습니다';
+    end if;
+
+    insert into ad_view_logs(user_id, purpose, product_code)
+    values (v_user_id, 'content_unlock', p_product_code);
+
+    insert into daily_unlocks(user_id, product_code, method)
+    values (v_user_id, p_product_code, 'ad');
+
+    select bonus_balance + cash_balance into v_bonus_balance from wallets where user_id = v_user_id;
+    return query select true, v_bonus_balance;
+
+  elsif p_method = 'cash' then
+    select bonus_balance, cash_balance into v_bonus_balance, v_cash_balance from wallets
+    where user_id = v_user_id for update;
+
+    if (v_bonus_balance + v_cash_balance) < v_price then
+      raise exception '자산이 부족합니다 (보유: %, 필요: %)', v_bonus_balance + v_cash_balance, v_price;
+    end if;
+
+    if not v_ad_unlockable then
+      if v_cash_balance < v_price then
+        raise exception '이 상품은 보석으로만 결제할 수 있어요 (보유 보석: %, 필요: %)', v_cash_balance, v_price;
+      end if;
+      v_from_bonus := 0;
+      v_from_cash := v_price;
+    else
+      v_from_bonus := least(v_bonus_balance, v_price);
+      v_from_cash := v_price - v_from_bonus;
+    end if;
+
+    update wallets
+    set bonus_balance = bonus_balance - v_from_bonus,
+        cash_balance = cash_balance - v_from_cash,
+        updated_at = now()
+    where user_id = v_user_id
+    returning bonus_balance, cash_balance into v_bonus_balance, v_cash_balance;
+
+    insert into wallet_transactions(user_id, type, amount, balance_after, bonus_balance_after, product_code, description)
+    values (v_user_id, 'spend', -v_price, v_cash_balance, v_bonus_balance, p_product_code, '결제로 콘텐츠 해제');
+
+    insert into daily_unlocks(user_id, product_code, method)
+    values (v_user_id, p_product_code, 'cash');
+
+    return query select true, v_bonus_balance + v_cash_balance;
+  else
+    raise exception '잘못된 해제 방식입니다: %', p_method;
+  end if;
+end;
+$$;
+
+-- Phase 3 — 이탈 유저 재활성화(웰컴백 보너스)
+--
+-- 이메일/푸시 발송 인프라가 없어 "먼저 연락해서 데려오는" 방식은 못 쓴다.
+-- 대신 오랫동안(30일+) 안 왔던 사용자가 스스로 돌아왔을 때 자동으로
+-- 감지해 보너스를 주는 방식 — 별도 인프라 없이 로그인 순간에 처리된다.
+--
+-- auth.users.last_sign_in_at은 이번 로그인 시점에 이미 갱신돼버려서
+-- "직전 로그인이 언제였는지" 판단 기준으로 못 쓴다. 대신 user_profiles에
+-- 우리가 직접 관리하는 last_seen_at을 둬서, 갱신 "전에" 간격을 확인한다.
+
+alter table user_profiles
+  add column if not exists last_seen_at timestamptz;
+
+create or replace function check_winback_bonus()
+returns table(granted boolean, bonus_amount integer, new_balance integer)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_last_seen timestamptz;
+  v_bonus integer := 300;
+  v_bonus_balance integer;
+  v_cash_balance integer;
+  v_granted boolean := false;
+begin
+  if v_user_id is null then
+    raise exception '인증되지 않은 요청입니다';
+  end if;
+
+  select last_seen_at into v_last_seen from user_profiles where user_id = v_user_id;
+
+  -- 30일 이상 안 돌아왔던 경우에만 지급 (첫 방문은 last_seen_at이 null이라 제외됨 —
+  -- 웰컴 보너스와 중복 지급 방지)
+  if v_last_seen is not null and v_last_seen < now() - interval '30 days' then
+    update wallets set bonus_balance = bonus_balance + v_bonus, updated_at = now()
+      where user_id = v_user_id
+      returning bonus_balance, cash_balance into v_bonus_balance, v_cash_balance;
+
+    if found then
+      insert into wallet_transactions(user_id, type, amount, balance_after, bonus_balance_after, description)
+      values (v_user_id, 'refund', v_bonus, v_cash_balance, v_bonus_balance, '오랜만이에요 웰컴백 별조각');
+      v_granted := true;
+    end if;
+  end if;
+
+  update user_profiles set last_seen_at = now() where user_id = v_user_id;
+
+  return query select v_granted, case when v_granted then v_bonus else 0 end, coalesce(v_bonus_balance, 0);
+end;
+$$;
+

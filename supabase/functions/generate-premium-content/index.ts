@@ -36,6 +36,10 @@ function getCurrentYearMonth(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
+function getCurrentYear(): string {
+  return String(new Date().getFullYear());
+}
+
 Deno.serve(async (req: Request) => {
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -101,6 +105,10 @@ Deno.serve(async (req: Request) => {
       startOfMonth.setHours(0, 0, 0, 0);
       txQuery = txQuery.gte("created_at", startOfMonth.toISOString());
     }
+    if (productCode === "yearly_fortune") {
+      const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+      txQuery = txQuery.gte("created_at", startOfYear.toISOString());
+    }
 
     const { data: txRows } = await txQuery.limit(1);
 
@@ -123,7 +131,8 @@ Deno.serve(async (req: Request) => {
       // monthly_fortune은 캐시가 이번 달 것일 때만 유효하다 (지난달 캐시 무시)
       const cacheIsValid =
         cached &&
-        (productCode !== "monthly_fortune" || cached.content?.yearMonth === getCurrentYearMonth());
+        (productCode !== "monthly_fortune" || cached.content?.yearMonth === getCurrentYearMonth()) &&
+        (productCode !== "yearly_fortune" || cached.content?.year === getCurrentYear());
 
       if (cacheIsValid) {
         return new Response(JSON.stringify({ content: cached.content, source: "cache" }), {
@@ -137,6 +146,9 @@ Deno.serve(async (req: Request) => {
     const content: Record<string, unknown> = { text: generatedText, generatedAt: new Date().toISOString() };
     if (productCode === "monthly_fortune") {
       content.yearMonth = (context as { yearMonth?: string })?.yearMonth ?? getCurrentYearMonth();
+    }
+    if (productCode === "yearly_fortune") {
+      content.year = (context as { year?: string | number })?.year?.toString() ?? getCurrentYear();
     }
 
     if (productCode !== "compatibility_deep") {
@@ -196,6 +208,17 @@ function buildPrompt(productCode: string, context: Record<string, unknown>): str
       `수 있는지, 일과 관계와 컨디션 중 어느 쪽에 조금 더 마음 써보면 좋을지를 ` +
       `5~8문장으로 자연스럽게 풀어주세요. 이번 달"에 한정된" 이야기라는 걸 은근히 ` +
       `느끼게 해주세요(다음 달엔 또 다른 흐름일 수 있다는 뉘앙스).\n\n` +
+      `데이터: ${JSON.stringify(context)}`
+    );
+  }
+
+  if (productCode === "yearly_fortune") {
+    return (
+      `${TONE_GUIDE}\n\n` +
+      `아래는 한 사람의 올해 세운(歲運) 데이터입니다. 올 한 해가 어떤 결의 흐름일 ` +
+      `수 있는지, 상반기와 하반기 중 어느 쪽에 조금 더 마음 써보면 좋을지를 ` +
+      `6~9문장으로 자연스럽게 풀어주세요. "올해에 한정된" 이야기라는 걸 은근히 ` +
+      `느끼게 해주세요(내년엔 또 다른 흐름일 수 있다는 뉘앙스).\n\n` +
       `데이터: ${JSON.stringify(context)}`
     );
   }

@@ -126,3 +126,28 @@ export const getRefundEvents = () =>
 
 export const markRefundEventReviewed = (eventId: number) =>
   adminPost<{ ok: boolean }>("/api/admin/refund-events", { eventId });
+
+export interface RetentionStats {
+  thisMonthBuyers: number;
+  lastMonthBuyers: number;
+  retained: number;
+  retentionRate: number | null;
+}
+
+export const getRetentionStats = () =>
+  adminFetch<RetentionStats>("/api/admin/retention");
+
+export interface UserListItem {
+  user_id: string;
+  nickname: string;
+  lpt_type_id: string | null;
+  xp: number;
+  created_at: string;
+  cashBalance: number;
+  bonusBalance: number;
+}
+
+export const getUsersList = (page: number) =>
+  adminFetch<{ users: UserListItem[]; total: number; page: number; pageSize: number }>(
+    `/api/admin/users-list?page=${page}`
+  );

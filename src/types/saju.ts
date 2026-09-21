@@ -125,3 +125,18 @@ export interface MonthlyFortuneData {
   tenGodBranch: TenGod | string;
   stage12: string;
 }
+
+/**
+ * 세운(歲運) 올해 — 월운과 같은 원리로, 매년 바뀌는 값이라 "올해의 운세"가
+ * 매년(특히 새해 시즌) 재구매될 이유가 된다.
+ */
+export interface YearlyFortuneData {
+  /** "2026" — 이 콘텐츠가 어느 해 것인지 구분하는 기준 */
+  year: number;
+  ganzhi: string;
+  stem: string;
+  branch: string;
+  tenGodStem: TenGod | string;
+  tenGodBranch: TenGod | string;
+  stage12: string;
+}

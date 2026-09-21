@@ -16,6 +16,7 @@ import {
 
 const METRIC_LABEL: Record<string, string> = {
   friend_invites: "친구초대",
+  referred_paying_friends: "결제 전환 친구",
   level_reached: "레벨 달성",
   badges_collected: "뱃지 수집",
 };
