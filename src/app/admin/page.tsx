@@ -457,15 +457,17 @@ function UserLookupSection() {
         닉네임 또는 이메일로 찾아서, 보유 자산과 최근 거래내역을 확인하고 필요하면 직접 조정할 수 있어요.
       </CardDescription>
 
-      <form onSubmit={handleSearch} className="mt-4 flex gap-2">
-        <TextField
-          label="닉네임 또는 이메일 검색"
-          name="nickname"
-          placeholder="닉네임 또는 이메일로 검색"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <Button type="submit" disabled={searching}>
+      <form onSubmit={handleSearch} className="mt-4 flex items-end gap-2">
+        <div className="flex-1">
+          <TextField
+            label="닉네임 또는 이메일 검색"
+            name="nickname"
+            placeholder="닉네임 또는 이메일로 검색"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+        <Button type="submit" disabled={searching} className="shrink-0 whitespace-nowrap">
           {searching ? "검색 중…" : "검색"}
         </Button>
       </form>
