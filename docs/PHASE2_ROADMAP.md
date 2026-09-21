@@ -1271,3 +1271,15 @@ last_seen_at`을 직접 관리해(auth.users.last_sign_in_at은 로그인
 → `026_weekly_pass.sql` → `027_winback_bonus.sql` 순서로 SQL Editor에서
 실행 + `generate-premium-content` Edge Function 재배포(yearly_fortune
 프롬프트 추가분 반영).
+
+---
+
+## 40. 관리자 이메일 검색 (누락됐던 마지막 항목)
+
+`/api/admin/user-lookup`이 검색어에 "@"가 있으면 자동으로 이메일 검색
+모드로 전환한다. 이메일은 `auth.users`에 있어 PostgREST로 직접 조회가
+안 되므로, Supabase Admin API의 `listUsers({ filter })`(이메일
+부분/전체 일치 지원, supabase-js PR #1741에서 확인)로 먼저 user_id를
+찾은 뒤 `user_profiles`를 조회하는 방식으로 구현했다.
+
+**필요 작업**: 없음 (DB 마이그레이션 불필요, 코드만 배포).

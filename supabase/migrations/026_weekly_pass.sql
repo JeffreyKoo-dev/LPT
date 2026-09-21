@@ -64,7 +64,9 @@ begin
   values (v_user_id, 'spend', -v_price, v_cash_balance, 'weekly_pass', '주간 이용권 구매');
 
   -- 이미 유효한 이용권이 남아있으면 그 만료일부터 7일 연장, 없으면 지금부터 7일
-  select expires_at into v_current_expiry from active_passes
+  -- (테이블 컬럼 active_passes.expires_at과 이 함수의 반환 컬럼 expires_at이
+  -- 이름이 같아서 모호해지므로, 테이블명을 명시해 구분한다)
+  select active_passes.expires_at into v_current_expiry from active_passes
     where user_id = v_user_id and pass_type = 'weekly_pass';
 
   v_new_expiry := greatest(coalesce(v_current_expiry, now()), now()) + interval '7 days';
@@ -123,7 +125,7 @@ begin
   if p_product_code = 'daily_card_unlock' then
     select exists (
       select 1 from active_passes
-      where user_id = v_user_id and pass_type = 'weekly_pass' and expires_at > now()
+      where user_id = v_user_id and pass_type = 'weekly_pass' and active_passes.expires_at > now()
     ) into v_has_pass;
 
     if v_has_pass then

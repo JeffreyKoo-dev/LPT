@@ -454,14 +454,14 @@ function UserLookupSection() {
     <Card className="mt-6">
       <CardTitle>회원 조회 및 보석 수동 조정</CardTitle>
       <CardDescription className="mt-1">
-        닉네임으로 찾아서, 보유 자산과 최근 거래내역을 확인하고 필요하면 직접 조정할 수 있어요.
+        닉네임 또는 이메일로 찾아서, 보유 자산과 최근 거래내역을 확인하고 필요하면 직접 조정할 수 있어요.
       </CardDescription>
 
       <form onSubmit={handleSearch} className="mt-4 flex gap-2">
         <TextField
-          label="닉네임 검색"
+          label="닉네임 또는 이메일 검색"
           name="nickname"
-          placeholder="닉네임으로 검색"
+          placeholder="닉네임 또는 이메일로 검색"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
