@@ -569,80 +569,7 @@ alter table user_milestone_claims enable row level security;
 create policy "본인 수령 내역만 조회" on user_milestone_claims
   for select using (auth.uid() = user_id);
 
--- ============================================================
--- 지표별 현재 달성 수치를 서버에서 직접 계산한다 (클라이언트 값 불신)
--- friend_invites: 같은 상대와 중복 친구관계는 1명으로만 카운트하고,
--- 상대방이 실제로 사주 분석을 완료했으며 생성된 지 최소 하루 지난
--- 계정일 때만 인정한다(가짜 계정 대량 생성 어뷰징 방지).
--- ============================================================
-create or replace function get_user_metric_value(p_user_id uuid, p_metric_type text)
-returns integer
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v_value integer;
-  v_xp integer;
-begin
-  if p_metric_type = 'friend_invites' then
-    select count(distinct f.addressee_id) into v_value
-    from friendships f
-    join auth.users u on u.id = f.addressee_id
-    join user_profiles up on up.user_id = f.addressee_id
-    where f.requester_id = p_user_id
-      and f.status = 'accepted'
-      and up.lpt_type_id is not null
-      and u.created_at < now() - interval '1 day';
 
-  elsif p_metric_type = 'level_reached' then
-    select xp into v_xp from user_profiles where user_id = p_user_id;
-    v_value := case
-      when coalesce(v_xp, 0) >= 2700 then 10
-      when v_xp >= 2200 then 9
-      when v_xp >= 1750 then 8
-      when v_xp >= 1350 then 7
-      when v_xp >= 1000 then 6
-      when v_xp >= 700  then 5
-      when v_xp >= 450  then 4
-      when v_xp >= 250  then 3
-      when v_xp >= 100  then 2
-      else 1
-    end;
-
-  elsif p_metric_type = 'badges_collected' then
-    select coalesce(array_length(badges, 1), 0) into v_value
-    from user_profiles where user_id = p_user_id;
-
-  else
-    v_value := 0;
-  end if;
-
-  return coalesce(v_value, 0);
-end;
-$$;
-
--- 로그인한 본인의 모든 지표 진행도를 한 번에 조회 (metric_type 늘어나면 union all로 추가)
-create or replace function get_my_milestone_progress()
-returns table(metric_type text, current_value integer)
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v_user_id uuid := auth.uid();
-begin
-  if v_user_id is null then
-    return;
-  end if;
-  return query
-    select 'friend_invites'::text, get_user_metric_value(v_user_id, 'friend_invites')
-    union all
-    select 'level_reached'::text, get_user_metric_value(v_user_id, 'level_reached')
-    union all
-    select 'badges_collected'::text, get_user_metric_value(v_user_id, 'badges_collected');
-end;
-$$;
 
 
 -- ============================================================
@@ -805,163 +732,7 @@ begin
 end;
 $$;
 
-create or replace function unlock_daily_content(p_product_code text, p_method text)
-returns table(unlocked boolean, new_balance integer)
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v_user_id uuid := auth.uid();
-  v_price integer;
-  v_ad_unlockable boolean;
-  v_is_active boolean;
-  v_today_ad_count integer;
-  v_bonus_balance integer;
-  v_cash_balance integer;
-  v_from_bonus integer;
-  v_from_cash integer;
-begin
-  if v_user_id is null then
-    raise exception '인증되지 않은 요청입니다';
-  end if;
 
-  select cash_price, ad_unlockable, is_active
-  into v_price, v_ad_unlockable, v_is_active
-  from product_prices
-  where product_code = p_product_code;
-
-  if not found or not v_is_active then
-    raise exception '존재하지 않거나 비활성화된 상품입니다: %', p_product_code;
-  end if;
-
-  if exists (
-    select 1 from daily_unlocks
-    where user_id = v_user_id
-      and product_code = p_product_code
-      and unlock_date = current_date
-  ) then
-    raise exception '오늘 이미 해제된 콘텐츠입니다';
-  end if;
-
-  if p_method = 'ad' then
-    if not v_ad_unlockable then
-      raise exception '이 콘텐츠는 광고로 해제할 수 없습니다. 보석으로 결제해주세요.';
-    end if;
-
-    select count(*) into v_today_ad_count
-    from ad_view_logs
-    where user_id = v_user_id and created_at::date = current_date;
-
-    if v_today_ad_count >= 3 then
-      raise exception '오늘의 광고 리워드 횟수(3회)를 모두 사용했습니다';
-    end if;
-
-    insert into ad_view_logs(user_id, purpose, product_code)
-    values (v_user_id, 'content_unlock', p_product_code);
-
-    insert into daily_unlocks(user_id, product_code, method)
-    values (v_user_id, p_product_code, 'ad');
-
-    select bonus_balance + cash_balance into v_bonus_balance from wallets where user_id = v_user_id;
-    return query select true, v_bonus_balance;
-
-  elsif p_method = 'cash' then
-    select bonus_balance, cash_balance into v_bonus_balance, v_cash_balance from wallets
-    where user_id = v_user_id for update;
-
-    if (v_bonus_balance + v_cash_balance) < v_price then
-      raise exception '자산이 부족합니다 (보유: %, 필요: %)', v_bonus_balance + v_cash_balance, v_price;
-    end if;
-
-    if not v_ad_unlockable then
-      if v_cash_balance < v_price then
-        raise exception '이 상품은 보석으로만 결제할 수 있어요 (보유 보석: %, 필요: %)', v_cash_balance, v_price;
-      end if;
-      v_from_bonus := 0;
-      v_from_cash := v_price;
-    else
-      v_from_bonus := least(v_bonus_balance, v_price);
-      v_from_cash := v_price - v_from_bonus;
-    end if;
-
-    update wallets
-    set bonus_balance = bonus_balance - v_from_bonus,
-        cash_balance = cash_balance - v_from_cash,
-        updated_at = now()
-    where user_id = v_user_id
-    returning bonus_balance, cash_balance into v_bonus_balance, v_cash_balance;
-
-    insert into wallet_transactions(user_id, type, amount, balance_after, bonus_balance_after, product_code, description)
-    values (v_user_id, 'spend', -v_price, v_cash_balance, v_bonus_balance, p_product_code, '결제로 콘텐츠 해제');
-
-    insert into daily_unlocks(user_id, product_code, method)
-    values (v_user_id, p_product_code, 'cash');
-
-    return query select true, v_bonus_balance + v_cash_balance;
-  else
-    raise exception '잘못된 해제 방식입니다: %', p_method;
-  end if;
-end;
-$$;
-
-create or replace function purchase_product(p_product_code text, p_reference_id text default null)
-returns table(new_balance integer)
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v_user_id uuid := auth.uid();
-  v_price integer;
-  v_is_active boolean;
-  v_ad_unlockable boolean;
-  v_bonus_balance integer;
-  v_cash_balance integer;
-  v_from_bonus integer;
-  v_from_cash integer;
-begin
-  if v_user_id is null then
-    raise exception '인증되지 않은 요청입니다';
-  end if;
-
-  select cash_price, is_active, ad_unlockable into v_price, v_is_active, v_ad_unlockable
-  from product_prices where product_code = p_product_code;
-
-  if not found or not v_is_active then
-    raise exception '존재하지 않거나 비활성화된 상품입니다: %', p_product_code;
-  end if;
-
-  select bonus_balance, cash_balance into v_bonus_balance, v_cash_balance from wallets
-  where user_id = v_user_id for update;
-
-  if v_ad_unlockable then
-    if (v_bonus_balance + v_cash_balance) < v_price then
-      raise exception '자산이 부족합니다 (보유: %, 필요: %)', v_bonus_balance + v_cash_balance, v_price;
-    end if;
-    v_from_bonus := least(v_bonus_balance, v_price);
-    v_from_cash := v_price - v_from_bonus;
-  else
-    if v_cash_balance < v_price then
-      raise exception '이 상품은 보석으로만 결제할 수 있어요 (보유 보석: %, 필요: %)', v_cash_balance, v_price;
-    end if;
-    v_from_bonus := 0;
-    v_from_cash := v_price;
-  end if;
-
-  update wallets
-  set bonus_balance = bonus_balance - v_from_bonus,
-      cash_balance = cash_balance - v_from_cash,
-      updated_at = now()
-  where user_id = v_user_id
-  returning bonus_balance, cash_balance into v_bonus_balance, v_cash_balance;
-
-  insert into wallet_transactions(user_id, type, amount, balance_after, bonus_balance_after, product_code, reference_id, description)
-  values (v_user_id, 'spend', -v_price, v_cash_balance, v_bonus_balance, p_product_code, p_reference_id, '보석 결제');
-
-  return query select v_bonus_balance + v_cash_balance;
-end;
-$$;
 
 create or replace function handle_new_user_wallet()
 returns trigger
@@ -1552,6 +1323,84 @@ $$;
 alter table user_profiles
   add column if not exists last_seen_at timestamptz;
 
+
+-- Phase 3 — 2차 코드 리뷰에서 발견한 이슈 수정
+--
+-- 1) purchase_product()가 compatibility_bundle_3 / weekly_pass도 받아들일
+--    수 있는 구조였다. 지금은 이 두 상품을 파는 화면이 전부 전용 함수
+--    (purchase_compatibility_bundle, purchase_weekly_pass)로만 연결되어
+--    있어 실제 문제는 없지만, 나중에 실수로 범용 구매 카드(PremiumUnlockCard)에
+--    이 product_code를 연결하면 "결제는 되는데 실제 혜택(궁합권·이용권)은
+--    지급 안 되는" 위험한 버그가 생길 수 있다. 범용 함수에서 이 두 상품은
+--    명시적으로 거부해 애초에 그런 실수가 불가능하게 만든다.
+--
+-- 2) check_winback_bonus()에 레이스 컨디션이 있었다 — 여러 탭에서 거의
+--    동시에 로그인하면, 둘 다 "지급 전 상태"를 읽고 각각 지급해버릴 수
+--    있었다(잠금 없이 조회 후 나중에 갱신). user_profiles 조회에 for
+--    update를 추가해 동시 호출이 순차 처리되게 한다.
+
+create or replace function purchase_product(p_product_code text, p_reference_id text default null)
+returns table(new_balance integer)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_price integer;
+  v_is_active boolean;
+  v_ad_unlockable boolean;
+  v_bonus_balance integer;
+  v_cash_balance integer;
+  v_from_bonus integer;
+  v_from_cash integer;
+begin
+  if v_user_id is null then
+    raise exception '인증되지 않은 요청입니다';
+  end if;
+
+  if p_product_code in ('compatibility_bundle_3', 'weekly_pass') then
+    raise exception '% 상품은 전용 구매 함수를 써야 합니다', p_product_code;
+  end if;
+
+  select cash_price, is_active, ad_unlockable into v_price, v_is_active, v_ad_unlockable
+  from product_prices where product_code = p_product_code;
+
+  if not found or not v_is_active then
+    raise exception '존재하지 않거나 비활성화된 상품입니다: %', p_product_code;
+  end if;
+
+  select bonus_balance, cash_balance into v_bonus_balance, v_cash_balance from wallets
+  where user_id = v_user_id for update;
+
+  if v_ad_unlockable then
+    if (v_bonus_balance + v_cash_balance) < v_price then
+      raise exception '자산이 부족합니다 (보유: %, 필요: %)', v_bonus_balance + v_cash_balance, v_price;
+    end if;
+    v_from_bonus := least(v_bonus_balance, v_price);
+    v_from_cash := v_price - v_from_bonus;
+  else
+    if v_cash_balance < v_price then
+      raise exception '이 상품은 보석으로만 결제할 수 있어요 (보유 보석: %, 필요: %)', v_cash_balance, v_price;
+    end if;
+    v_from_bonus := 0;
+    v_from_cash := v_price;
+  end if;
+
+  update wallets
+  set bonus_balance = bonus_balance - v_from_bonus,
+      cash_balance = cash_balance - v_from_cash,
+      updated_at = now()
+  where user_id = v_user_id
+  returning bonus_balance, cash_balance into v_bonus_balance, v_cash_balance;
+
+  insert into wallet_transactions(user_id, type, amount, balance_after, bonus_balance_after, product_code, reference_id, description)
+  values (v_user_id, 'spend', -v_price, v_cash_balance, v_bonus_balance, p_product_code, p_reference_id, '보석 결제');
+
+  return query select v_bonus_balance + v_cash_balance;
+end;
+$$;
+
 create or replace function check_winback_bonus()
 returns table(granted boolean, bonus_amount integer, new_balance integer)
 language plpgsql
@@ -1570,10 +1419,9 @@ begin
     raise exception '인증되지 않은 요청입니다';
   end if;
 
-  select last_seen_at into v_last_seen from user_profiles where user_id = v_user_id;
+  -- for update로 잠가서, 여러 탭에서 거의 동시에 로그인해도 한 번만 지급되게 한다
+  select last_seen_at into v_last_seen from user_profiles where user_id = v_user_id for update;
 
-  -- 30일 이상 안 돌아왔던 경우에만 지급 (첫 방문은 last_seen_at이 null이라 제외됨 —
-  -- 웰컴 보너스와 중복 지급 방지)
   if v_last_seen is not null and v_last_seen < now() - interval '30 days' then
     update wallets set bonus_balance = bonus_balance + v_bonus, updated_at = now()
       where user_id = v_user_id
