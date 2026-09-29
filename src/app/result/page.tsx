@@ -12,6 +12,7 @@ import { TenGodsPanel } from "@/components/result/TenGodsPanel";
 import { LifestyleIndicatorPanel } from "@/components/result/LifestyleIndicatorPanel";
 import { SynergyPanel } from "@/components/result/SynergyPanel";
 import { DailyCardWidget } from "@/components/result/DailyCardWidget";
+import { UserPlus } from "lucide-react";
 import { AnalysisReport } from "@/types/report";
 import { BasicInfo, Gender } from "@/types/user";
 import { loadAnalysisReport, generateAndSaveAnalysisReport } from "@/lib/report";
@@ -217,7 +218,12 @@ export default function ResultPage() {
             지인과 궁합 보기
           </Button>
         </div>
-        <Button variant="ghost" className="w-full" onClick={() => router.push("/friends")}>
+        <Button
+          variant="secondary"
+          className="w-full gap-2"
+          onClick={() => router.push("/friends")}
+        >
+          <UserPlus className="h-4 w-4 text-fate" />
           친구 초대하고 성향 비교하기
         </Button>
         <Button variant="ghost" className="w-full" onClick={() => router.push("/")}>
