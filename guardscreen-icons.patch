@@ -1,0 +1,350 @@
+diff --git a/src/app/account/page.tsx b/src/app/account/page.tsx
+index 88e88fc..a39eab9 100644
+--- a/src/app/account/page.tsx
++++ b/src/app/account/page.tsx
+@@ -7,6 +7,7 @@ import { Card, CardTitle, CardDescription } from "@/components/common/Card";
+ import { Button } from "@/components/common/Button";
+ import { TextField } from "@/components/form/TextField";
+ import { GuardScreen } from "@/components/common/GuardScreen";
++import { LogIn } from "lucide-react";
+ import { useRequireLogin } from "@/lib/useRequireLogin";
+ import { getSupabaseClient } from "@/lib/supabase/client";
+ import type { UserIdentity } from "@supabase/supabase-js";
+@@ -47,6 +48,7 @@ export default function AccountPage() {
+   if (!authGate.configured || !authGate.user) {
+     return (
+       <GuardScreen
++        icon={LogIn}
+         title="로그인이 필요해요"
+         description="계정 정보를 보려면 먼저 로그인해주세요."
+         actionLabel="로그인하러 가기"
+diff --git a/src/app/admin/page.tsx b/src/app/admin/page.tsx
+index 857ffbf..84aeaa4 100644
+--- a/src/app/admin/page.tsx
++++ b/src/app/admin/page.tsx
+@@ -7,6 +7,7 @@ import { Card, CardTitle, CardDescription } from "@/components/common/Card";
+ import { Button } from "@/components/common/Button";
+ import { TextField } from "@/components/form/TextField";
+ import { GuardScreen } from "@/components/common/GuardScreen";
++import { ShieldAlert, AlertTriangle } from "lucide-react";
+ import { useRequireLogin } from "@/lib/useRequireLogin";
+ import {
+   getAdminOverview,
+@@ -118,6 +119,7 @@ export default function AdminPage() {
+   if (state === "forbidden") {
+     return (
+       <GuardScreen
++        icon={ShieldAlert}
+         title="접근 권한이 없어요"
+         description="이 페이지는 관리자 계정만 볼 수 있어요."
+         actionLabel="홈으로"
+@@ -129,6 +131,7 @@ export default function AdminPage() {
+   if (state === "error" || !overview) {
+     return (
+       <GuardScreen
++        icon={AlertTriangle}
+         title="불러오지 못했어요"
+         description="잠시 후 다시 시도해주세요."
+         actionLabel="새로고침"
+diff --git a/src/app/badges/page.tsx b/src/app/badges/page.tsx
+index c5896bd..15b951a 100644
+--- a/src/app/badges/page.tsx
++++ b/src/app/badges/page.tsx
+@@ -2,6 +2,7 @@
+ 
+ import { useRouter } from "next/navigation";
+ import { GuardScreen } from "@/components/common/GuardScreen";
++import { Award } from "lucide-react";
+ import { BadgeCard } from "@/components/badge/BadgeCard";
+ import { PageHeading } from "@/components/common/PageHeading";
+ import { useGrowthSession } from "@/lib/useGrowthSession";
+@@ -33,6 +34,7 @@ export default function BadgesPage() {
+   if (session.status === "missing-analysis" || !session.profile) {
+     return (
+       <GuardScreen
++        icon={Award}
+         title="아직 캐릭터가 없어요"
+         description="기본 정보 입력과 설문을 완료하면 뱃지를 모을 수 있어요."
+         actionLabel="시작하러 가기"
+diff --git a/src/app/charge/page.tsx b/src/app/charge/page.tsx
+index bc2a34d..8dbb6c7 100644
+--- a/src/app/charge/page.tsx
++++ b/src/app/charge/page.tsx
+@@ -6,6 +6,7 @@ import { PageHeading } from "@/components/common/PageHeading";
+ import { Card } from "@/components/common/Card";
+ import { Button } from "@/components/common/Button";
+ import { GuardScreen } from "@/components/common/GuardScreen";
++import { Clock } from "lucide-react";
+ import { useRequireLogin } from "@/lib/useRequireLogin";
+ import { createPendingOrder } from "@/lib/wallet";
+ import { getChargeOptions, ChargeOption } from "@/lib/chargeOptions";
+@@ -75,6 +76,7 @@ export default function ChargePage() {
+   if (!isTossPaymentsConfigured()) {
+     return (
+       <GuardScreen
++        icon={Clock}
+         title="보석 충전 준비 중이에요"
+         description="결제 기능이 아직 연결되지 않았어요. 조금만 기다려주세요."
+         actionLabel="대시보드로"
+diff --git a/src/app/compatibility/page.tsx b/src/app/compatibility/page.tsx
+index 4642f2d..c417554 100644
+--- a/src/app/compatibility/page.tsx
++++ b/src/app/compatibility/page.tsx
+@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
+ import { Button } from "@/components/common/Button";
+ import { Card, CardTitle, CardDescription } from "@/components/common/Card";
+ import { GuardScreen } from "@/components/common/GuardScreen";
++import { Heart } from "lucide-react";
+ import { TextField } from "@/components/form/TextField";
+ import { BirthDateField } from "@/components/form/BirthDateField";
+ import { BirthTimeField } from "@/components/form/BirthTimeField";
+@@ -64,6 +65,7 @@ export default function CompatibilityPage() {
+   if (session.status === "missing-analysis" || !session.report) {
+     return (
+       <GuardScreen
++        icon={Heart}
+         title="먼저 내 결과가 필요해요"
+         description="기본 정보 입력과 설문을 완료하면 지인과의 관계 적합도를 볼 수 있어요."
+         actionLabel="시작하러 가기"
+diff --git a/src/app/dashboard/page.tsx b/src/app/dashboard/page.tsx
+index cf3498b..a1c3dcc 100644
+--- a/src/app/dashboard/page.tsx
++++ b/src/app/dashboard/page.tsx
+@@ -16,7 +16,7 @@ import { MonthlyFortuneReminder } from "@/components/dashboard/MonthlyFortuneRem
+ import { WeeklyPassSection } from "@/components/dashboard/WeeklyPassSection";
+ import { WalletSection } from "@/components/wallet/WalletSection";
+ import { PageHeading } from "@/components/common/PageHeading";
+-import { FileText, ChevronRight } from "lucide-react";
++import { FileText, ChevronRight, Sparkles } from "lucide-react";
+ 
+ export default function DashboardPage() {
+   const router = useRouter();
+@@ -48,6 +48,7 @@ export default function DashboardPage() {
+   ) {
+     return (
+       <GuardScreen
++        icon={Sparkles}
+         title="아직 캐릭터가 없어요"
+         description="기본 정보 입력과 설문을 완료하면 성장 대시보드를 사용할 수 있어요."
+         actionLabel="시작하러 가기"
+diff --git a/src/app/friends/page.tsx b/src/app/friends/page.tsx
+index 09f26b4..1ebb207 100644
+--- a/src/app/friends/page.tsx
++++ b/src/app/friends/page.tsx
+@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
+ import { Button } from "@/components/common/Button";
+ import { Card, CardDescription, CardTitle } from "@/components/common/Card";
+ import { GuardScreen } from "@/components/common/GuardScreen";
++import { UserPlus } from "lucide-react";
+ import { FriendCard } from "@/components/friends/FriendCard";
+ import { useGrowthSession } from "@/lib/useGrowthSession";
+ import { useRequireLogin } from "@/lib/useRequireLogin";
+@@ -47,6 +48,7 @@ export default function FriendsPage() {
+   if (session.status === "missing-analysis" || !session.report) {
+     return (
+       <GuardScreen
++        icon={UserPlus}
+         title="먼저 내 결과가 필요해요"
+         description="기본 정보 입력과 설문을 완료하면 친구를 초대할 수 있어요."
+         actionLabel="시작하러 가기"
+diff --git a/src/app/growth/page.tsx b/src/app/growth/page.tsx
+index 5f56ef1..fff1f76 100644
+--- a/src/app/growth/page.tsx
++++ b/src/app/growth/page.tsx
+@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
+ import { Button } from "@/components/common/Button";
+ import { Card, CardDescription, CardTitle } from "@/components/common/Card";
+ import { GuardScreen } from "@/components/common/GuardScreen";
++import { TrendingUp } from "lucide-react";
+ import { GrowthTimeline } from "@/components/growth/GrowthTimeline";
+ import { PageHeading } from "@/components/common/PageHeading";
+ import { useGrowthSession } from "@/lib/useGrowthSession";
+@@ -36,6 +37,7 @@ export default function GrowthHistoryPage() {
+   if (session.status === "missing-analysis" || !session.profile) {
+     return (
+       <GuardScreen
++        icon={TrendingUp}
+         title="아직 기록할 게 없어요"
+         description="기본 정보 입력과 설문을 완료하면 성장 히스토리가 쌓이기 시작해요."
+         actionLabel="시작하러 가기"
+diff --git a/src/app/login/page.tsx b/src/app/login/page.tsx
+index 6a6f7bc..d57f26d 100644
+--- a/src/app/login/page.tsx
++++ b/src/app/login/page.tsx
+@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
+ import { Button } from "@/components/common/Button";
+ import { Card } from "@/components/common/Card";
+ import { GuardScreen } from "@/components/common/GuardScreen";
++import { Settings } from "lucide-react";
+ import { TextField } from "@/components/form/TextField";
+ import { PageHeading } from "@/components/common/PageHeading";
+ import { getSupabaseClient } from "@/lib/supabase/client";
+@@ -60,6 +61,7 @@ function LoginPageInner() {
+   if (!session.configured) {
+     return (
+       <GuardScreen
++        icon={Settings}
+         title="로그인 기능이 아직 설정되지 않았어요"
+         description="관리자가 Supabase 연결을 완료하면 로그인을 사용할 수 있어요."
+         actionLabel="홈으로"
+diff --git a/src/app/quests/[id]/page.tsx b/src/app/quests/[id]/page.tsx
+index 2fa8b83..1d65e12 100644
+--- a/src/app/quests/[id]/page.tsx
++++ b/src/app/quests/[id]/page.tsx
+@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
+ import { Button } from "@/components/common/Button";
+ import { Card, CardDescription, CardTitle } from "@/components/common/Card";
+ import { GuardScreen } from "@/components/common/GuardScreen";
++import { Sparkles, SearchX } from "lucide-react";
+ import { useGrowthSession } from "@/lib/useGrowthSession";
+ import { useRequireLogin } from "@/lib/useRequireLogin";
+ import { completeQuest, isQuestCompleted } from "@/lib/quest";
+@@ -41,6 +42,7 @@ export default function QuestDetailPage() {
+   if (session.status === "missing-analysis" || !session.profile) {
+     return (
+       <GuardScreen
++        icon={Sparkles}
+         title="아직 캐릭터가 없어요"
+         description="기본 정보 입력과 설문을 완료하면 퀘스트를 진행할 수 있어요."
+         actionLabel="시작하러 가기"
+@@ -53,6 +55,7 @@ export default function QuestDetailPage() {
+   if (!quest) {
+     return (
+       <GuardScreen
++        icon={SearchX}
+         title="퀘스트를 찾을 수 없어요"
+         description="존재하지 않는 퀘스트입니다."
+         actionLabel="퀘스트 목록으로"
+diff --git a/src/app/quests/page.tsx b/src/app/quests/page.tsx
+index 513db58..301e054 100644
+--- a/src/app/quests/page.tsx
++++ b/src/app/quests/page.tsx
+@@ -2,6 +2,7 @@
+ 
+ import { useRouter } from "next/navigation";
+ import { GuardScreen } from "@/components/common/GuardScreen";
++import { Sparkles } from "lucide-react";
+ import { QuestCard } from "@/components/quest/QuestCard";
+ import { useGrowthSession } from "@/lib/useGrowthSession";
+ import { useRequireLogin } from "@/lib/useRequireLogin";
+@@ -32,6 +33,7 @@ export default function QuestsPage() {
+   if (session.status === "missing-analysis" || !session.profile || !session.fantasyClass) {
+     return (
+       <GuardScreen
++        icon={Sparkles}
+         title="아직 캐릭터가 없어요"
+         description="기본 정보 입력과 설문을 완료하면 맞춤 퀘스트를 추천받을 수 있어요."
+         actionLabel="시작하러 가기"
+diff --git a/src/app/result/page.tsx b/src/app/result/page.tsx
+index af568a1..ece74cf 100644
+--- a/src/app/result/page.tsx
++++ b/src/app/result/page.tsx
+@@ -12,6 +12,7 @@ import { TenGodsPanel } from "@/components/result/TenGodsPanel";
+ import { LifestyleIndicatorPanel } from "@/components/result/LifestyleIndicatorPanel";
+ import { SynergyPanel } from "@/components/result/SynergyPanel";
+ import { DailyCardWidget } from "@/components/result/DailyCardWidget";
++import { UserPlus, ClipboardList, ListChecks, AlertTriangle } from "lucide-react";
+ import { AnalysisReport } from "@/types/report";
+ import { BasicInfo, Gender } from "@/types/user";
+ import { loadAnalysisReport, generateAndSaveAnalysisReport } from "@/lib/report";
+@@ -75,6 +76,7 @@ export default function ResultPage() {
+   if (state === "missing-basic-info") {
+     return (
+       <GuardScreen
++        icon={ClipboardList}
+         title="기본 정보가 필요해요"
+         description="사주 기반 분석을 위해 먼저 기본 정보를 입력해주세요."
+         actionLabel="기본 정보 입력하러 가기"
+@@ -86,6 +88,7 @@ export default function ResultPage() {
+   if (state === "missing-survey" || !report) {
+     return (
+       <GuardScreen
++        icon={ListChecks}
+         title="설문 응답이 필요해요"
+         description="36문항 설문을 완료하면 사주와 결합한 LPT 유형을 볼 수 있어요."
+         actionLabel="설문하러 가기"
+@@ -100,6 +103,7 @@ export default function ResultPage() {
+   if (!typeMeta || !fantasyClass) {
+     return (
+       <GuardScreen
++        icon={AlertTriangle}
+         title="결과를 불러오지 못했어요"
+         description="유형 데이터를 찾을 수 없습니다. 설문을 다시 진행해주세요."
+         actionLabel="설문 다시하기"
+@@ -217,7 +221,12 @@ export default function ResultPage() {
+             지인과 궁합 보기
+           </Button>
+         </div>
+-        <Button variant="ghost" className="w-full" onClick={() => router.push("/friends")}>
++        <Button
++          variant="secondary"
++          className="w-full gap-2"
++          onClick={() => router.push("/friends")}
++        >
++          <UserPlus className="h-4 w-4 text-fate" />
+           친구 초대하고 성향 비교하기
+         </Button>
+         <Button variant="ghost" className="w-full" onClick={() => router.push("/")}>
+diff --git a/src/app/share/[id]/page.tsx b/src/app/share/[id]/page.tsx
+index eef03d5..7190269 100644
+--- a/src/app/share/[id]/page.tsx
++++ b/src/app/share/[id]/page.tsx
+@@ -3,6 +3,7 @@
+ import { useMemo, useRef, useState } from "react";
+ import { useParams, useRouter } from "next/navigation";
+ import { GuardScreen } from "@/components/common/GuardScreen";
++import { Share2, Link2Off } from "lucide-react";
+ import { Checkbox } from "@/components/form/Checkbox";
+ import { ShareCard } from "@/components/share/ShareCard";
+ import { ShareActions } from "@/components/share/ShareActions";
+@@ -44,6 +45,7 @@ export default function SharePage() {
+   if (session.status === "missing-analysis" || !session.typeMeta || !session.fantasyClass) {
+     return (
+       <GuardScreen
++        icon={Share2}
+         title="공유할 카드가 아직 없어요"
+         description="기본 정보 입력과 설문을 완료하면 캐릭터 카드를 공유할 수 있어요."
+         actionLabel="시작하러 가기"
+@@ -72,6 +74,7 @@ export default function SharePage() {
+   if (!shareData) {
+     return (
+       <GuardScreen
++        icon={Link2Off}
+         title="공유 카드를 찾을 수 없어요"
+         description="유효하지 않은 공유 링크입니다."
+         actionLabel="대시보드로"
+diff --git a/src/components/common/GuardScreen.tsx b/src/components/common/GuardScreen.tsx
+index d5fce08..853522f 100644
+--- a/src/components/common/GuardScreen.tsx
++++ b/src/components/common/GuardScreen.tsx
+@@ -1,3 +1,4 @@
++import { LucideIcon, Compass } from "lucide-react";
+ import { Button } from "@/components/common/Button";
+ import { Card, CardDescription, CardTitle } from "@/components/common/Card";
+ 
+@@ -6,13 +7,24 @@ interface GuardScreenProps {
+   description: string;
+   actionLabel: string;
+   onAction: () => void;
++  /** 상황을 한눈에 알려주는 아이콘. 생략하면 기본 나침반 아이콘을 씁니다. */
++  icon?: LucideIcon;
+ }
+ 
+ /** 필요한 데이터(기본 정보/설문/분석 결과 등)가 없을 때 다음 단계로 안내하는 공통 화면 */
+-export function GuardScreen({ title, description, actionLabel, onAction }: GuardScreenProps) {
++export function GuardScreen({
++  title,
++  description,
++  actionLabel,
++  onAction,
++  icon: Icon = Compass,
++}: GuardScreenProps) {
+   return (
+     <div className="mx-auto max-w-md px-5 py-24 text-center">
+       <Card>
++        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-fate-soft">
++          <Icon className="h-6 w-6 text-fate" />
++        </div>
+         <CardTitle>{title}</CardTitle>
+         <CardDescription className="mt-2">{description}</CardDescription>
+         <Button className="mt-5" onClick={onAction}>

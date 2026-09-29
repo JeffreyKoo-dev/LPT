@@ -12,7 +12,7 @@ import { TenGodsPanel } from "@/components/result/TenGodsPanel";
 import { LifestyleIndicatorPanel } from "@/components/result/LifestyleIndicatorPanel";
 import { SynergyPanel } from "@/components/result/SynergyPanel";
 import { DailyCardWidget } from "@/components/result/DailyCardWidget";
-import { UserPlus } from "lucide-react";
+import { UserPlus, ClipboardList, ListChecks, AlertTriangle } from "lucide-react";
 import { AnalysisReport } from "@/types/report";
 import { BasicInfo, Gender } from "@/types/user";
 import { loadAnalysisReport, generateAndSaveAnalysisReport } from "@/lib/report";
@@ -76,6 +76,7 @@ export default function ResultPage() {
   if (state === "missing-basic-info") {
     return (
       <GuardScreen
+        icon={ClipboardList}
         title="기본 정보가 필요해요"
         description="사주 기반 분석을 위해 먼저 기본 정보를 입력해주세요."
         actionLabel="기본 정보 입력하러 가기"
@@ -87,6 +88,7 @@ export default function ResultPage() {
   if (state === "missing-survey" || !report) {
     return (
       <GuardScreen
+        icon={ListChecks}
         title="설문 응답이 필요해요"
         description="36문항 설문을 완료하면 사주와 결합한 LPT 유형을 볼 수 있어요."
         actionLabel="설문하러 가기"
@@ -101,6 +103,7 @@ export default function ResultPage() {
   if (!typeMeta || !fantasyClass) {
     return (
       <GuardScreen
+        icon={AlertTriangle}
         title="결과를 불러오지 못했어요"
         description="유형 데이터를 찾을 수 없습니다. 설문을 다시 진행해주세요."
         actionLabel="설문 다시하기"

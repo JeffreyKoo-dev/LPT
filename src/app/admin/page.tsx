@@ -7,6 +7,7 @@ import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
 import { TextField } from "@/components/form/TextField";
 import { GuardScreen } from "@/components/common/GuardScreen";
+import { ShieldAlert, AlertTriangle } from "lucide-react";
 import { useRequireLogin } from "@/lib/useRequireLogin";
 import {
   getAdminOverview,
@@ -118,6 +119,7 @@ export default function AdminPage() {
   if (state === "forbidden") {
     return (
       <GuardScreen
+        icon={ShieldAlert}
         title="접근 권한이 없어요"
         description="이 페이지는 관리자 계정만 볼 수 있어요."
         actionLabel="홈으로"
@@ -129,6 +131,7 @@ export default function AdminPage() {
   if (state === "error" || !overview) {
     return (
       <GuardScreen
+        icon={AlertTriangle}
         title="불러오지 못했어요"
         description="잠시 후 다시 시도해주세요."
         actionLabel="새로고침"

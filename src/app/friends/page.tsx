@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/common/Button";
 import { Card, CardDescription, CardTitle } from "@/components/common/Card";
 import { GuardScreen } from "@/components/common/GuardScreen";
+import { UserPlus } from "lucide-react";
 import { FriendCard } from "@/components/friends/FriendCard";
 import { useGrowthSession } from "@/lib/useGrowthSession";
 import { useRequireLogin } from "@/lib/useRequireLogin";
@@ -47,6 +48,7 @@ export default function FriendsPage() {
   if (session.status === "missing-analysis" || !session.report) {
     return (
       <GuardScreen
+        icon={UserPlus}
         title="먼저 내 결과가 필요해요"
         description="기본 정보 입력과 설문을 완료하면 친구를 초대할 수 있어요."
         actionLabel="시작하러 가기"

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/common/Button";
 import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { GuardScreen } from "@/components/common/GuardScreen";
+import { Heart } from "lucide-react";
 import { TextField } from "@/components/form/TextField";
 import { BirthDateField } from "@/components/form/BirthDateField";
 import { BirthTimeField } from "@/components/form/BirthTimeField";
@@ -64,6 +65,7 @@ export default function CompatibilityPage() {
   if (session.status === "missing-analysis" || !session.report) {
     return (
       <GuardScreen
+        icon={Heart}
         title="먼저 내 결과가 필요해요"
         description="기본 정보 입력과 설문을 완료하면 지인과의 관계 적합도를 볼 수 있어요."
         actionLabel="시작하러 가기"

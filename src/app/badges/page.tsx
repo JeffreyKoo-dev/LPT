@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { GuardScreen } from "@/components/common/GuardScreen";
+import { Award } from "lucide-react";
 import { BadgeCard } from "@/components/badge/BadgeCard";
 import { PageHeading } from "@/components/common/PageHeading";
 import { useGrowthSession } from "@/lib/useGrowthSession";
@@ -33,6 +34,7 @@ export default function BadgesPage() {
   if (session.status === "missing-analysis" || !session.profile) {
     return (
       <GuardScreen
+        icon={Award}
         title="아직 캐릭터가 없어요"
         description="기본 정보 입력과 설문을 완료하면 뱃지를 모을 수 있어요."
         actionLabel="시작하러 가기"

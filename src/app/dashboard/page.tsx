@@ -16,7 +16,7 @@ import { MonthlyFortuneReminder } from "@/components/dashboard/MonthlyFortuneRem
 import { WeeklyPassSection } from "@/components/dashboard/WeeklyPassSection";
 import { WalletSection } from "@/components/wallet/WalletSection";
 import { PageHeading } from "@/components/common/PageHeading";
-import { FileText, ChevronRight } from "lucide-react";
+import { FileText, ChevronRight, Sparkles } from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -48,6 +48,7 @@ export default function DashboardPage() {
   ) {
     return (
       <GuardScreen
+        icon={Sparkles}
         title="아직 캐릭터가 없어요"
         description="기본 정보 입력과 설문을 완료하면 성장 대시보드를 사용할 수 있어요."
         actionLabel="시작하러 가기"

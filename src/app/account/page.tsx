@@ -7,6 +7,7 @@ import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
 import { TextField } from "@/components/form/TextField";
 import { GuardScreen } from "@/components/common/GuardScreen";
+import { LogIn } from "lucide-react";
 import { useRequireLogin } from "@/lib/useRequireLogin";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import type { UserIdentity } from "@supabase/supabase-js";
@@ -47,6 +48,7 @@ export default function AccountPage() {
   if (!authGate.configured || !authGate.user) {
     return (
       <GuardScreen
+        icon={LogIn}
         title="로그인이 필요해요"
         description="계정 정보를 보려면 먼저 로그인해주세요."
         actionLabel="로그인하러 가기"

@@ -6,6 +6,7 @@ import { PageHeading } from "@/components/common/PageHeading";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
 import { GuardScreen } from "@/components/common/GuardScreen";
+import { Clock } from "lucide-react";
 import { useRequireLogin } from "@/lib/useRequireLogin";
 import { createPendingOrder } from "@/lib/wallet";
 import { getChargeOptions, ChargeOption } from "@/lib/chargeOptions";
@@ -75,6 +76,7 @@ export default function ChargePage() {
   if (!isTossPaymentsConfigured()) {
     return (
       <GuardScreen
+        icon={Clock}
         title="보석 충전 준비 중이에요"
         description="결제 기능이 아직 연결되지 않았어요. 조금만 기다려주세요."
         actionLabel="대시보드로"

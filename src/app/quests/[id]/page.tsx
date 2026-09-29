@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/common/Button";
 import { Card, CardDescription, CardTitle } from "@/components/common/Card";
 import { GuardScreen } from "@/components/common/GuardScreen";
+import { Sparkles, SearchX } from "lucide-react";
 import { useGrowthSession } from "@/lib/useGrowthSession";
 import { useRequireLogin } from "@/lib/useRequireLogin";
 import { completeQuest, isQuestCompleted } from "@/lib/quest";
@@ -41,6 +42,7 @@ export default function QuestDetailPage() {
   if (session.status === "missing-analysis" || !session.profile) {
     return (
       <GuardScreen
+        icon={Sparkles}
         title="아직 캐릭터가 없어요"
         description="기본 정보 입력과 설문을 완료하면 퀘스트를 진행할 수 있어요."
         actionLabel="시작하러 가기"
@@ -53,6 +55,7 @@ export default function QuestDetailPage() {
   if (!quest) {
     return (
       <GuardScreen
+        icon={SearchX}
         title="퀘스트를 찾을 수 없어요"
         description="존재하지 않는 퀘스트입니다."
         actionLabel="퀘스트 목록으로"

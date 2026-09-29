@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/common/Button";
 import { Card, CardDescription, CardTitle } from "@/components/common/Card";
 import { GuardScreen } from "@/components/common/GuardScreen";
+import { TrendingUp } from "lucide-react";
 import { GrowthTimeline } from "@/components/growth/GrowthTimeline";
 import { PageHeading } from "@/components/common/PageHeading";
 import { useGrowthSession } from "@/lib/useGrowthSession";
@@ -36,6 +37,7 @@ export default function GrowthHistoryPage() {
   if (session.status === "missing-analysis" || !session.profile) {
     return (
       <GuardScreen
+        icon={TrendingUp}
         title="아직 기록할 게 없어요"
         description="기본 정보 입력과 설문을 완료하면 성장 히스토리가 쌓이기 시작해요."
         actionLabel="시작하러 가기"

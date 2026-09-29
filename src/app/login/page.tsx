@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/common/Button";
 import { Card } from "@/components/common/Card";
 import { GuardScreen } from "@/components/common/GuardScreen";
+import { Settings } from "lucide-react";
 import { TextField } from "@/components/form/TextField";
 import { PageHeading } from "@/components/common/PageHeading";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -60,6 +61,7 @@ function LoginPageInner() {
   if (!session.configured) {
     return (
       <GuardScreen
+        icon={Settings}
         title="로그인 기능이 아직 설정되지 않았어요"
         description="관리자가 Supabase 연결을 완료하면 로그인을 사용할 수 있어요."
         actionLabel="홈으로"

@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { GuardScreen } from "@/components/common/GuardScreen";
+import { Share2, Link2Off } from "lucide-react";
 import { Checkbox } from "@/components/form/Checkbox";
 import { ShareCard } from "@/components/share/ShareCard";
 import { ShareActions } from "@/components/share/ShareActions";
@@ -44,6 +45,7 @@ export default function SharePage() {
   if (session.status === "missing-analysis" || !session.typeMeta || !session.fantasyClass) {
     return (
       <GuardScreen
+        icon={Share2}
         title="공유할 카드가 아직 없어요"
         description="기본 정보 입력과 설문을 완료하면 캐릭터 카드를 공유할 수 있어요."
         actionLabel="시작하러 가기"
@@ -72,6 +74,7 @@ export default function SharePage() {
   if (!shareData) {
     return (
       <GuardScreen
+        icon={Link2Off}
         title="공유 카드를 찾을 수 없어요"
         description="유효하지 않은 공유 링크입니다."
         actionLabel="대시보드로"

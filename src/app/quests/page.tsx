@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { GuardScreen } from "@/components/common/GuardScreen";
+import { Sparkles } from "lucide-react";
 import { QuestCard } from "@/components/quest/QuestCard";
 import { useGrowthSession } from "@/lib/useGrowthSession";
 import { useRequireLogin } from "@/lib/useRequireLogin";
@@ -32,6 +33,7 @@ export default function QuestsPage() {
   if (session.status === "missing-analysis" || !session.profile || !session.fantasyClass) {
     return (
       <GuardScreen
+        icon={Sparkles}
         title="아직 캐릭터가 없어요"
         description="기본 정보 입력과 설문을 완료하면 맞춤 퀘스트를 추천받을 수 있어요."
         actionLabel="시작하러 가기"
