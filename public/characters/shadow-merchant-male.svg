@@ -1,50 +1,77 @@
 <svg width="400" height="500" viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#fff8ef"/>
-      <stop offset="100%" stop-color="#ffe8d1"/>
+    <linearGradient id="bgSHADOWMERCHANTmale" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f5f4fb"/>
+      <stop offset="100%" stop-color="#e3e0f2"/>
     </linearGradient>
+    <radialGradient id="faceSHADOWMERCHANTmale" cx="38%" cy="32%" r="70%">
+      <stop offset="0%" stop-color="#fff6ec"/>
+      <stop offset="100%" stop-color="#fde0bd"/>
+    </radialGradient>
+    <linearGradient id="furSHADOWMERCHANTmale" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#a3592a"/>
+      <stop offset="100%" stop-color="#7c3f16"/>
+    </linearGradient>
+    <linearGradient id="bodySHADOWMERCHANTmale" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#d6d3e8"/>
+      <stop offset="100%" stop-color="#8b85b0"/>
+    </linearGradient>
+    <filter id="shadowSHADOWMERCHANTmale" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#4a4470" flood-opacity="0.18"/>
+    </filter>
   </defs>
-  <rect width="400" height="500" fill="url(#bg)"/>
-  <ellipse cx="200" cy="440" rx="100" ry="15" fill="#f5c398" opacity="0.5"/>
 
-  <path d="M 155 300 Q 125 360 132 420 L 160 412 Q 158 360 178 305 Z" fill="#d6d3e8"/>
-  <path d="M 245 300 Q 275 360 268 420 L 240 412 Q 242 360 222 305 Z" fill="#d6d3e8"/>
+  <rect width="400" height="500" fill="url(#bgSHADOWMERCHANTmale)"/>
+  <ellipse cx="200" cy="442" rx="104" ry="16" fill="#8b85b0" opacity="0.35"/>
 
-  <ellipse cx="200" cy="375" rx="57" ry="52" fill="#d6d3e8"/>
-  <path d="M 169 356 Q 200 369 231 356 L 227 391 Q 200 403 173 391 Z" fill="#faf9ff"/>
-  <rect x="191.2" y="363.2" width="17.6" height="17.6" rx="3" fill="#8b85b0"/>
-  
+  <path d="M 152 298 Q 118 362 126 424 L 158 416 Q 155 362 177 303 Z" fill="url(#bodySHADOWMERCHANTmale)" stroke="#4a4470" stroke-width="2"/>
+  <path d="M 248 298 Q 282 362 274 424 L 242 416 Q 245 362 223 303 Z" fill="url(#bodySHADOWMERCHANTmale)" stroke="#4a4470" stroke-width="2"/>
+  <ellipse cx="200" cy="378" rx="60" ry="54" fill="url(#bodySHADOWMERCHANTmale)" stroke="#4a4470" stroke-width="2.5"/>
 
-  <circle cx="149" cy="377" r="21" fill="#d6d3e8"/>
-  <circle cx="251" cy="377" r="21" fill="#d6d3e8"/>
-  <circle cx="141" cy="391" r="13" fill="#fff1e2"/>
-  <circle cx="259" cy="391" r="13" fill="#fff1e2"/>
+  <path d="M 167 354 Q 200 368 233 354 L 228 394 Q 200 407 172 394 Z" fill="#fef3c7" stroke="#4a4470" stroke-width="2"/>
+  <circle cx="200" cy="372" r="11" fill="#8b85b0" stroke="#4a4470" stroke-width="1.5"/>
 
-  <circle cx="200" cy="220" r="118" fill="#fff1e2"/>
+  <circle cx="147" cy="380" r="22" fill="url(#bodySHADOWMERCHANTmale)" stroke="#4a4470" stroke-width="2"/>
+  <circle cx="253" cy="380" r="22" fill="url(#bodySHADOWMERCHANTmale)" stroke="#4a4470" stroke-width="2"/>
+  <circle cx="139" cy="394" r="13.5" fill="#fff1e2" stroke="#4a4470" stroke-width="1.5"/>
+  <circle cx="261" cy="394" r="13.5" fill="#fff1e2" stroke="#4a4470" stroke-width="1.5"/>
+
+  <circle cx="200" cy="220" r="120" fill="url(#faceSHADOWMERCHANTmale)" filter="url(#shadowSHADOWMERCHANTmale)" stroke="#e7b585" stroke-width="2"/>
+
   
   <path d="M 90 200 C 82 130 130 78 200 78 C 270 78 318 130 310 200
-           C 300 160 270 150 200 150 C 130 150 100 160 90 200 Z" fill="#8a4a1f"/>
-  <circle cx="118" cy="130" r="26" fill="#8a4a1f"/>
-  <circle cx="282" cy="130" r="26" fill="#8a4a1f"/>
-  <circle cx="200" cy="88" r="24" fill="#8a4a1f"/>
+           C 300 160 270 150 200 150 C 130 150 100 160 90 200 Z" fill="url(#furSHADOWMERCHANTmale)" stroke="#5a2c0f" stroke-width="2"/>
+  <circle cx="118" cy="130" r="26" fill="url(#furSHADOWMERCHANTmale)" stroke="#5a2c0f" stroke-width="2"/>
+  <circle cx="282" cy="130" r="26" fill="url(#furSHADOWMERCHANTmale)" stroke="#5a2c0f" stroke-width="2"/>
+  <circle cx="118" cy="130" r="11" fill="#c97a3d"/>
+  <circle cx="282" cy="130" r="11" fill="#c97a3d"/>
+  
+  <path d="M 200 70 L 170 152 Q 200 140 230 152 Z" fill="#6b6490" stroke="#4a4470" stroke-width="2"/>
 
-  <circle cx="200" cy="168" r="13" fill="#fde047"/>
-  <circle cx="200" cy="168" r="7" fill="#f59e0b"/>
+  <circle cx="130" cy="250" r="24" fill="#8b85b0" opacity="0.4"/>
+  <circle cx="270" cy="250" r="24" fill="#8b85b0" opacity="0.4"/>
 
-  <circle cx="128" cy="248" r="24" fill="#d6d3e8" opacity="0.55"/>
-  <circle cx="272" cy="248" r="24" fill="#d6d3e8" opacity="0.55"/>
+  <circle cx="159" cy="230" r="19" fill="#3a2318"/>
+  <circle cx="241" cy="230" r="19" fill="#3a2318"/>
+  <circle cx="164" cy="223" r="6" fill="#ffffff"/>
+  <circle cx="246" cy="223" r="6" fill="#ffffff"/>
+  <circle cx="154" cy="236" r="3" fill="#ffffff" opacity="0.85"/>
+  <circle cx="236" cy="236" r="3" fill="#ffffff" opacity="0.85"/>
+  
 
-  <circle cx="158" cy="228" r="19" fill="#3a2318"/>
-  <circle cx="242" cy="228" r="19" fill="#3a2318"/>
-  <circle cx="164" cy="220" r="6.5" fill="#ffffff"/>
-  <circle cx="248" cy="220" r="6.5" fill="#ffffff"/>
-  <circle cx="153" cy="234" r="3.5" fill="#ffffff" opacity="0.8"/>
-  <circle cx="237" cy="234" r="3.5" fill="#ffffff" opacity="0.8"/>
+  <path d="M 188 264 Q 200 272 212 264" stroke="#4a4470" stroke-width="4.5" fill="none" stroke-linecap="round"/>
 
-  <path d="M 188 262 Q 200 272 212 262" stroke="#6b6490" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+  
+  <g transform="translate(300 300)">
+    <ellipse cx="0" cy="6" rx="18" ry="22" fill="#8b85b0" stroke="#4a4470" stroke-width="2"/>
+    <path d="M -8 -10 Q 0 -18 8 -10" stroke="#4a4470" stroke-width="2.5" fill="none"/>
+  </g>
+  <g transform="translate(98 300)">
+    <rect x="-22" y="-4" width="44" height="4" fill="#4a4470"/>
+    <circle cx="-22" cy="0" r="13" fill="none" stroke="#4a4470" stroke-width="2.5"/>
+    <circle cx="22" cy="0" r="13" fill="none" stroke="#4a4470" stroke-width="2.5"/>
+    <rect x="-4" y="-16" width="8" height="16" fill="#4a4470"/>
+  </g>
 
-  <path d="M 300 100 l 4 10 l 10 4 l -10 4 l -4 10 l -4 -10 l -10 -4 l 10 -4 z" fill="#fde047"/>
-
-  <text x="200" y="478" text-anchor="middle" font-family="Noto Sans CJK KR, sans-serif" font-size="22" font-weight="700" fill="#6b6490">그림자 상인</text>
+  <text x="200" y="478" text-anchor="middle" font-family="Noto Sans CJK KR, sans-serif" font-size="23" font-weight="700" fill="#4a4470">그림자 상인</text>
 </svg>
