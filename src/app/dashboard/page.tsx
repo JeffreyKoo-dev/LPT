@@ -76,6 +76,12 @@ export default function DashboardPage() {
           <LevelPanel levelProgress={levelProgress} />
         </Card>
 
+        <Link href="/result">
+          <Button variant="secondary" className="w-full">
+            분석 리포트 다시 보기
+          </Button>
+        </Link>
+
         <TodayRecommendationPanel report={report} profile={profile} fantasyClass={fantasyClass} />
 
         <MonthlyFortuneReminder />
@@ -121,12 +127,6 @@ export default function DashboardPage() {
             </Link>
           </div>
         </Card>
-
-        <Link href="/result">
-          <Button variant="ghost" className="w-full">
-            분석 리포트 다시 보기
-          </Button>
-        </Link>
 
         <Link href="/share/character">
           <Button variant="secondary" className="w-full">
