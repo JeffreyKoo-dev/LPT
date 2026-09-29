@@ -7,7 +7,7 @@ import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
 import { TextField } from "@/components/form/TextField";
 import { GuardScreen } from "@/components/common/GuardScreen";
-import { LogIn } from "lucide-react";
+import { LogIn, Link2 } from "lucide-react";
 import { useRequireLogin } from "@/lib/useRequireLogin";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import type { UserIdentity } from "@supabase/supabase-js";
@@ -333,7 +333,10 @@ function SharedLinksSection() {
         &ldquo;결과 보기 허용&rdquo;으로 공개한 링크예요. 더 이상 공개하고 싶지 않으면 지울 수 있어요.
       </CardDescription>
       {links.length === 0 ? (
-        <p className="mt-4 text-sm text-muted">공개한 링크가 없어요.</p>
+        <p className="mt-4 flex items-center gap-2 text-sm text-muted">
+          <Link2 className="h-4 w-4" />
+          공개한 링크가 없어요.
+        </p>
       ) : (
         <div className="mt-4 flex flex-col gap-2">
           {links.map((link) => (

@@ -15,9 +15,14 @@ interface GrowthTimelineProps {
 export function GrowthTimeline({ events }: GrowthTimelineProps) {
   if (events.length === 0) {
     return (
-      <p className="py-10 text-center text-sm text-muted">
-        아직 기록이 없어요. 첫 퀘스트를 완료하면 여기에 쌓이기 시작해요.
-      </p>
+      <div className="flex flex-col items-center gap-3 py-10 text-center">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-fate-soft">
+          <TrendingUp className="h-5 w-5 text-fate" />
+        </div>
+        <p className="text-sm text-muted">
+          아직 기록이 없어요. 첫 퀘스트를 완료하면 여기에 쌓이기 시작해요.
+        </p>
+      </div>
     );
   }
 

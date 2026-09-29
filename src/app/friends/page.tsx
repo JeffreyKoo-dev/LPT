@@ -137,9 +137,12 @@ export default function FriendsPage() {
         )}
 
         {friends !== null && friends.length === 0 && (
-          <p className="py-10 text-center text-sm text-muted">
-            아직 친구가 없어요. 초대 링크를 공유해보세요.
-          </p>
+          <div className="flex flex-col items-center gap-3 py-10 text-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-fate-soft">
+              <UserPlus className="h-5 w-5 text-fate" />
+            </div>
+            <p className="text-sm text-muted">아직 친구가 없어요. 초대 링크를 공유해보세요.</p>
+          </div>
         )}
 
         <div className="flex flex-col gap-3">

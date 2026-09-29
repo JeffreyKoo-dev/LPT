@@ -1,0 +1,67 @@
+diff --git a/src/app/account/page.tsx b/src/app/account/page.tsx
+index a39eab9..573a8bc 100644
+--- a/src/app/account/page.tsx
++++ b/src/app/account/page.tsx
+@@ -7,7 +7,7 @@ import { Card, CardTitle, CardDescription } from "@/components/common/Card";
+ import { Button } from "@/components/common/Button";
+ import { TextField } from "@/components/form/TextField";
+ import { GuardScreen } from "@/components/common/GuardScreen";
+-import { LogIn } from "lucide-react";
++import { LogIn, Link2 } from "lucide-react";
+ import { useRequireLogin } from "@/lib/useRequireLogin";
+ import { getSupabaseClient } from "@/lib/supabase/client";
+ import type { UserIdentity } from "@supabase/supabase-js";
+@@ -333,7 +333,10 @@ function SharedLinksSection() {
+         &ldquo;결과 보기 허용&rdquo;으로 공개한 링크예요. 더 이상 공개하고 싶지 않으면 지울 수 있어요.
+       </CardDescription>
+       {links.length === 0 ? (
+-        <p className="mt-4 text-sm text-muted">공개한 링크가 없어요.</p>
++        <p className="mt-4 flex items-center gap-2 text-sm text-muted">
++          <Link2 className="h-4 w-4" />
++          공개한 링크가 없어요.
++        </p>
+       ) : (
+         <div className="mt-4 flex flex-col gap-2">
+           {links.map((link) => (
+diff --git a/src/app/friends/page.tsx b/src/app/friends/page.tsx
+index 1ebb207..b83704d 100644
+--- a/src/app/friends/page.tsx
++++ b/src/app/friends/page.tsx
+@@ -137,9 +137,12 @@ export default function FriendsPage() {
+         )}
+ 
+         {friends !== null && friends.length === 0 && (
+-          <p className="py-10 text-center text-sm text-muted">
+-            아직 친구가 없어요. 초대 링크를 공유해보세요.
+-          </p>
++          <div className="flex flex-col items-center gap-3 py-10 text-center">
++            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-fate-soft">
++              <UserPlus className="h-5 w-5 text-fate" />
++            </div>
++            <p className="text-sm text-muted">아직 친구가 없어요. 초대 링크를 공유해보세요.</p>
++          </div>
+         )}
+ 
+         <div className="flex flex-col gap-3">
+diff --git a/src/components/growth/GrowthTimeline.tsx b/src/components/growth/GrowthTimeline.tsx
+index d418e0f..126bbf5 100644
+--- a/src/components/growth/GrowthTimeline.tsx
++++ b/src/components/growth/GrowthTimeline.tsx
+@@ -15,9 +15,14 @@ interface GrowthTimelineProps {
+ export function GrowthTimeline({ events }: GrowthTimelineProps) {
+   if (events.length === 0) {
+     return (
+-      <p className="py-10 text-center text-sm text-muted">
+-        아직 기록이 없어요. 첫 퀘스트를 완료하면 여기에 쌓이기 시작해요.
+-      </p>
++      <div className="flex flex-col items-center gap-3 py-10 text-center">
++        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-fate-soft">
++          <TrendingUp className="h-5 w-5 text-fate" />
++        </div>
++        <p className="text-sm text-muted">
++          아직 기록이 없어요. 첫 퀘스트를 완료하면 여기에 쌓이기 시작해요.
++        </p>
++      </div>
+     );
+   }
+ 
