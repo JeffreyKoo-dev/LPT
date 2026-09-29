@@ -16,6 +16,7 @@ import { MonthlyFortuneReminder } from "@/components/dashboard/MonthlyFortuneRem
 import { WeeklyPassSection } from "@/components/dashboard/WeeklyPassSection";
 import { WalletSection } from "@/components/wallet/WalletSection";
 import { PageHeading } from "@/components/common/PageHeading";
+import { FileText, ChevronRight } from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -77,9 +78,13 @@ export default function DashboardPage() {
         </Card>
 
         <Link href="/result">
-          <Button variant="secondary" className="w-full">
-            분석 리포트 다시 보기
-          </Button>
+         <Button variant="secondary" className="w-full justify-between px-4">
+          <span className="flex items-center gap-2">
+           <FileText className="h-4 w-4 text-fate" />
+           분석 리포트 다시 보기
+          </span>
+          <ChevronRight className="h-4 w-4 text-muted" />
+         </Button>
         </Link>
 
         <TodayRecommendationPanel report={report} profile={profile} fantasyClass={fantasyClass} />
