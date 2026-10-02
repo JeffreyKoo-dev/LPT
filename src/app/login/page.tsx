@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/common/Button";
 import { Card } from "@/components/common/Card";
 import { GuardScreen } from "@/components/common/GuardScreen";
+import { InlineError } from "@/components/common/InlineError";
 import { Settings } from "lucide-react";
 import { TextField } from "@/components/form/TextField";
 import { PageHeading } from "@/components/common/PageHeading";
@@ -205,7 +206,7 @@ function LoginPageInner() {
           </form>
         )}
 
-        {errorMessage && <p className="mt-4 text-sm text-red-600">{errorMessage}</p>}
+        {errorMessage && <InlineError className="mt-4 text-sm">{errorMessage}</InlineError>}
       </Card>
 
       <p className="mt-6 text-center text-xs text-muted">

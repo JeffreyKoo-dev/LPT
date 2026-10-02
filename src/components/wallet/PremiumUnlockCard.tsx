@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
+import { InlineError } from "@/components/common/InlineError";
 import { purchaseProduct, getProductPrices, getProductPrice, ProductCode, ProductPrice } from "@/lib/wallet";
 import {
   hasPurchased,
@@ -137,7 +138,7 @@ export function PremiumUnlockCard({
           <Button className="mt-4 w-full" onClick={handlePurchase}>
             {purchaseButtonLabel ?? (price ? `보석 ${price.cash_price.toLocaleString()}개로 열어보기` : "열어보기")}
           </Button>
-          {errorMessage && <p className="mt-2 text-xs text-red-600">{errorMessage}</p>}
+          {errorMessage && <InlineError>{errorMessage}</InlineError>}
         </>
       )}
 
@@ -149,7 +150,7 @@ export function PremiumUnlockCard({
           <Button className="mt-4 w-full" onClick={handleGenerate}>
             {noCache ? "결과 보기" : "다시 생성하기"}
           </Button>
-          {errorMessage && <p className="mt-2 text-xs text-red-600">{errorMessage}</p>}
+          {errorMessage && <InlineError>{errorMessage}</InlineError>}
         </>
       )}
 

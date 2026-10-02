@@ -19,6 +19,15 @@ export async function GET(req: NextRequest) {
       },
       { name: "Google Ad Manager 리워드 광고", configured: !!process.env.NEXT_PUBLIC_GAM_REWARDED_AD_UNIT },
       { name: "카카오톡 공유", configured: !!process.env.NEXT_PUBLIC_KAKAO_JS_KEY },
+      {
+        name: "웹 푸시 알림",
+        configured: !!(
+          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY &&
+          process.env.VAPID_PRIVATE_KEY &&
+          process.env.VAPID_SUBJECT
+        ),
+      },
+      { name: "재구매 리마인더 크론(CRON_SECRET)", configured: !!process.env.CRON_SECRET },
     ],
   });
 }

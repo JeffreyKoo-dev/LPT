@@ -7,7 +7,8 @@ import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
 import { TextField } from "@/components/form/TextField";
 import { GuardScreen } from "@/components/common/GuardScreen";
-import { ShieldAlert, AlertTriangle } from "lucide-react";
+import { InlineError } from "@/components/common/InlineError";
+import { ShieldAlert, AlertTriangle, Package, Flag, CreditCard, RotateCcw, UserX } from "lucide-react";
 import { useRequireLogin } from "@/lib/useRequireLogin";
 import {
   getAdminOverview,
@@ -173,7 +174,10 @@ export default function AdminPage() {
         <CardTitle>상품별 판매 현황</CardTitle>
         <CardDescription className="mt-1">어떤 유료 콘텐츠가 잘 팔리는지 확인해요.</CardDescription>
         {productSales.length === 0 ? (
-          <p className="mt-4 text-sm text-muted">아직 판매 내역이 없어요.</p>
+          <div className="mt-4 flex items-center gap-2 text-sm text-muted">
+            <Package className="h-4 w-4 text-fate" />
+            <span>아직 판매 내역이 없어요.</span>
+          </div>
         ) : (
           <div className="mt-4 flex flex-col gap-2">
             {productSales.map((s) => (
@@ -228,7 +232,10 @@ export default function AdminPage() {
           AI 검수에서 문제로 판단해 차단한 입력 기록이에요 (최근 100건).
         </CardDescription>
         {reports.length === 0 ? (
-          <p className="mt-4 text-sm text-muted">신고된 내역이 없어요.</p>
+          <div className="mt-4 flex items-center gap-2 text-sm text-muted">
+            <Flag className="h-4 w-4 text-fate" />
+            <span>신고된 내역이 없어요.</span>
+          </div>
         ) : (
           <div className="mt-4 flex flex-col gap-2">
             {reports.map((r) => (
@@ -254,7 +261,10 @@ export default function AdminPage() {
         <CardTitle>결제 내역</CardTitle>
         <CardDescription className="mt-1">최근 100건.</CardDescription>
         {orders.length === 0 ? (
-          <p className="mt-4 text-sm text-muted">결제 내역이 없어요.</p>
+          <div className="mt-4 flex items-center gap-2 text-sm text-muted">
+            <CreditCard className="h-4 w-4 text-fate" />
+            <span>결제 내역이 없어요.</span>
+          </div>
         ) : (
           <div className="mt-4 flex flex-col gap-2">
             {orders.map((o) => (
@@ -317,7 +327,10 @@ function RefundEventsSection({
         만큼(미회수액)은 확인이 필요해요.
       </CardDescription>
       {events.length === 0 ? (
-        <p className="mt-4 text-sm text-muted">환불 처리된 내역이 없어요.</p>
+        <div className="mt-4 flex items-center gap-2 text-sm text-muted">
+          <RotateCcw className="h-4 w-4 text-fate" />
+          <span>환불 처리된 내역이 없어요.</span>
+        </div>
       ) : (
         <div className="mt-4 flex flex-col gap-2">
           {events.map((e) => (
@@ -339,9 +352,9 @@ function RefundEventsSection({
                 )}
               </div>
               {e.shortfall > 0 && (
-                <p className="mt-1 text-xs text-red-600">
+                <InlineError className="mt-1">
                   미회수액 {e.shortfall.toLocaleString()} (이미 소비됨 — 별도 조치 검토 필요)
-                </p>
+                </InlineError>
               )}
               <p className="mt-1 text-xs text-muted">
                 {new Date(e.created_at).toLocaleString("ko-KR")}
@@ -474,10 +487,13 @@ function UserLookupSection() {
           {searching ? "검색 중…" : "검색"}
         </Button>
       </form>
-      {searchError && <p className="mt-2 text-xs text-red-600">{searchError}</p>}
+      {searchError && <InlineError>{searchError}</InlineError>}
 
       {results && results.length === 0 && (
-        <p className="mt-4 text-sm text-muted">일치하는 회원이 없어요.</p>
+        <div className="mt-4 flex items-center gap-2 text-sm text-muted">
+          <UserX className="h-4 w-4 text-fate" />
+          <span>일치하는 회원이 없어요.</span>
+        </div>
       )}
 
       {results && results.length > 0 && (
@@ -587,7 +603,7 @@ function UserResultCard({ user }: { user: UserLookupResult }) {
           {status === "saving" ? "처리 중…" : "적용"}
         </Button>
       </div>
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <InlineError className="mt-1">{error}</InlineError>}
       {done && <p className="mt-1 text-xs text-emerald-700">반영됐어요.</p>}
     </div>
   );

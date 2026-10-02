@@ -318,7 +318,9 @@ grant execute on function charge_cash_from_pg to service_role;
 
 insert into product_prices (product_code, display_name, cash_price, ai_model, ad_unlockable, is_active)
 values
-  ('daily_card_unlock', '오늘의 카드 즉시해제', 500, null, true, true),
+  -- is_active=false: 실제로 판매하는 화면이 없는 고아 상품이라 029 마이그레이션에서
+  -- 비활성화했다. 콘텐츠를 설계하게 되면 true로 되돌릴 것.
+  ('daily_card_unlock', '오늘의 카드 즉시해제', 500, null, true, false),
   ('premium_report',    '정밀 사주 리포트',     1900, 'haiku-4.5', false, true),
   ('compatibility_deep','심층 궁합 분석',       2500, 'haiku-4.5', false, true),
   ('daeun_seun',        '대운·세운 해석',       1500, 'haiku-4.5', false, true)
@@ -1440,3 +1442,45 @@ begin
 end;
 $$;
 
+
+
+-- ============================================================
+-- 웹 푸시 알림(재구매 리마인더) — 029 이후 추가분(migration 030)
+-- ============================================================
+
+create table if not exists push_subscriptions (
+  id          bigint generated always as identity primary key,
+  user_id     uuid not null references auth.users(id) on delete cascade,
+  endpoint    text not null unique,
+  p256dh      text not null,
+  auth_key    text not null,
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists idx_push_subscriptions_user on push_subscriptions(user_id);
+
+alter table push_subscriptions enable row level security;
+
+create policy "본인 푸시 구독 조회" on push_subscriptions
+  for select using (auth.uid() = user_id);
+
+create policy "본인 푸시 구독 등록" on push_subscriptions
+  for insert with check (auth.uid() = user_id);
+
+create policy "본인 푸시 구독 갱신" on push_subscriptions
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "본인 푸시 구독 해지" on push_subscriptions
+  for delete using (auth.uid() = user_id);
+
+create table if not exists push_reminder_log (
+  id             bigint generated always as identity primary key,
+  user_id        uuid not null references auth.users(id) on delete cascade,
+  reminder_type  text not null,
+  sent_at        timestamptz not null default now()
+);
+
+create index if not exists idx_push_reminder_log_lookup
+  on push_reminder_log(user_id, reminder_type, sent_at);
+
+alter table push_reminder_log enable row level security;

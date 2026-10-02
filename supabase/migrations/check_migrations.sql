@@ -175,7 +175,21 @@ select migration, status, note from (
       and exists (select 1 from func_defs
       where fn_name='check_winback_bonus' and def like '%user_id = v_user_id for update%')
       then '✅ 적용됨(최신, 레이스컨디션/오상품 방어 반영)' else '❌ 누락 또는 구버전' end,
-    'purchase_product/check_winback_bonus 최신본(2차 코드리뷰 수정)')
+    'purchase_product/check_winback_bonus 최신본(2차 코드리뷰 수정)'),
+
+  ('029_deactivate_daily_card_unlock',
+    case when exists (select 1 from product_prices
+      where product_code='daily_card_unlock' and is_active=false)
+      then '✅ 적용됨' else '❌ 누락' end,
+    'daily_card_unlock 상품 is_active=false(고아 상품 비활성화)'),
+
+  ('030_push_notifications',
+    case when exists (select 1 from information_schema.tables
+      where table_schema='public' and table_name='push_subscriptions')
+      and exists (select 1 from information_schema.tables
+      where table_schema='public' and table_name='push_reminder_log')
+      then '✅ 적용됨' else '❌ 누락' end,
+    'push_subscriptions / push_reminder_log 테이블(웹 푸시 리마인더)')
 
 ) as t(migration, status, note)
 order by migration;

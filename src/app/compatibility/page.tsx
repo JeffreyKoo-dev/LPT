@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/common/Button";
 import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { GuardScreen } from "@/components/common/GuardScreen";
+import { InlineError } from "@/components/common/InlineError";
 import { Heart } from "lucide-react";
 import { TextField } from "@/components/form/TextField";
 import { BirthDateField } from "@/components/form/BirthDateField";
@@ -128,7 +129,7 @@ export default function CompatibilityPage() {
         <Button variant="secondary" className="mt-3 w-full" onClick={handleBuyBundle} disabled={bundleStatus === "buying"}>
           {bundleStatus === "buying" ? "구매 중…" : "3인 세트로 구매하기"}
         </Button>
-        {bundleError && <p className="mt-2 text-xs text-red-600">{bundleError}</p>}
+        {bundleError && <InlineError>{bundleError}</InlineError>}
       </Card>
 
       {!result && (

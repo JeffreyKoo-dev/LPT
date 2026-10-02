@@ -6,6 +6,7 @@ import { PageHeading } from "@/components/common/PageHeading";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
 import { GuardScreen } from "@/components/common/GuardScreen";
+import { InlineError } from "@/components/common/InlineError";
 import { Clock } from "lucide-react";
 import { useRequireLogin } from "@/lib/useRequireLogin";
 import { createPendingOrder } from "@/lib/wallet";
@@ -153,7 +154,7 @@ export default function ChargePage() {
         >
           {status === "paying" ? "결제 요청 중…" : "결제하기"}
         </Button>
-        {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+        {error && <InlineError>{error}</InlineError>}
       </Card>
     </div>
   );

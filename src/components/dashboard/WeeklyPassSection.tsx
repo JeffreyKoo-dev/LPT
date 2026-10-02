@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
+import { InlineError } from "@/components/common/InlineError";
 import { getActivePassExpiry, purchaseWeeklyPass } from "@/lib/weeklyPass";
 import { getProductPrices, getProductPrice, ProductPrice } from "@/lib/wallet";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
@@ -64,7 +65,7 @@ export function WeeklyPassSection() {
           ? "처리 중…"
           : `${expiresAt ? "7일 연장하기" : "주간 이용권 구매하기"}${price ? ` (보석 ${price.cash_price.toLocaleString()}개)` : ""}`}
       </Button>
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      {error && <InlineError>{error}</InlineError>}
     </Card>
   );
 }

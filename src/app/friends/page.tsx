@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/common/Button";
 import { Card, CardDescription, CardTitle } from "@/components/common/Card";
 import { GuardScreen } from "@/components/common/GuardScreen";
+import { InlineError } from "@/components/common/InlineError";
 import { UserPlus } from "lucide-react";
 import { FriendCard } from "@/components/friends/FriendCard";
 import { useGrowthSession } from "@/lib/useGrowthSession";
@@ -123,7 +124,7 @@ export default function FriendsPage() {
           </div>
         )}
         {inviteStatus === "error" && (
-          <p className="mt-2 text-xs text-red-600">초대 링크 생성에 실패했어요. 다시 시도해주세요.</p>
+          <InlineError>초대 링크 생성에 실패했어요. 다시 시도해주세요.</InlineError>
         )}
       </Card>
 

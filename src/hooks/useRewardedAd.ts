@@ -29,60 +29,71 @@ export function useRewardedAd() {
   const slotRef = useRef<GoogletagRewardedSlot | null>(null);
   const grantedRef = useRef(false);
 
-  /** 광고를 요청하고 재생한다. 실제 시청 완료 시에만 onGranted가 호출됨. */
-  const showRewardedAd = useCallback(async (onGranted: () => void | Promise<void>) => {
-    setStatus("loading");
-    grantedRef.current = false;
+  /**
+   * 광고를 요청하고 재생한다. 실제 시청 완료 시에만 onGranted가 호출됨.
+   * onClosedWithoutGrant는 사용자가 끝까지 보지 않고 광고를 닫았을 때 호출된다
+   * (호출 측에서 버튼의 busy 상태를 풀어주는 용도 — googletag 이벤트는 비동기라
+   * showRewardedAd 반환 직후의 status 값을 읽으면 항상 최신 상태가 아닐 수 있다).
+   */
+  const showRewardedAd = useCallback(
+    async (onGranted: () => void | Promise<void>, onClosedWithoutGrant?: () => void) => {
+      setStatus("loading");
+      grantedRef.current = false;
 
-    try {
-      await loadGpt();
-      const googletag = window.googletag;
+      try {
+        await loadGpt();
+        const googletag = window.googletag;
 
-      googletag.cmd.push(() => {
-        const slot = googletag.defineOutOfPageSlot(
-          AD_UNIT_PATH,
-          googletag.enums.OutOfPageFormat.REWARDED
-        );
+        googletag.cmd.push(() => {
+          const slot = googletag.defineOutOfPageSlot(
+            AD_UNIT_PATH,
+            googletag.enums.OutOfPageFormat.REWARDED
+          );
 
-        if (!slot) {
-          // 리워드 광고를 지원하지 않는 페이지 조건 (뷰포트 meta 누락 등)
-          setStatus("error");
-          return;
-        }
-
-        slotRef.current = slot;
-        slot.addService(googletag.pubads());
-
-        googletag.pubads().addEventListener("rewardedSlotReady", (event: GoogletagEvent) => {
-          setStatus("ready");
-          event.makeRewardedVisible();
-          setStatus("playing");
-        });
-
-        googletag.pubads().addEventListener("rewardedSlotGranted", async () => {
-          grantedRef.current = true;
-          setStatus("granted");
-          await onGranted();
-        });
-
-        googletag.pubads().addEventListener("rewardedSlotClosed", () => {
-          if (!grantedRef.current) {
-            setStatus("closed_without_reward");
+          if (!slot) {
+            // 리워드 광고를 지원하지 않는 페이지 조건 (뷰포트 meta 누락 등)
+            setStatus("error");
+            onClosedWithoutGrant?.();
+            return;
           }
-          if (slotRef.current) {
-            googletag.destroySlots([slotRef.current]);
-          }
-          slotRef.current = null;
-        });
 
-        googletag.enableServices();
-        googletag.display(slot);
-      });
-    } catch (err) {
-      console.error("리워드 광고 로드 실패:", err);
-      setStatus("error");
-    }
-  }, []);
+          slotRef.current = slot;
+          slot.addService(googletag.pubads());
+
+          googletag.pubads().addEventListener("rewardedSlotReady", (event: GoogletagEvent) => {
+            setStatus("ready");
+            event.makeRewardedVisible();
+            setStatus("playing");
+          });
+
+          googletag.pubads().addEventListener("rewardedSlotGranted", async () => {
+            grantedRef.current = true;
+            setStatus("granted");
+            await onGranted();
+          });
+
+          googletag.pubads().addEventListener("rewardedSlotClosed", () => {
+            if (!grantedRef.current) {
+              setStatus("closed_without_reward");
+              onClosedWithoutGrant?.();
+            }
+            if (slotRef.current) {
+              googletag.destroySlots([slotRef.current]);
+            }
+            slotRef.current = null;
+          });
+
+          googletag.enableServices();
+          googletag.display(slot);
+        });
+      } catch (err) {
+        console.error("리워드 광고 로드 실패:", err);
+        setStatus("error");
+        onClosedWithoutGrant?.();
+      }
+    },
+    []
+  );
 
   return { status, showRewardedAd };
 }

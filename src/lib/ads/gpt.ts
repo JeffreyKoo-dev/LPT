@@ -32,6 +32,17 @@ declare global {
   }
 }
 
+/**
+ * 실제 Google Ad Manager 광고 단위가 설정됐는지 확인한다.
+ * .env.local.example의 플레이스홀더(YOUR_NETWORK_CODE)가 그대로 남아있으면
+ * 아직 네트워크 코드 발급 전이라고 보고, 리워드 광고 버튼을 숨긴다
+ * (카카오 공유 버튼의 isKakaoShareConfigured()와 동일한 패턴).
+ */
+export function isRewardedAdConfigured(): boolean {
+  const unit = process.env.NEXT_PUBLIC_GAM_REWARDED_AD_UNIT;
+  return !!unit && !unit.includes("YOUR_NETWORK_CODE");
+}
+
 let loadPromise: Promise<void> | null = null;
 
 export function loadGpt(): Promise<void> {

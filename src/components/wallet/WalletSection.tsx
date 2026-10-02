@@ -12,6 +12,7 @@ import {
   WalletTransaction,
 } from "@/lib/wallet";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { RewardedAdButton } from "@/components/ads/RewardedAdButton";
 
 const TX_LABEL: Record<WalletTransaction["type"], string> = {
   charge: "충전",
@@ -59,6 +60,16 @@ export function WalletSection() {
     };
   }, []);
 
+  // 광고 리워드 지급 후 보석/별조각/거래내역을 다시 불러온다. grant_ad_cash_reward가
+  // 돌려주는 new_balance는 두 잔액 합산값이라 UI에 그대로 쓰기 애매해서, 서버 재조회로
+  // 정확한 보석/별조각 분리값을 받는다.
+  async function refreshWallet() {
+    const [balances, tx] = await Promise.all([getWalletBalances(), getWalletTransactions(5)]);
+    setGemBalance(balances?.cashBalance ?? 0);
+    setStarBalance(balances?.bonusBalance ?? 0);
+    setTransactions(tx);
+  }
+
   if (!isSupabaseConfigured() || loading) return null;
 
   return (
@@ -87,6 +98,11 @@ export function WalletSection() {
           콘텐츠는 보석으로만 결제할 수 있어요.
         </p>
       )}
+
+      <div className="mt-3">
+        <RewardedAdButton mode="cash_reward" rewardAmount={100} onSuccess={refreshWallet} />
+        <p className="mt-1.5 text-xs text-muted">짧은 광고를 보면 별조각을 받을 수 있어요 (하루 최대 3회).</p>
+      </div>
 
       {prices.length > 0 && (
         <div className="mt-4 flex flex-col gap-2">

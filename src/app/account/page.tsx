@@ -7,7 +7,15 @@ import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
 import { TextField } from "@/components/form/TextField";
 import { GuardScreen } from "@/components/common/GuardScreen";
-import { LogIn, Link2 } from "lucide-react";
+import { InlineError } from "@/components/common/InlineError";
+import { LogIn, Link2, Bell } from "lucide-react";
+import {
+  isPushSupported,
+  isPushConfigured,
+  getExistingSubscription,
+  subscribeToPush,
+  unsubscribeFromPush,
+} from "@/lib/push";
 import { useRequireLogin } from "@/lib/useRequireLogin";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import type { UserIdentity } from "@supabase/supabase-js";
@@ -65,6 +73,7 @@ export default function AccountPage() {
       <NicknameSection />
       <WalletSummarySection />
       <LinkedIdentitiesSection />
+      <NotificationSection />
       <SharedLinksSection />
       <DataExportSection />
       <DangerZoneSection />
@@ -306,7 +315,60 @@ function LinkedIdentitiesSection() {
           </Button>
         )}
       </div>
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      {error && <InlineError>{error}</InlineError>}
+    </Card>
+  );
+}
+
+/**
+ * 웹 푸시 알림(재구매 리마인더 등) 구독 설정. 브라우저가 지원하지 않거나
+ * VAPID 키가 아직 설정되지 않은 환경에서는 카드 자체를 렌더링하지 않는다
+ * (카카오 공유/리워드 광고와 동일한 "미설정 시 자동 숨김" 패턴).
+ */
+function NotificationSection() {
+  const [subscribed, setSubscribed] = useState<boolean | null>(null);
+  const [status, setStatus] = useState<"idle" | "working">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const supported = isPushSupported() && isPushConfigured();
+
+  useEffect(() => {
+    if (!supported) return;
+    getExistingSubscription().then((sub) => setSubscribed(!!sub));
+  }, [supported]);
+
+  if (!supported) return null;
+
+  async function handleToggle() {
+    setError(null);
+    setStatus("working");
+    const result = subscribed ? await unsubscribeFromPush() : await subscribeToPush();
+    if (result.ok) {
+      setSubscribed(!subscribed);
+    } else {
+      setError(result.error ?? "처리에 실패했어요.");
+    }
+    setStatus("idle");
+  }
+
+  return (
+    <Card className="mt-6">
+      <div className="flex items-center gap-2">
+        <Bell className="h-4 w-4 text-fate" />
+        <CardTitle>알림</CardTitle>
+      </div>
+      <CardDescription className="mt-2">
+        이번 달 운세처럼 매달 새로 확인할 수 있는 콘텐츠를 깜빡하지 않도록, 브라우저 알림으로
+        알려드려요.
+      </CardDescription>
+      <Button
+        variant={subscribed ? "secondary" : "primary"}
+        className="mt-4 w-full"
+        onClick={handleToggle}
+        disabled={status === "working" || subscribed === null}
+      >
+        {status === "working" ? "처리 중…" : subscribed ? "알림 끄기" : "알림 받기"}
+      </Button>
+      {error && <InlineError>{error}</InlineError>}
     </Card>
   );
 }
@@ -449,7 +511,7 @@ function DangerZoneSection() {
               {status === "deleting" ? "처리 중…" : "완전히 삭제"}
             </Button>
           </div>
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <InlineError className="mt-0">{error}</InlineError>}
         </div>
       )}
     </Card>

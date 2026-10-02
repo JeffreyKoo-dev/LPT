@@ -1313,3 +1313,182 @@ last_seen_at`을 직접 관리해(auth.users.last_sign_in_at은 로그인
 
 **필요 작업**: `supabase/migrations/028_code_review_fixes_2.sql`을
 SQL Editor에서 실행.
+
+---
+
+## 42. 마이그레이션 적용 여부 점검 도구 + GuardScreen 밀도 개선
+
+**마이그레이션 점검 쿼리**: 001~028번 마이그레이션이 실제 Supabase
+프로젝트에 전부 적용됐는지 한 번에 확인하는 SQL을
+`supabase/migrations/check_migrations.sql`로 추가했다. 같은 함수가
+여러 마이그레이션에서 반복적으로 `create or replace`되는 경우(예:
+`purchase_product`, `unlock_daily_content`)는 단순히 "함수가
+존재하는지"만으로는 최신 버전인지 알 수 없어서, 최신 마이그레이션에만
+있는 특징적인 문구(함수 본문 텍스트)까지 대조하도록 만들었다. 점검
+결과 023번(`referred_paying_friends` 마일스톤)이 누락되어 있던 걸
+발견해 반영 완료했다 — 이제 001~028 전체 적용 확인됨.
+
+**GuardScreen 밀도 개선**: `/badges`, `/dashboard`, `/growth`,
+`/friends` 등 13개 페이지에서 공용으로 쓰는 안내 화면(`GuardScreen`)이
+텍스트만 있어 밋밋하다는 지적에 따라, 상황에 맞는 `lucide-react`
+아이콘을 강조색(`fate` 퍼플) 원형 배지로 추가했다. 톤·카피는 그대로
+유지하고 시각적 밀도만 보강(디자인/톤 개편 작업의 1차분).
+
+**저장소에 남아있는 작업용 파일**: `guardscreen-icons.patch`(패치
+적용 과정에서 커밋에 같이 올라감)와 `supabase/migrations/
+check_migrations.sql`(점검용 조회 쿼리, 스키마 변경 없음 — 마이그레이션
+번호가 붙어있지만 실제로는 DDL이 없는 읽기 전용 스크립트라 이후
+새 프로젝트 세팅 시 `schema.sql`과는 무관함)은 정리하지 않고
+그대로 두기로 결정했다. 둘 다 동작에는 영향 없다.
+
+**다음**: 디자인/톤 개편 2차(다른 화면의 빈 상태·에러 메시지 등 추가
+점검) 또는 캐릭터 일러스트 방향 검토.
+
+---
+
+## 43. 캐릭터 일러스트 12유형 전체 개편 + 공용 InlineError 컴포넌트
+
+**캐릭터 일러스트**: 기존엔 같은 오행(fire/wood/metal/water/earth)
+그룹에 속한 유형들이 전부 같은 곰 모양에 흉갑의 작은 아이콘 하나로만
+구분돼 시각적으로 거의 동일했다. 12개 클래스 각각에 고유한
+헤드피스+소품 조합을 추가(전사=붉은 머리띠+검과 방패, 상인=두건+저울과
+동전주머니, 현자=동그란 안경+마법서 등)하고, 그라데이션 음영·
+드롭섀도우·외곽선을 더해 입체감을 보강했다. `public/characters/*.svg`
+24개 전체 재작성, 공유 카드용 PNG(`ShareActions.tsx`,
+`/types/[typeId]` SEO 페이지에서 사용) 24개도 새 일러스트 기준으로
+재생성. 프로덕션 배포 후 사용자 확인 완료.
+
+**공용 InlineError 컴포넌트**: 로그인/계정(카카오 연결·계정 삭제)/
+친구초대/궁합권 구매/충전/주간 이용권/프리미엄 잠금해제(`PremiumUnlockCard`)
+등 여러 화면에 중복돼 있던 텍스트 전용 빨간 에러 메시지를
+`src/components/common/InlineError.tsx`(AlertCircle 아이콘 포함)로
+통일했다. admin 페이지의 에러·빈 상태와 폼 필드별 인라인 검증
+에러(`BirthDateField` 등)는 내부용/의도적으로 미니멀한 성격이라 이번
+범위에서 제외.
+
+**검증**: 타입체크·린트 0 errors, 전체 빌드 성공.
+
+**다음**: admin 페이지 빈 상태 아이콘화 검토, 또는 다른 로드맵 항목
+착수.
+
+---
+
+## 44. admin 페이지 빈 상태 아이콘화 + 에러 메시지 정리 (디자인/톤 개편 2차 마무리)
+
+`/admin`의 판매 내역·신고 내역·결제 내역·환불 내역·회원 검색 결과 5곳
+빈 상태에 상황별 아이콘(Package/Flag/CreditCard/RotateCcw/UserX)을
+추가해 다른 화면들과 밀도를 맞췄다. 환불 미회수액 경고, 회원 검색
+실패, 자산 수동 조정 실패 등 admin 내 에러 메시지도 §43에서 도입한
+공용 `InlineError` 컴포넌트로 통일.
+
+**검증**: 타입체크·린트 0 errors, 전체 빌드 성공.
+
+이로써 "디자인/톤 개편(GuardScreen·빈 상태·에러 메시지 밀도 향상) →
+캐릭터 일러스트 12유형 전면 개편"으로 이어진 계획이 모두 마무리됐다.
+
+**다음**: 새 로드맵 항목 착수 (미정 — 다음 세션에서 논의).
+
+---
+
+## 45. 수익 증대 전략 검토 + 리워드 광고(별조각 지급형) 실연결
+
+**AdSense 검토**: 웹 방문자 대상 Google AdSense 배너 광고 도입을 검토했으나,
+LPT는 보석/별조각 결제형 IAP가 핵심 매출원이라 결제 전환 동선(`/result`,
+`/dashboard`, `/charge` 등)에 광고를 넣으면 이탈률 증가·톤 훼손 위험이
+전환 가치보다 크다고 판단해 보류. 트래픽이 의미 있는 규모가 되면
+`/types/[typeId]` SEO 페이지·`/view/[id]` 비회원 공유 페이지 등
+비전환 구간에 한정 적용을 재검토하기로 함.
+
+**리워드 광고 연동 상태 점검**: 코드를 점검한 결과, 리워드 광고 인프라
+(`useRewardedAd`, `RewardedAdButton`, 서버 RPC `grant_ad_cash_reward`/
+`unlock_daily_content`)는 과거에 다 구현돼 있었으나 **어느 화면에도
+실제로 렌더링된 적이 없었다**는 걸 발견했다. 또한 `daily_card_unlock`
+상품(500원, 유일하게 `ad_unlockable=true`)은 DB 가격표에만 존재하고
+이를 판매하는 화면 자체가 없는 상태(고아 상품)였다.
+
+**이번에 구현한 범위 (A안 — 별조각 직접지급형)**: 새 콘텐츠 설계가
+필요 없는 `cash_reward` 모드(광고 시청 완료 시 별조각 100개 지급,
+서버에서 하루 3회 상한 검증)를 대시보드 `WalletSection`(보유 자산
+카드)에 연결했다.
+
+- `lib/ads/gpt.ts`에 `isRewardedAdConfigured()` 추가 — GAM 네트워크
+  코드가 `.env.local.example`의 플레이스홀더(`YOUR_NETWORK_CODE`)로
+  남아있으면 버튼을 아예 렌더링하지 않음(카카오 공유 버튼의
+  `isKakaoShareConfigured()`와 동일한 패턴). 계정 발급 후
+  `NEXT_PUBLIC_GAM_REWARDED_AD_UNIT`만 채우면 자동 노출됨.
+- `hooks/useRewardedAd.ts`: `showRewardedAd`에 `onClosedWithoutGrant`
+  콜백 추가. 기존엔 사용자가 광고를 끝까지 안 보고 닫으면 버튼의
+  `busy` 상태가 stale closure 때문에 영영 안 풀리는 버그가 있었음 —
+  실제 화면에 붙은 적이 없어 지금까지 발견되지 않았던 것.
+- `components/ads/RewardedAdButton.tsx`: 공용 `Button`/`InlineError`
+  컴포넌트로 스타일 통일, 위 버그 수정 반영.
+- `WalletSection.tsx`: 버튼 추가 + 광고 지급 후 보석/별조각/거래내역
+  재조회(`grant_ad_cash_reward`의 `new_balance`는 두 잔액 합산값이라
+  UI에 그대로 못 써서 서버 재조회로 정확한 분리값을 받음).
+
+**검증**: 타입체크·린트 0 errors, 전체 빌드 성공.
+
+**다음 (보류 — B안)**: `daily_card_unlock`을 실제 콘텐츠로 설계할지
+(현재 무료인 `DailyCardWidget`과 어떻게 차별화할지부터 결정 필요),
+아니면 고아 상품으로 정리(비활성화)할지 다음 세션에서 논의. 그 외
+수익 증대 후보로 논의했던 항목: 카카오 알림톡 재구매 리마인더,
+첫 구매 전용 할인, 공유 바이럴 보상 강화(공유 즉시 보상+결제전환
+2단계 퍼널), 정기결제(빌링키) 전환, 시즌패스형 콘텐츠.
+
+---
+
+## 46. 법적 표시사항 추가 + B안(daily_card_unlock 비활성화) + 웹 푸시 리마인더
+
+**개인정보처리방침·이용약관 페이지 신설**: 전자상거래법·개인정보보호법상
+필수 표시사항을 반영했다. `src/data/businessInfo.ts`에 사업자 정보를
+단일 소스로 관리(상호 저스트셀에이아이, 대표 구재형, 사업자등록번호
+304-63-00718, 통신판매업신고 제2026-서울강남-02766호, 사업장 주소).
+`/privacy`, `/terms` 페이지를 실제 데이터 흐름(이메일/카카오 로그인,
+생년월일시·설문, 토스페이먼츠 결제, Supabase/AWS/Anthropic 위탁처리
+등) 기준으로 작성하고, `SiteFooter`에 링크+사업자정보 블록을 추가했다.
+**고객센터 전화번호·이메일은 아직 미확정이라 비워둔 상태** —
+`businessInfo.ts`의 TODO 주석 참고. 개인정보보호책임자 연락처는
+법적으로 계속 비워두면 안 되는 항목이라, 확정되는 대로 꼭 채울 것.
+
+**B안 — daily_card_unlock 비활성화**: §45에서 발견한 고아 상품(판매
+화면이 한 번도 구현된 적 없는 "오늘의 카드 즉시해제")을
+`is_active=false`로 비활성화했다(029 마이그레이션). 나중에 실제
+콘텐츠로 설계하면 플래그만 되돌리면 된다.
+
+**카카오 알림톡 → 웹 푸시로 전환**: 알림톡은 전화번호 수집(+ 별도
+마케팅 수신동의)이 선행돼야 해서 범위가 크다고 판단, 전화번호·외부
+계정 승인 없이 브라우저 권한만으로 바로 구현 가능한 Web Push(VAPID)로
+대체했다. "이번 달 운세" 재구매 리마인더(기존 인앱 카드
+`MonthlyFortuneReminder`)와 동일한 대상 조건(이번 달 미구매 유저)을
+푸시로도 발송한다.
+
+- `supabase/migrations/030_push_notifications.sql`: `push_subscriptions`
+  (RLS로 본인 행만 접근), `push_reminder_log`(중복발송 방지)
+- `public/sw.js`: 푸시 수신/알림 클릭 서비스워커
+- `src/lib/push.ts`: 구독/해지 헬퍼 — VAPID 공개키 미설정 시 자동 숨김
+- `/api/push/subscribe`, `/api/push/unsubscribe`: 본인 토큰+RLS로 처리
+- `/api/cron/monthly-reminder`: `CRON_SECRET`으로 보호되는 발송
+  엔드포인트. 이번 달 미구매+미발송 유저만 골라 발송, 만료 구독
+  (410/404)은 자동 정리. **EC2 시스템 크론 등록이 별도로 필요**
+  (하루 1회 `curl -X POST -H "Authorization: Bearer $CRON_SECRET"
+  https://questofme.com/api/cron/monthly-reminder`)
+- `/account`에 "알림 받기" 토글(`NotificationSection`) 추가
+- `/api/admin/system-status`에 웹 푸시/크론 설정 여부 노출
+
+VAPID 키는 외부 승인이 필요 없어 세션에서 직접 생성해 전달함 —
+`.env.local`에 `NEXT_PUBLIC_VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/
+`VAPID_SUBJECT`만 채우면 바로 동작. `CRON_SECRET` 값 설정과 EC2
+crontab 등록은 배포 쪽에서 직접 해야 함.
+
+**검증**: 타입체크·린트 0 errors, 전체 빌드 성공(모든 신규 라우트
+포함). `npm install web-push`로 2건의 기존 취약점 경고(critical:
+Next.js `next/og` RCE, high: `brace-expansion` DoS)가 눈에 띄었는데
+이번 작업과 무관한 기존 의존성 이슈라 별도 처리 필요 — 특히
+Next.js RCE는 critical 등급이라 우선순위 높게 검토 권장.
+
+**다음**: (1) 고객센터 전화번호/이메일 확정 → `businessInfo.ts` 업데이트,
+(2) VAPID 키를 `.env.local`에 설정하고 EC2 crontab 등록 →
+리마인더 실제 발송 테스트, (3) `npm audit`의 Next.js RCE 취약점 검토,
+(4) GAM 네트워크 코드 발급되면 리워드 광고 활성화, (5) 그 외 수익
+증대 후보(첫 구매 할인, 공유 바이럴 보상 강화 등) 또는 다른 로드맵
+항목.
