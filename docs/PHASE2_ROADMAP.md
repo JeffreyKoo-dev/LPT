@@ -1492,3 +1492,55 @@ Next.js RCE는 critical 등급이라 우선순위 높게 검토 권장.
 (4) GAM 네트워크 코드 발급되면 리워드 광고 활성화, (5) 그 외 수익
 증대 후보(첫 구매 할인, 공유 바이럴 보상 강화 등) 또는 다른 로드맵
 항목.
+
+---
+
+## 47. 웹 푸시 리마인더 배포 완료
+
+§46에서 코드까지 끝내고 "다음"으로 남겨뒀던 배포 작업 3가지를
+전부 마쳤다.
+
+- **환경변수 설정**: EC2 `.env.local`에 `NEXT_PUBLIC_VAPID_PUBLIC_KEY`/
+  `VAPID_PRIVATE_KEY`/`VAPID_SUBJECT`/`CRON_SECRET`(직접 `openssl rand
+  -hex 32`로 생성) 반영 후 `rm -rf .next && npm run build && pm2
+  restart lpt --update-env` 재배포
+- **EC2 crontab 등록**: 매일 10시 `curl -X POST -H "Authorization:
+  Bearer $CRON_SECRET" https://questofme.com/api/cron/monthly-reminder`
+  등록 완료
+- **마이그레이션**: `029_deactivate_daily_card_unlock.sql`,
+  `030_push_notifications.sql` 순서로 SQL Editor 실행 완료
+- **실기기 검증**: `/account`에서 "알림 받기" 구독 성공(처음엔 브라우저
+  알림 권한이 거부 상태라 "알림 끄기"로 안 바뀌는 문제가 있었는데,
+  크롬 사이트 설정에서 알림 권한을 허용으로 바꾼 뒤 정상 동작 확인),
+  `/admin` → system-status에서 "웹 푸시 알림"/"재구매 리마인더
+  크론(CRON_SECRET)" 둘 다 "설정됨"으로 확인
+
+**남은 것 (§46에서 이어지는 것)**: (1) 고객센터 전화번호/이메일 확정 →
+`businessInfo.ts` 업데이트, (2) `npm audit`의 Next.js RCE(critical)
+취약점 검토, (3) GAM 네트워크 코드 발급되면 리워드 광고 활성화,
+(4) 그 외 수익 증대 후보(첫 구매 할인, 공유 바이럴 보상 강화 등)
+또는 다른 로드맵 항목. 실제 리마인더가 발송되는지는 크론이 처음
+도는 시점(다음 날 10시)에 확인 필요.
+
+---
+
+## 48. Next.js RCE(critical) 취약점 패치
+
+**확인**: 취약점은 `next/og`의 `ImageResponse`(RCE, GHSA-vcvr-r3jv-pc5j)
+관련인데, 코드 전체에서 `next/og`를 쓰는 곳이 없어 실제 공격 경로는
+원래 없었다. 그래도 방치할 이유는 없어 바로 처리.
+
+**조치**: `next` `16.3.5` → `16.3.8`로 업그레이드 — §17에서 보류했던
+"14→16 메이저 업그레이드"와는 무관한 **16 내 패치 버전** 업그레이드라
+리스크가 낮다. 이어서 `npm audit fix`로 남아있던 `brace-expansion`
+(high, DoS) 취약점도 함께 해결 — `npm audit` 결과 **0개 취약점**.
+
+**검증**: 타입체크 0 errors, 전체 라우트(46개) 빌드 성공.
+
+**필요 작업**: EC2에서 `git pull` 후 `npm install && npm run build &&
+pm2 restart lpt`로 재배포 필요 (package.json/package-lock.json 변경분
+반영).
+
+**다음**: (1) 고객센터 전화번호/이메일 확정, (2) GAM 네트워크 코드
+발급되면 리워드 광고 활성화, (3) 수익 증대 후보(첫 구매 할인, 공유
+바이럴 보상 강화, 정기결제, 시즌패스형 콘텐츠) 또는 다른 로드맵 항목.
