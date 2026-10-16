@@ -29,8 +29,8 @@ export function CoupangDisclosure({ className, variant = "subtle" }: CoupangDisc
     <p
       className={cn(
         variant === "prominent"
-          ? "text-sm font-semibold leading-snug text-fate"
-          : "text-[11px] leading-relaxed text-muted",
+          ? "break-keep text-sm font-semibold leading-snug text-fate"
+          : "break-keep text-[11px] leading-relaxed text-muted",
         className
       )}
     >
