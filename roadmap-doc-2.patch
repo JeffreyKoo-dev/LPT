@@ -1,0 +1,25 @@
+diff --git a/docs/PHASE2_ROADMAP.md b/docs/PHASE2_ROADMAP.md
+index 97958ad..1155ece 100644
+--- a/docs/PHASE2_ROADMAP.md
++++ b/docs/PHASE2_ROADMAP.md
+@@ -1370,3 +1370,20 @@ check_migrations.sql`(점검용 조회 쿼리, 스키마 변경 없음 — 마
+ 
+ **다음**: admin 페이지 빈 상태 아이콘화 검토, 또는 다른 로드맵 항목
+ 착수.
++
++---
++
++## 44. admin 페이지 빈 상태 아이콘화 + 에러 메시지 정리 (디자인/톤 개편 2차 마무리)
++
++`/admin`의 판매 내역·신고 내역·결제 내역·환불 내역·회원 검색 결과 5곳
++빈 상태에 상황별 아이콘(Package/Flag/CreditCard/RotateCcw/UserX)을
++추가해 다른 화면들과 밀도를 맞췄다. 환불 미회수액 경고, 회원 검색
++실패, 자산 수동 조정 실패 등 admin 내 에러 메시지도 §43에서 도입한
++공용 `InlineError` 컴포넌트로 통일.
++
++**검증**: 타입체크·린트 0 errors, 전체 빌드 성공.
++
++이로써 "디자인/톤 개편(GuardScreen·빈 상태·에러 메시지 밀도 향상) →
++캐릭터 일러스트 12유형 전면 개편"으로 이어진 계획이 모두 마무리됐다.
++
++**다음**: 새 로드맵 항목 착수 (미정 — 다음 세션에서 논의).

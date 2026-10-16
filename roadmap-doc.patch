@@ -1,0 +1,35 @@
+diff --git a/docs/PHASE2_ROADMAP.md b/docs/PHASE2_ROADMAP.md
+index 8a4c4ff..97958ad 100644
+--- a/docs/PHASE2_ROADMAP.md
++++ b/docs/PHASE2_ROADMAP.md
+@@ -1343,3 +1343,30 @@ check_migrations.sql`(점검용 조회 쿼리, 스키마 변경 없음 — 마
+ 
+ **다음**: 디자인/톤 개편 2차(다른 화면의 빈 상태·에러 메시지 등 추가
+ 점검) 또는 캐릭터 일러스트 방향 검토.
++
++---
++
++## 43. 캐릭터 일러스트 12유형 전체 개편 + 공용 InlineError 컴포넌트
++
++**캐릭터 일러스트**: 기존엔 같은 오행(fire/wood/metal/water/earth)
++그룹에 속한 유형들이 전부 같은 곰 모양에 흉갑의 작은 아이콘 하나로만
++구분돼 시각적으로 거의 동일했다. 12개 클래스 각각에 고유한
++헤드피스+소품 조합을 추가(전사=붉은 머리띠+검과 방패, 상인=두건+저울과
++동전주머니, 현자=동그란 안경+마법서 등)하고, 그라데이션 음영·
++드롭섀도우·외곽선을 더해 입체감을 보강했다. `public/characters/*.svg`
++24개 전체 재작성, 공유 카드용 PNG(`ShareActions.tsx`,
++`/types/[typeId]` SEO 페이지에서 사용) 24개도 새 일러스트 기준으로
++재생성. 프로덕션 배포 후 사용자 확인 완료.
++
++**공용 InlineError 컴포넌트**: 로그인/계정(카카오 연결·계정 삭제)/
++친구초대/궁합권 구매/충전/주간 이용권/프리미엄 잠금해제(`PremiumUnlockCard`)
++등 여러 화면에 중복돼 있던 텍스트 전용 빨간 에러 메시지를
++`src/components/common/InlineError.tsx`(AlertCircle 아이콘 포함)로
++통일했다. admin 페이지의 에러·빈 상태와 폼 필드별 인라인 검증
++에러(`BirthDateField` 등)는 내부용/의도적으로 미니멀한 성격이라 이번
++범위에서 제외.
++
++**검증**: 타입체크·린트 0 errors, 전체 빌드 성공.
++
++**다음**: admin 페이지 빈 상태 아이콘화 검토, 또는 다른 로드맵 항목
++착수.

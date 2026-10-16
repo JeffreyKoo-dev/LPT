@@ -1,0 +1,55 @@
+diff --git a/docs/PHASE2_ROADMAP.md b/docs/PHASE2_ROADMAP.md
+index 1155ece..d30d5cc 100644
+--- a/docs/PHASE2_ROADMAP.md
++++ b/docs/PHASE2_ROADMAP.md
+@@ -1387,3 +1387,50 @@ check_migrations.sql`(점검용 조회 쿼리, 스키마 변경 없음 — 마
+ 캐릭터 일러스트 12유형 전면 개편"으로 이어진 계획이 모두 마무리됐다.
+ 
+ **다음**: 새 로드맵 항목 착수 (미정 — 다음 세션에서 논의).
++
++---
++
++## 45. 수익 증대 전략 검토 + 리워드 광고(별조각 지급형) 실연결
++
++**AdSense 검토**: 웹 방문자 대상 Google AdSense 배너 광고 도입을 검토했으나,
++LPT는 보석/별조각 결제형 IAP가 핵심 매출원이라 결제 전환 동선(`/result`,
++`/dashboard`, `/charge` 등)에 광고를 넣으면 이탈률 증가·톤 훼손 위험이
++전환 가치보다 크다고 판단해 보류. 트래픽이 의미 있는 규모가 되면
++`/types/[typeId]` SEO 페이지·`/view/[id]` 비회원 공유 페이지 등
++비전환 구간에 한정 적용을 재검토하기로 함.
++
++**리워드 광고 연동 상태 점검**: 코드를 점검한 결과, 리워드 광고 인프라
++(`useRewardedAd`, `RewardedAdButton`, 서버 RPC `grant_ad_cash_reward`/
++`unlock_daily_content`)는 과거에 다 구현돼 있었으나 **어느 화면에도
++실제로 렌더링된 적이 없었다**는 걸 발견했다. 또한 `daily_card_unlock`
++상품(500원, 유일하게 `ad_unlockable=true`)은 DB 가격표에만 존재하고
++이를 판매하는 화면 자체가 없는 상태(고아 상품)였다.
++
++**이번에 구현한 범위 (A안 — 별조각 직접지급형)**: 새 콘텐츠 설계가
++필요 없는 `cash_reward` 모드(광고 시청 완료 시 별조각 100개 지급,
++서버에서 하루 3회 상한 검증)를 대시보드 `WalletSection`(보유 자산
++카드)에 연결했다.
++
++- `lib/ads/gpt.ts`에 `isRewardedAdConfigured()` 추가 — GAM 네트워크
++  코드가 `.env.local.example`의 플레이스홀더(`YOUR_NETWORK_CODE`)로
++  남아있으면 버튼을 아예 렌더링하지 않음(카카오 공유 버튼의
++  `isKakaoShareConfigured()`와 동일한 패턴). 계정 발급 후
++  `NEXT_PUBLIC_GAM_REWARDED_AD_UNIT`만 채우면 자동 노출됨.
++- `hooks/useRewardedAd.ts`: `showRewardedAd`에 `onClosedWithoutGrant`
++  콜백 추가. 기존엔 사용자가 광고를 끝까지 안 보고 닫으면 버튼의
++  `busy` 상태가 stale closure 때문에 영영 안 풀리는 버그가 있었음 —
++  실제 화면에 붙은 적이 없어 지금까지 발견되지 않았던 것.
++- `components/ads/RewardedAdButton.tsx`: 공용 `Button`/`InlineError`
++  컴포넌트로 스타일 통일, 위 버그 수정 반영.
++- `WalletSection.tsx`: 버튼 추가 + 광고 지급 후 보석/별조각/거래내역
++  재조회(`grant_ad_cash_reward`의 `new_balance`는 두 잔액 합산값이라
++  UI에 그대로 못 써서 서버 재조회로 정확한 분리값을 받음).
++
++**검증**: 타입체크·린트 0 errors, 전체 빌드 성공.
++
++**다음 (보류 — B안)**: `daily_card_unlock`을 실제 콘텐츠로 설계할지
++(현재 무료인 `DailyCardWidget`과 어떻게 차별화할지부터 결정 필요),
++아니면 고아 상품으로 정리(비활성화)할지 다음 세션에서 논의. 그 외
++수익 증대 후보로 논의했던 항목: 카카오 알림톡 재구매 리마인더,
++첫 구매 전용 할인, 공유 바이럴 보상 강화(공유 즉시 보상+결제전환
++2단계 퍼널), 정기결제(빌링키) 전환, 시즌패스형 콘텐츠.
