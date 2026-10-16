@@ -1630,3 +1630,26 @@ pm2 restart lpt`로 재배포 필요 (package.json/package-lock.json 변경분
 `COUPANG_ACCESS_KEY`/`COUPANG_SECRET_KEY` 등록. 이후 라이브 결과가 자동으로 우선 노출된다.
 
 **기타 정리**: `.gitignore`에 `/*.patch` 추가, 실수로 커밋된 패치 파일 3개 제거.
+
+---
+
+## 51. 사이트 아이콘(파비콘) 추가 (2026-10)
+
+**배경**: 브라우저 탭에 기본 지구본 아이콘이 표시되고, 푸시 알림 아이콘도 가로형 `og-image.png`를
+그대로 썼다. 쿠팡 파트너스 등 외부 심사에서 사이트 완성도를 보는 점도 고려해 전용 아이콘을 만들었다.
+
+**디자인**: 사이트 색(보라 `#8a5fae`, 주황 `#d9954a`, 크림 `#fff6ec`)에 맞춘 둥근 사각형 아이콘.
+방긋 웃는 말랑한 별 캐릭터("별조각")가 크림색 궤도 링(QuestofMe의 Q)을 두르고 있고, 글로시
+하이라이트와 반짝이를 더했다. 직접 그린 오리지널 디자인이다.
+
+**파일** (Next.js App Router 파일 규칙 — `layout.tsx` 수정 없이 `<head>`에 자동 삽입)
+- `src/app/icon.svg` — 최신 브라우저 탭용 벡터 아이콘(전체 디자인)
+- `src/app/favicon.ico` — 16/32/48px. 작은 크기에서 또렷하도록 장식을 줄이고 별·링·눈을 키운 전용 버전
+- `src/app/apple-icon.png` — 180px, iOS 홈 화면용(모서리는 iOS가 처리하므로 꽉 찬 정사각형)
+- `public/icon-192.png`, `public/icon-512.png` — 푸시 알림·향후 PWA 매니페스트용
+- `public/sw.js` — 푸시 알림 기본 아이콘을 `og-image.png` → `/icon-192.png`로 변경
+
+**검증**: 전체 빌드 성공, 빌드 산출 HTML에 `rel="icon"`(ico, svg)과 `rel="apple-touch-icon"` 삽입 확인.
+배포 후 브라우저는 파비콘을 강하게 캐시하므로 강력 새로고침(Ctrl+Shift+R) 또는 탭을 닫았다 다시 열어 확인한다.
+
+**다음 후보**: `manifest` 추가(홈 화면에 추가 지원 — iOS 웹 푸시는 홈 화면에 추가된 PWA에서만 동작).

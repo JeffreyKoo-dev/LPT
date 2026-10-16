@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#b790e6"/><stop offset="0.55" stop-color="#8a5fae"/><stop offset="1" stop-color="#6a3f94"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.28" cy="0.18" r="0.7">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.45"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="star" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#ffe9a0"/><stop offset="0.5" stop-color="#ffc157"/><stop offset="1" stop-color="#f0872e"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fffaf2"/><stop offset="1" stop-color="#ffdcc0"/>
+    </linearGradient>
+    <clipPath id="front"><rect x="0" y="292" width="512" height="220"/></clipPath>
+    <filter id="blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="116" fill="url(#glow)"/>
+  <!-- 반짝이 -->
+  <path d="M104 88 Q110.6 111.4 134 118 Q110.6 124.6 104 148 Q97.4 124.6 74 118 Q97.4 111.4 104 88Z" fill="#fff6ec"/>
+  <path d="M420 84 Q424.4 99.6 440 104 Q424.4 108.4 420 124 Q415.6 108.4 400 104 Q415.6 99.6 420 84Z" fill="#fff6ec"/>
+  <path d="M430 392 Q433.52 404.48 446 408 Q433.52 411.52 430 424 Q426.48 411.52 414 408 Q426.48 404.48 430 392Z" fill="#ffe9a0"/>
+  <path d="M84 368 Q86.64 377.36 96 380 Q86.64 382.64 84 392 Q81.36 382.64 72 380 Q81.36 377.36 84 368Z" fill="#ffe9a0"/>
+  <!-- 궤도 링(Q) : 뒤쪽 -->
+  <g transform="rotate(-18 256 300)">
+    <ellipse cx="256" cy="300" rx="196" ry="62" fill="none" stroke="#5b3482" stroke-opacity="0.35" stroke-width="30" transform="translate(0 8)" filter="url(#blur)"/>
+    <ellipse cx="256" cy="300" rx="196" ry="62" fill="none" stroke="url(#ring)" stroke-width="26"/>
+  </g>
+  <!-- 별 그림자 + 몸통(말랑하게 둥근 모서리) -->
+  <path d="M256.0 120.0 L299.5 198.1 L387.2 215.4 L326.4 280.9 L337.1 369.6 L256.0 332.0 L174.9 369.6 L185.6 280.9 L124.8 215.4 L212.5 198.1Z" fill="#4d2a72" fill-opacity="0.45" stroke="#4d2a72" stroke-opacity="0.45" stroke-width="40" stroke-linejoin="round" transform="translate(0 14)" filter="url(#blur)"/>
+  <path d="M256.0 120.0 L299.5 198.1 L387.2 215.4 L326.4 280.9 L337.1 369.6 L256.0 332.0 L174.9 369.6 L185.6 280.9 L124.8 215.4 L212.5 198.1Z" fill="url(#star)" stroke="url(#star)" stroke-width="40" stroke-linejoin="round"/>
+  <!-- 글로시 하이라이트 -->
+  <ellipse cx="206" cy="170" rx="46" ry="22" fill="#fff" fill-opacity="0.55" transform="rotate(-38 206 170)" filter="url(#soft)"/>
+  <!-- 궤도 링 : 앞쪽(별 앞을 지나감) -->
+  <g clip-path="url(#front)">
+    <g transform="rotate(-18 256 300)">
+      <ellipse cx="256" cy="300" rx="196" ry="62" fill="none" stroke="url(#ring)" stroke-width="26"/>
+    </g>
+  </g>
+  <!-- 얼굴 -->
+  <ellipse cx="212" cy="244" rx="13" ry="18" fill="#4a3728"/>
+  <ellipse cx="300" cy="244" rx="13" ry="18" fill="#4a3728"/>
+  <circle cx="217" cy="237" r="5" fill="#fff"/><circle cx="305" cy="237" r="5" fill="#fff"/>
+  <ellipse cx="184" cy="270" rx="17" ry="10" fill="#ff7f9d" fill-opacity="0.75"/>
+  <ellipse cx="328" cy="270" rx="17" ry="10" fill="#ff7f9d" fill-opacity="0.75"/>
+  <path d="M240 266 Q256 286 272 266" fill="none" stroke="#4a3728" stroke-width="9" stroke-linecap="round"/>
+</svg>

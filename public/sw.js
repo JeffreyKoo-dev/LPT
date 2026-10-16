@@ -12,7 +12,7 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "LPT";
   const options = {
     body: payload.body || "",
-    icon: payload.icon || "/og-image.png",
+    icon: payload.icon || "/icon-192.png",
     badge: payload.badge || "/og-image.png",
     data: { url: payload.url || "/dashboard" },
   };
