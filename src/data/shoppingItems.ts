@@ -23,16 +23,16 @@ export interface ShoppingItem {
 }
 
 export const SHOPPING_ITEMS: ShoppingItem[] = [
-  { id: "wood-1", element: "wood", name: "그린 아로마 디퓨저", blurb: "산뜻한 향으로 하루를 여는 데 도움이 될 수 있어요.", searchKeyword: "아로마 디퓨저" },
-  { id: "wood-2", element: "wood", name: "식물 재배 키트", blurb: "책상 위 작은 초록빛이 기분 전환에 좋을 수 있어요.", searchKeyword: "미니 화분 키트" },
-  { id: "fire-1", element: "fire", name: "레드 무드등", blurb: "따뜻한 조명이 활력을 더해줄 수 있어요.", searchKeyword: "무드등" },
-  { id: "fire-2", element: "fire", name: "핸드드립 커피 세트", blurb: "직접 내리는 커피 한 잔이 오늘 기운과 잘 맞을 수 있어요.", searchKeyword: "핸드드립 커피세트" },
-  { id: "earth-1", element: "earth", name: "도자기 머그컵", blurb: "묵직하고 편안한 질감이 안정감을 줄 수 있어요.", searchKeyword: "도자기 머그컵" },
-  { id: "earth-2", element: "earth", name: "우드 트레이", blurb: "책상 위를 정돈하면 마음도 정리되는 느낌일 수 있어요.", searchKeyword: "우드 트레이" },
-  { id: "metal-1", element: "metal", name: "스테인리스 텀블러", blurb: "깔끔하고 단정한 도구가 오늘과 잘 어울려요.", searchKeyword: "스테인리스 텀블러" },
-  { id: "metal-2", element: "metal", name: "미니멀 무선 이어폰", blurb: "군더더기 없는 디자인이 기분 전환에 좋을 수 있어요.", searchKeyword: "무선 이어폰" },
-  { id: "water-1", element: "water", name: "수분 미스트", blurb: "촉촉한 케어가 오늘 컨디션에 도움이 될 수 있어요.", searchKeyword: "수분 미스트" },
-  { id: "water-2", element: "water", name: "블루 라이트 무드등", blurb: "차분한 파란빛이 마음을 가라앉히는 데 좋을 수 있어요.", searchKeyword: "블루 무드등" },
+  { id: "wood-1", element: "wood", name: "그린 아로마 디퓨저", blurb: "산뜻한 향으로 하루를 여는 데 도움이 될 수 있어요.", searchKeyword: "아로마 디퓨저", affiliateUrl: "https://link.coupang.com/a/hTa8TQDWP6" },
+  { id: "wood-2", element: "wood", name: "식물 재배 키트", blurb: "책상 위 작은 초록빛이 기분 전환에 좋을 수 있어요.", searchKeyword: "미니 화분 키트", affiliateUrl: "https://link.coupang.com/a/hThBw9nmh2" },
+  { id: "fire-1", element: "fire", name: "레드 무드등", blurb: "따뜻한 조명이 활력을 더해줄 수 있어요.", searchKeyword: "무드등", affiliateUrl: "https://link.coupang.com/a/hThHey5jS8" },
+  { id: "fire-2", element: "fire", name: "핸드드립 커피 세트", blurb: "직접 내리는 커피 한 잔이 오늘 기운과 잘 맞을 수 있어요.", searchKeyword: "핸드드립 커피세트", affiliateUrl: "https://link.coupang.com/a/hThIbd5FvM" },
+  { id: "earth-1", element: "earth", name: "도자기 머그컵", blurb: "묵직하고 편안한 질감이 안정감을 줄 수 있어요.", searchKeyword: "도자기 머그컵", affiliateUrl: "https://link.coupang.com/a/hThI0TFUK4" },
+  { id: "earth-2", element: "earth", name: "우드 트레이", blurb: "책상 위를 정돈하면 마음도 정리되는 느낌일 수 있어요.", searchKeyword: "우드 트레이", affiliateUrl: "https://link.coupang.com/a/hThJLuqggu" },
+  { id: "metal-1", element: "metal", name: "스테인리스 텀블러", blurb: "깔끔하고 단정한 도구가 오늘과 잘 어울려요.", searchKeyword: "스테인리스 텀블러", affiliateUrl: "https://link.coupang.com/a/hThLQJTDvU" },
+  { id: "metal-2", element: "metal", name: "미니멀 무선 이어폰", blurb: "군더더기 없는 디자인이 기분 전환에 좋을 수 있어요.", searchKeyword: "무선 이어폰", affiliateUrl: "https://link.coupang.com/a/hThM6HjwT6" },
+  { id: "water-1", element: "water", name: "수분 미스트", blurb: "촉촉한 케어가 오늘 컨디션에 도움이 될 수 있어요.", searchKeyword: "수분 미스트", affiliateUrl: "https://link.coupang.com/a/hThNLT0P8e" },
+  { id: "water-2", element: "water", name: "블루 라이트 무드등", blurb: "차분한 파란빛이 마음을 가라앉히는 데 좋을 수 있어요.", searchKeyword: "블루 무드등", affiliateUrl: "https://link.coupang.com/a/hThODW9KwK" },
 ];
 
 export function getShoppingItemsByElement(element: Element): ShoppingItem[] {
