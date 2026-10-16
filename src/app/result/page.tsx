@@ -26,6 +26,8 @@ import { RelatedTypesPanel } from "@/components/result/RelatedTypesPanel";
 import { PageHeading } from "@/components/common/PageHeading";
 import { PremiumUnlockCard } from "@/components/wallet/PremiumUnlockCard";
 import { PushOptInBanner } from "@/components/common/PushOptInBanner";
+import { CoupangRecommendation } from "@/components/common/CoupangRecommendation";
+import { getDailyShoppingItem } from "@/lib/dailyRecommendation";
 
 type LoadState = "loading" | "missing-basic-info" | "missing-survey" | "ready";
 
@@ -137,6 +139,11 @@ export default function ResultPage() {
         )}
 
         <DailyCardWidget quadrant={report.lptType.quadrant} />
+
+        <CoupangRecommendation
+          item={getDailyShoppingItem(report.sajuChart.dominantElement)}
+          standalone
+        />
 
         <Card variant="ledger">
           <ElementRadar elementCounts={report.sajuChart.elementCounts} />

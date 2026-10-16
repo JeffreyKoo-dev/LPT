@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/common/Button";
 import { Card, CardDescription, CardTitle } from "@/components/common/Card";
+import { DailyCoupangPick } from "@/components/common/DailyCoupangPick";
 
 const CONCEPT_ITEMS = [
   {
@@ -92,6 +93,10 @@ export default function HomePage() {
             </Card>
           ))}
         </div>
+      </section>
+
+      <section className="mx-auto max-w-3xl px-5 pb-12">
+        <DailyCoupangPick />
       </section>
 
       <section className="mx-auto max-w-3xl px-5 pb-24">

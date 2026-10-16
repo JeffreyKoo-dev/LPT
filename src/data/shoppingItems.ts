@@ -1,4 +1,5 @@
 import { Element } from "@/types/saju";
+import { getDayOfYear } from "@/data/dailyTips";
 
 /**
  * "오늘의 추천 아이템"에 쓰이는 오행별 상품 큐레이션.
@@ -37,4 +38,9 @@ export const SHOPPING_ITEMS: ShoppingItem[] = [
 
 export function getShoppingItemsByElement(element: Element): ShoppingItem[] {
   return SHOPPING_ITEMS.filter((item) => item.element === element);
+}
+
+/** 오행 정보가 없는 공개 페이지용: 전체 큐레이션에서 오늘 날짜로 하나를 순환 선택한다 */
+export function getDailyAnyShoppingItem(date: Date = new Date()): ShoppingItem {
+  return SHOPPING_ITEMS[getDayOfYear(date) % SHOPPING_ITEMS.length];
 }
