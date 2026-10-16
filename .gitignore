@@ -18,3 +18,6 @@ next-env.d.ts
 # env files
 .env*.local
 .env
+
+# patch files delivered from the Claude session (never commit)
+/*.patch
