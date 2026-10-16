@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BUSINESS_INFO } from "@/data/businessInfo";
+import { CoupangDisclosure } from "@/components/common/CoupangDisclosure";
 
 export function SiteFooter() {
   return (
@@ -32,6 +33,8 @@ export function SiteFooter() {
           </p>
         )}
       </div>
+
+      <CoupangDisclosure className="mx-auto mt-3 max-w-md px-5" />
 
       <p className="mt-3">© {new Date().getFullYear()} {BUSINESS_INFO.companyName}</p>
     </footer>

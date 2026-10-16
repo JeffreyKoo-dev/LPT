@@ -31,3 +31,25 @@ export async function searchCoupangProducts(keyword: string): Promise<CoupangPro
     return [];
   }
 }
+
+/**
+ * 수동 생성한 쿠팡 파트너스 단축 링크인지 확인한다. 쿠팡 파트너스 "링크 생성"
+ * 결과는 link.coupang.com/a/... 또는 coupa.ng/... 형태다. 이 두 도메인만 허용해
+ * 오타나 임의 URL이 "제휴 링크"로 노출되는 것을 막는다.
+ */
+export function isCoupangAffiliateUrl(url: string | undefined): url is string {
+  if (!url) return false;
+  try {
+    const { protocol, hostname } = new URL(url);
+    if (protocol !== "https:") return false;
+    return hostname === "link.coupang.com" || hostname === "coupa.ng";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 제휴 링크용 rel 값. sponsored/nofollow로 유료 제휴 링크임을 검색엔진에 알린다.
+ * noreferrer는 일부러 뺀다 — 쿠팡이 유입 채널(등록된 사이트)을 확인할 수 있어야 한다.
+ */
+export const AFFILIATE_LINK_REL = "sponsored nofollow noopener";

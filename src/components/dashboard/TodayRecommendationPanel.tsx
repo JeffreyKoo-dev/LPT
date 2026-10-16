@@ -14,7 +14,13 @@ import {
   DailyFriendSuggestion,
 } from "@/lib/dailyRecommendation";
 import { getFriendsList } from "@/lib/friends";
-import { searchCoupangProducts, CoupangProduct } from "@/lib/coupang";
+import {
+  searchCoupangProducts,
+  CoupangProduct,
+  isCoupangAffiliateUrl,
+  AFFILIATE_LINK_REL,
+} from "@/lib/coupang";
+import { CoupangDisclosure } from "@/components/common/CoupangDisclosure";
 import { Quest } from "@/types/quest";
 import { ShoppingItem } from "@/data/shoppingItems";
 
@@ -101,26 +107,43 @@ export function TodayRecommendationPanel({
         <div className="rounded-lg border border-border bg-surface-2 px-3 py-3">
           <p className="text-xs text-growth">오늘의 추천 아이템</p>
           {liveProduct ? (
-            <a
-              href={liveProduct.productUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 flex items-center gap-3"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element -- 쿠팡 외부 이미지라 next/image 도메인 설정 없이 바로 사용 */}
-              <img
-                src={liveProduct.productImage}
-                alt=""
-                className="h-14 w-14 shrink-0 rounded-md object-cover"
-              />
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-foreground">{liveProduct.productName}</p>
-                <p className="mt-0.5 text-xs text-muted">
-                  {liveProduct.productPrice.toLocaleString()}원
-                  {liveProduct.isRocket && " (로켓배송)"}
-                </p>
-              </div>
-            </a>
+            <>
+              <a
+                href={liveProduct.productUrl}
+                target="_blank"
+                rel={AFFILIATE_LINK_REL}
+                className="mt-1 flex items-center gap-3"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element -- 쿠팡 외부 이미지라 next/image 도메인 설정 없이 바로 사용 */}
+                <img
+                  src={liveProduct.productImage}
+                  alt=""
+                  className="h-14 w-14 shrink-0 rounded-md object-cover"
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground">{liveProduct.productName}</p>
+                  <p className="mt-0.5 text-xs text-muted">
+                    {liveProduct.productPrice.toLocaleString()}원
+                    {liveProduct.isRocket && " (로켓배송)"}
+                  </p>
+                </div>
+              </a>
+              <CoupangDisclosure className="mt-2" />
+            </>
+          ) : isCoupangAffiliateUrl(shoppingItem.affiliateUrl) ? (
+            <>
+              <p className="mt-1 text-sm font-medium text-foreground">{shoppingItem.name}</p>
+              <p className="mt-0.5 text-xs text-muted">{shoppingItem.blurb}</p>
+              <a
+                href={shoppingItem.affiliateUrl}
+                target="_blank"
+                rel={AFFILIATE_LINK_REL}
+                className="mt-2 inline-block text-xs font-medium text-fate underline underline-offset-2"
+              >
+                쿠팡에서 둘러보기
+              </a>
+              <CoupangDisclosure className="mt-2" />
+            </>
           ) : (
             <>
               <p className="mt-1 text-sm font-medium text-foreground">{shoppingItem.name}</p>

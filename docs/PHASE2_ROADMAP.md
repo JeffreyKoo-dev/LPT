@@ -1579,3 +1579,47 @@ pm2 restart lpt`로 재배포 필요 (package.json/package-lock.json 변경분
 
 **다음**: (1) 고객센터 전화번호 확정, (2) GAM 리워드 광고 활성화, (3) 수익 증대 후보
 (첫 구매 할인, 공유 바이럴 보상 강화 등).
+
+---
+
+## 50. 쿠팡 파트너스 수동 제휴 링크 + 대가성 문구 (2026-10)
+
+**배경**: §(쿠팡 검색 연동)의 `coupang-search` API는 쿠팡 최종 승인(누적 판매 실적)
+이후에야 열린다. 그 전까지 "오늘의 추천 아이템"은 "둘러보기 링크 준비 중"만 보여
+수익이 0이었다. API 없이도 쿠팡 파트너스 "링크 생성"으로 만든 단축 링크를 데이터에
+넣어 바로 수익이 나게 한다.
+
+**구현**
+- `data/shoppingItems.ts`의 `affiliateUrl`에 항목별 단축 링크(link.coupang.com/a/… 또는
+  coupa.ng/…)를 넣으면 "쿠팡에서 둘러보기"로 노출. 라이브 API 결과가 있으면 그쪽이 우선.
+- `lib/coupang.ts` — `isCoupangAffiliateUrl()`로 쿠팡 도메인(https)만 허용,
+  `AFFILIATE_LINK_REL`(`sponsored nofollow noopener`, noreferrer는 의도적으로 제외).
+- `components/common/CoupangDisclosure.tsx` — 쿠팡 지정 대가성 문구를 제휴 링크 바로
+  아래와 전역 푸터에 표시. 문구는 쿠팡 안내 표현 그대로 유지할 것.
+
+**운영 규칙(쿠팡 파트너스 활동 시 주의 사항)**
+1. 제휴 링크가 보이는 곳에는 대가성 문구를 반드시 함께 표시한다.
+2. 제휴 링크를 메신저·SNS·푸시 알림 등 수신 동의 없는 메시지에 넣지 않는다
+   (불법 스팸 간주 시 과태료·형사처벌 대상). 푸시 리마인더 본문에도 넣지 않는다.
+3. 등록하지 않은 채널(도메인)에서 링크를 노출하지 않는다 — 부정행위로 간주될 수 있음.
+
+**링크 생성 작업표** (쿠팡 파트너스 > 링크 생성 > 간편 링크 만들기, 채널 아이디: Questofme)
+검색 URL을 넣고 "링크 생성" → 나온 단축 링크를 `affiliateUrl`에 붙여넣는다.
+
+| id | 쿠팡 URL |
+|---|---|
+| wood-1 | https://www.coupang.com/np/search?q=아로마 디퓨저 |
+| wood-2 | https://www.coupang.com/np/search?q=미니 화분 키트 |
+| fire-1 | https://www.coupang.com/np/search?q=무드등 |
+| fire-2 | https://www.coupang.com/np/search?q=핸드드립 커피세트 |
+| earth-1 | https://www.coupang.com/np/search?q=도자기 머그컵 |
+| earth-2 | https://www.coupang.com/np/search?q=우드 트레이 |
+| metal-1 | https://www.coupang.com/np/search?q=스테인리스 텀블러 |
+| metal-2 | https://www.coupang.com/np/search?q=무선 이어폰 |
+| water-1 | https://www.coupang.com/np/search?q=수분 미스트 |
+| water-2 | https://www.coupang.com/np/search?q=블루 무드등 |
+
+**API가 열린 뒤**: 최종 승인 → Access/Secret Key 발급 → Supabase Edge Function Secrets에
+`COUPANG_ACCESS_KEY`/`COUPANG_SECRET_KEY` 등록. 이후 라이브 결과가 자동으로 우선 노출된다.
+
+**기타 정리**: `.gitignore`에 `/*.patch` 추가, 실수로 커밋된 패치 파일 3개 제거.

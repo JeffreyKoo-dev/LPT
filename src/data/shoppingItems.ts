@@ -13,6 +13,12 @@ export interface ShoppingItem {
   name: string;
   blurb: string;
   searchKeyword: string;
+  /**
+   * 쿠팡 파트너스 "링크 생성"으로 만든 단축 링크(https://link.coupang.com/a/... 또는
+   * https://coupa.ng/...). API가 열리기 전에도 수익이 나도록 searchKeyword 검색
+   * 결과 페이지의 제휴 링크를 직접 넣어둔다. 비어 있거나 쿠팡 도메인이 아니면
+   * 화면에는 "링크 준비 중"으로 표시된다. 라이브 검색 결과가 있으면 그쪽이 우선.
+   */
   affiliateUrl?: string;
 }
 
