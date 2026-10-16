@@ -51,6 +51,7 @@ export function TodayRecommendationPanel({
   const lunch = getDailyLunch(report.sajuChart.dominantElement);
   const shoppingItem: ShoppingItem = getDailyShoppingItem(report.sajuChart.dominantElement);
   const dailyQuest: Quest | null = getDailyQuest(fantasyClass, profile);
+  const hasAffiliateLink = !!liveProduct || isCoupangAffiliateUrl(shoppingItem.affiliateUrl);
 
   useEffect(() => {
     setLiveProduct(null);
@@ -105,7 +106,11 @@ export function TodayRecommendationPanel({
 
         {/* 오늘의 추천 아이템 */}
         <div className="rounded-lg border border-border bg-surface-2 px-3 py-3">
-          <p className="text-xs text-growth">오늘의 추천 아이템</p>
+          <p className="text-xs text-growth">
+            {hasAffiliateLink && "[광고] "}오늘의 추천 아이템
+          </p>
+          {/* 쿠팡 가이드: 문구는 제휴 링크 "위"(콘텐츠 첫 부분)에, 본문보다 눈에 띄게 */}
+          {hasAffiliateLink && <CoupangDisclosure variant="prominent" className="mt-1.5" />}
           {liveProduct ? (
             <>
               <a
@@ -128,7 +133,6 @@ export function TodayRecommendationPanel({
                   </p>
                 </div>
               </a>
-              <CoupangDisclosure className="mt-2" />
             </>
           ) : isCoupangAffiliateUrl(shoppingItem.affiliateUrl) ? (
             <>
@@ -142,7 +146,6 @@ export function TodayRecommendationPanel({
               >
                 쿠팡에서 둘러보기
               </a>
-              <CoupangDisclosure className="mt-2" />
             </>
           ) : (
             <>
