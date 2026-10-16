@@ -25,6 +25,7 @@ import { getRelatedTypes } from "@/lib/compatibility";
 import { RelatedTypesPanel } from "@/components/result/RelatedTypesPanel";
 import { PageHeading } from "@/components/common/PageHeading";
 import { PremiumUnlockCard } from "@/components/wallet/PremiumUnlockCard";
+import { PushOptInBanner } from "@/components/common/PushOptInBanner";
 
 type LoadState = "loading" | "missing-basic-info" | "missing-survey" | "ready";
 
@@ -165,6 +166,8 @@ export default function ResultPage() {
             lptType: { name: typeMeta.name },
           })}
         />
+
+        <PushOptInBanner variant="result" />
 
         <PremiumUnlockCard
           productCode="yearly_fortune"

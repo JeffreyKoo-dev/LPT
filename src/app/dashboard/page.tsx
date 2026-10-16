@@ -13,6 +13,7 @@ import { getLevelProgress } from "@/lib/growth";
 import { BADGES } from "@/data/badges";
 import { TodayRecommendationPanel } from "@/components/dashboard/TodayRecommendationPanel";
 import { MonthlyFortuneReminder } from "@/components/dashboard/MonthlyFortuneReminder";
+import { PushOptInBanner } from "@/components/common/PushOptInBanner";
 import { WeeklyPassSection } from "@/components/dashboard/WeeklyPassSection";
 import { WalletSection } from "@/components/wallet/WalletSection";
 import { PageHeading } from "@/components/common/PageHeading";
@@ -91,6 +92,8 @@ export default function DashboardPage() {
         <TodayRecommendationPanel report={report} profile={profile} fantasyClass={fantasyClass} />
 
         <MonthlyFortuneReminder />
+
+        <PushOptInBanner variant="dashboard" />
 
         <WalletSection />
 
