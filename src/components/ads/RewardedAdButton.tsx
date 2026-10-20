@@ -19,7 +19,7 @@ type Props =
   | { mode: "content_unlock"; productCode: ProductCode; rewardAmount?: never; onSuccess: (newBalance: number) => void };
 
 export function RewardedAdButton(props: Props) {
-  const { showRewardedAd } = useRewardedAd();
+  const { status, showRewardedAd } = useRewardedAd();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -63,6 +63,9 @@ export function RewardedAdButton(props: Props) {
         {busy ? "광고 준비 중…" : label}
       </Button>
       {error && <InlineError>{error}</InlineError>}
+      {!error && !busy && status === "error" && (
+        <InlineError>지금은 보여드릴 광고가 없어요. 잠시 후 다시 시도해 주세요.</InlineError>
+      )}
     </div>
   );
 }
