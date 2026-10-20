@@ -20,6 +20,7 @@ export interface Googletag {
   defineOutOfPageSlot: (adUnitPath: string, format: unknown) => GoogletagRewardedSlot | null;
   pubads: () => {
     addEventListener: (event: string, handler: (event: GoogletagEvent) => void) => void;
+    removeEventListener: (event: string, handler: (event: GoogletagEvent) => void) => void;
   };
   enableServices: () => void;
   display: (slot: GoogletagRewardedSlot) => void;

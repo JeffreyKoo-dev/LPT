@@ -1686,3 +1686,30 @@ pm2 restart lpt`로 재배포 필요 (package.json/package-lock.json 변경분
 회사 대표번호(070-8028-9498)가 확정되어 `data/businessInfo.ts`의 `phone`에 반영했다.
 푸터(`고객센터 … · 이메일`)와 개인정보처리방침의 개인정보보호책임자 연락처(`이메일 / 전화번호`)에
 자동으로 표시된다. 이로써 §49 이후 남아 있던 "고객센터 전화번호 확정" 항목이 해소되었다.
+
+---
+
+## 54. PWA 매니페스트 · iOS 설치 안내 (2026-10)
+
+- `app/manifest.ts`(→ `/manifest.webmanifest`): standalone, `start_url=/dashboard`, 192/512 아이콘.
+  `layout.tsx`에 `viewport`(themeColor)와 `appleWebApp` 메타 추가. 리워드 광고 슬롯은 viewport meta가
+  없으면 생성되지 않으므로 이쪽도 명시.
+- iOS Safari는 홈 화면에 설치한 웹앱에서만 웹 푸시가 되므로, `PushOptInBanner`가 iOS 비설치 상태에서는
+  알림 버튼 대신 "홈 화면에 추가" 안내 카드를 보여준다(14일 내 "알겠어요" 시 숨김).
+
+## 55. 첫 결제 보너스 (2026-10)
+
+- `migrations/031_first_charge_bonus.sql`: `charge_cash_from_pg`가 사용자의 첫 `charge` 거래에 한해
+  별조각(bonus_balance) 300개를 추가 지급. 지갑 행 잠금으로 동시 결제 중복 지급 방지, 동일 결제 재실행
+  (unique 위반 경로)에서는 지급하지 않음. **Supabase SQL Editor에서 이 마이그레이션을 실행해야 적용된다.**
+- `/charge` 화면: 결제 이력이 없는 사용자에게 보너스 안내 배너 표시(값은 `FIRST_CHARGE_BONUS`, SQL과 동기화).
+- 공유·초대 보상은 이미 마일스톤(`friend_invites` 1/3/5/10명 → 200/500/1000/2500 별조각)으로 존재하므로
+  중복 설계하지 않았다.
+
+## 56. 리워드 광고 활성화 준비 (2026-10)
+
+- 버그 수정: `useRewardedAd`가 클릭마다 전역 `pubads()`에 리스너를 추가만 하고 해제하지 않아, 두 번째
+  시청부터 지급 콜백이 중복 호출될 수 있었다. 슬롯 종료 시 리스너 해제하도록 수정.
+- 활성화 절차(코드 변경 없음): GAM 네트워크에서 리워드 광고 단위 생성·승인 → EC2 `.env.local`의
+  `NEXT_PUBLIC_GAM_REWARDED_AD_UNIT=/네트워크코드/광고단위` 설정 → `npm run build && pm2 restart lpt`.
+  설정 전에는 버튼이 자동으로 숨겨진다. 관리자 system-status에서 설정 여부 확인 가능.

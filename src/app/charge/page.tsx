@@ -20,6 +20,9 @@ import {
   TossWidgets,
 } from "@/lib/tossPayments";
 
+/** supabase/migrations/031_first_charge_bonus.sql의 v_first_bonus와 같은 값으로 유지 */
+const FIRST_CHARGE_BONUS = 300;
+
 export default function ChargePage() {
   const router = useRouter();
   const authGate = useRequireLogin();
@@ -28,6 +31,8 @@ export default function ChargePage() {
   const [widgetsReady, setWidgetsReady] = useState(false);
   const [status, setStatus] = useState<"idle" | "rendering" | "paying">("idle");
   const [error, setError] = useState<string | null>(null);
+  // null = 확인 전. true면 아직 한 번도 결제한 적 없는 사용자(첫 결제 보너스 대상)
+  const [isFirstCharge, setIsFirstCharge] = useState<boolean | null>(null);
 
   const widgetsRef = useRef<TossWidgets | null>(null);
   const orderIdRef = useRef<string | null>(null);
@@ -37,6 +42,16 @@ export default function ChargePage() {
     getChargeOptions(getSupabaseClient())
       .then(setChargeOptions)
       .catch((err) => setError(err instanceof Error ? err.message : "충전 옵션을 불러오지 못했어요."));
+  }, []);
+
+  useEffect(() => {
+    getSupabaseClient()
+      .from("wallet_transactions")
+      .select("id", { head: true, count: "exact" })
+      .eq("type", "charge")
+      .then(({ count, error: queryError }: { count: number | null; error: unknown }) => {
+        if (!queryError) setIsFirstCharge((count ?? 0) === 0);
+      });
   }, []);
 
   // 금액을 선택하면, 그 금액으로 결제수단·약관 UI를 새로 렌더링한다.
@@ -113,6 +128,11 @@ export default function ChargePage() {
       <PageHeading label="보석 충전" title="필요한 만큼 채워보세요" />
 
       <Card>
+        {isFirstCharge && (
+          <p className="mb-4 break-keep rounded-lg bg-growth-soft px-3 py-2 text-sm font-semibold text-growth">
+            첫 결제 기념! 어떤 금액이든 별조각 {FIRST_CHARGE_BONUS}개를 추가로 드려요.
+          </p>
+        )}
         <div className="flex flex-col gap-2">
           {chargeOptions.map(({ krwAmount, cashAmount }) => {
             const bonus = cashAmount - krwAmount;

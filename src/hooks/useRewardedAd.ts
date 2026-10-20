@@ -60,28 +60,43 @@ export function useRewardedAd() {
           slotRef.current = slot;
           slot.addService(googletag.pubads());
 
-          googletag.pubads().addEventListener("rewardedSlotReady", (event: GoogletagEvent) => {
+          // pubads()는 페이지 전역 서비스라 리스너가 클릭마다 쌓이면 두 번째 시청부터
+          // 지급 콜백이 여러 번 호출된다. 이 슬롯의 광고가 닫히면 반드시 해제한다.
+          const pubads = googletag.pubads();
+
+          const onReady = (event: GoogletagEvent) => {
             setStatus("ready");
             event.makeRewardedVisible();
             setStatus("playing");
-          });
+          };
 
-          googletag.pubads().addEventListener("rewardedSlotGranted", async () => {
+          const onGranted_ = async () => {
             grantedRef.current = true;
             setStatus("granted");
             await onGranted();
-          });
+          };
 
-          googletag.pubads().addEventListener("rewardedSlotClosed", () => {
+          const cleanup = () => {
+            pubads.removeEventListener("rewardedSlotReady", onReady);
+            pubads.removeEventListener("rewardedSlotGranted", onGranted_);
+            pubads.removeEventListener("rewardedSlotClosed", onClosed);
+          };
+
+          const onClosed = () => {
             if (!grantedRef.current) {
               setStatus("closed_without_reward");
               onClosedWithoutGrant?.();
             }
+            cleanup();
             if (slotRef.current) {
               googletag.destroySlots([slotRef.current]);
             }
             slotRef.current = null;
-          });
+          };
+
+          pubads.addEventListener("rewardedSlotReady", onReady);
+          pubads.addEventListener("rewardedSlotGranted", onGranted_);
+          pubads.addEventListener("rewardedSlotClosed", onClosed);
 
           googletag.enableServices();
           googletag.display(slot);

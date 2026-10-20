@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "@fontsource/noto-sans-kr/korean-400.css";
 import "@fontsource/noto-sans-kr/korean-500.css";
 import "@fontsource/noto-sans-kr/korean-600.css";
@@ -41,12 +41,19 @@ export const metadata: Metadata = {
     description: "사주팔자와 성향 설문으로 찾는 나만의 라이프 패턴 유형. 타고난 기질과 지금의 나를 함께 읽어보세요.",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "LPT — 사주로 찾는 나의 라이프 패턴" }],
   },
+  appleWebApp: { capable: true, title: "QuestofMe", statusBarStyle: "default" },
   twitter: {
     card: "summary_large_image",
     title: "사주 기반 성향 테스트 LPT",
     description: "사주팔자와 성향 설문으로 찾는 나만의 라이프 패턴 유형",
     images: ["/og-image.png"],
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#8a5fae",
 };
 
 export default function RootLayout({

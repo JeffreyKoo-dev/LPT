@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Check } from "lucide-react";
+import { Bell, Check, Share } from "lucide-react";
 import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
 import { InlineError } from "@/components/common/InlineError";
@@ -36,6 +36,21 @@ function rememberDismiss() {
   }
 }
 
+/**
+ * 아이폰/아이패드 Safari는 "홈 화면에 추가"로 설치한 웹앱에서만 웹 푸시를 지원한다.
+ * 일반 탭에서는 PushManager 자체가 없어 isPushSupported()가 false이므로, 이 경우엔
+ * 알림 버튼 대신 설치 방법을 안내한다.
+ */
+function needsIosInstall(): boolean {
+  const ua = navigator.userAgent;
+  const isIos = /iPad|iPhone|iPod/.test(ua) || (ua.includes("Mac") && navigator.maxTouchPoints > 1);
+  if (!isIos) return false;
+  const standalone =
+    window.matchMedia?.("(display-mode: standalone)").matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  return !standalone;
+}
+
 const COPY = {
   dashboard: {
     title: "알림으로 받아보세요",
@@ -64,13 +79,24 @@ interface PushOptInBannerProps {
 export function PushOptInBanner({ variant }: PushOptInBannerProps) {
   const { loading, user } = useSupabaseSession();
   const [visible, setVisible] = useState(false);
+  const [iosHint, setIosHint] = useState(false);
   const [working, setWorking] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (loading || !user) return;
-    if (!isPushSupported() || !isPushConfigured()) return;
+    if (!isPushConfigured()) return;
+    if (!isPushSupported()) {
+      if (isDismissedRecently() || !needsIosInstall()) return;
+      let cancelledIos = false;
+      Promise.resolve().then(() => {
+        if (!cancelledIos) setIosHint(true);
+      });
+      return () => {
+        cancelledIos = true;
+      };
+    }
     if (Notification.permission === "denied") return;
     if (isDismissedRecently()) return;
 
@@ -82,6 +108,34 @@ export function PushOptInBanner({ variant }: PushOptInBannerProps) {
       cancelled = true;
     };
   }, [loading, user]);
+
+  if (iosHint) {
+    return (
+      <Card>
+        <div className="flex items-center gap-2">
+          <Bell className="h-4 w-4 text-fate" />
+          <CardTitle>아이폰은 홈 화면에 추가하면 알림을 받을 수 있어요</CardTitle>
+        </div>
+        <CardDescription className="mt-2 break-keep">
+          Safari 하단의 공유 버튼(
+          <Share className="inline h-3.5 w-3.5 align-text-bottom" />
+          )을 누르고 &lsquo;홈 화면에 추가&rsquo;를 선택하세요. 추가한 아이콘으로 다시 접속해 알림을 켜면
+          매달 운세 알림을 받아볼 수 있어요.
+        </CardDescription>
+        <div className="mt-4">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              rememberDismiss();
+              setIosHint(false);
+            }}
+          >
+            알겠어요
+          </Button>
+        </div>
+      </Card>
+    );
+  }
 
   if (!visible) return null;
 
