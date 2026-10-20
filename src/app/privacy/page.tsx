@@ -160,7 +160,7 @@ export default function PrivacyPage() {
           </p>
           <ul className="list-disc pl-5">
             <li>성명: {BUSINESS_INFO.ceoName}</li>
-            <li>연락처: {BUSINESS_INFO.email ?? BUSINESS_INFO.phone ?? "준비 중 — 추후 업데이트 예정"}</li>
+            <li>연락처: {[BUSINESS_INFO.email, BUSINESS_INFO.phone].filter(Boolean).join(" / ") || "준비 중 — 추후 업데이트 예정"}</li>
           </ul>
         </Section>
 
