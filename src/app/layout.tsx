@@ -41,6 +41,8 @@ export const metadata: Metadata = {
     description: "사주팔자와 성향 설문으로 찾는 나만의 라이프 패턴 유형. 타고난 기질과 지금의 나를 함께 읽어보세요.",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "LPT — 사주로 찾는 나의 라이프 패턴" }],
   },
+  // Google Search Console 소유권 확인 (<meta name="google-site-verification">)
+  verification: { google: "hT-0kLyBI-Cj8s7ZZsMW97YplcR43mEMntnvCPNdOUQ" },
   appleWebApp: { capable: true, title: "QuestofMe", statusBarStyle: "default" },
   twitter: {
     card: "summary_large_image",
