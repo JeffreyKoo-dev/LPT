@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/common/Button";
 import { Card, CardDescription, CardTitle } from "@/components/common/Card";
+import { GUIDE_ARTICLES } from "@/data/guideArticles";
 import { DailyCoupangPick } from "@/components/common/DailyCoupangPick";
 
 const CONCEPT_ITEMS = [
@@ -93,6 +94,28 @@ export default function HomePage() {
             </Card>
           ))}
         </div>
+      </section>
+
+      <section className="mx-auto max-w-3xl px-5 pb-12">
+        <h2 className="font-display text-xl font-semibold text-foreground">사주와 LPT 읽을거리</h2>
+        <p className="mt-1 text-sm text-muted">검사를 시작하기 전에 개념부터 가볍게 읽어 보세요.</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {GUIDE_ARTICLES.slice(0, 4).map((article) => (
+            <Link
+              key={article.slug}
+              href={`/guide/${article.slug}`}
+              className="rounded-xl border border-border bg-surface p-4 transition-colors hover:border-fate/40"
+            >
+              <p className="break-keep text-sm font-medium text-foreground">{article.title}</p>
+              <p className="mt-1 text-xs text-muted">읽는 시간 약 {article.readMinutes}분</p>
+            </Link>
+          ))}
+        </div>
+        <p className="mt-3 text-xs text-muted">
+          <Link href="/guide" className="underline underline-offset-2">가이드 전체 보기</Link>
+          {" · "}
+          <Link href="/faq" className="underline underline-offset-2">자주 묻는 질문</Link>
+        </p>
       </section>
 
       <section className="mx-auto max-w-3xl px-5 pb-12">

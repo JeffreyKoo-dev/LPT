@@ -10,7 +10,13 @@ export function SiteFooter() {
         보장하지 않습니다.
       </p>
 
-      <nav className="mt-4 flex items-center justify-center gap-4">
+      <nav className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+        <Link href="/guide" className="underline underline-offset-2 hover:text-foreground">
+          가이드
+        </Link>
+        <Link href="/faq" className="underline underline-offset-2 hover:text-foreground">
+          자주 묻는 질문
+        </Link>
         <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">
           개인정보처리방침
         </Link>

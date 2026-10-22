@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 import { LPT_TYPES } from "@/data/lptTypes";
+import { GUIDE_ARTICLES } from "@/data/guideArticles";
 
-/** 공개 검색 노출 대상: 홈페이지 + 유형 소개 페이지 12개 (robots.ts와 일관되게 유지) */
+/** 공개 검색 노출 대상: 홈페이지 + 가이드·FAQ + 유형 소개 페이지 12개 (robots.ts와 일관되게 유지) */
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
@@ -10,6 +11,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 1,
     },
+    { url: "https://questofme.com/guide", lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.8 },
+    ...GUIDE_ARTICLES.map((a) => ({
+      url: `https://questofme.com/guide/${a.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
+    { url: "https://questofme.com/faq", lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.7 },
     ...LPT_TYPES.map((type) => ({
       url: `https://questofme.com/types/${type.id.toLowerCase()}`,
       lastModified: new Date(),
