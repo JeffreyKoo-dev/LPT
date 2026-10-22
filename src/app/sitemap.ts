@@ -19,6 +19,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     })),
     { url: "https://questofme.com/faq", lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.7 },
+    { url: "https://questofme.com/refund", lastModified: new Date(), changeFrequency: "yearly" as const, priority: 0.3 },
     ...LPT_TYPES.map((type) => ({
       url: `https://questofme.com/types/${type.id.toLowerCase()}`,
       lastModified: new Date(),

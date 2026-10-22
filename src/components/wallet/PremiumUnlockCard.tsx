@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
 import { InlineError } from "@/components/common/InlineError";
@@ -14,6 +15,7 @@ import {
   PremiumContent,
 } from "@/lib/premiumContent";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { WITHDRAWAL_NOTICE } from "@/data/refundPolicy";
 
 interface PremiumUnlockCardProps {
   productCode: ProductCode;
@@ -60,6 +62,8 @@ export function PremiumUnlockCard({
   const [content, setContent] = useState<PremiumContent | null>(null);
   const [price, setPrice] = useState<ProductPrice | undefined>();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // 결제 직전 청약철회 제한 안내를 확인하는 단계(전자상거래법상 철회 제한은 사전 표시가 전제)
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
@@ -97,6 +101,7 @@ export function PremiumUnlockCard({
 
   async function handlePurchase() {
     setErrorMessage(null);
+    setConfirming(false);
     setStage("generating");
     try {
       if (customPurchase) {
@@ -135,9 +140,29 @@ export function PremiumUnlockCard({
       {stage === "locked" && (
         <>
           <CardDescription className="mt-2">{teaser}</CardDescription>
-          <Button className="mt-4 w-full" onClick={handlePurchase}>
-            {purchaseButtonLabel ?? (price ? `보석 ${price.cash_price.toLocaleString()}개로 열어보기` : "열어보기")}
-          </Button>
+          {!confirming ? (
+            <Button className="mt-4 w-full" onClick={() => setConfirming(true)}>
+              {purchaseButtonLabel ?? (price ? `보석 ${price.cash_price.toLocaleString()}개로 열어보기` : "열어보기")}
+            </Button>
+          ) : (
+            <div className="mt-4 rounded-lg border border-border bg-surface-2 px-4 py-3">
+              <p className="break-keep text-sm font-medium text-foreground">결제 전에 확인해 주세요</p>
+              <p className="mt-1 break-keep text-xs leading-relaxed text-muted">
+                {WITHDRAWAL_NOTICE}{" "}
+                <Link href="/refund" className="underline underline-offset-2">
+                  환불 안내 보기
+                </Link>
+              </p>
+              <div className="mt-3 flex gap-2">
+                <Button className="flex-1" onClick={handlePurchase}>
+                  확인하고 열어보기
+                </Button>
+                <Button variant="ghost" onClick={() => setConfirming(false)}>
+                  취소
+                </Button>
+              </div>
+            </div>
+          )}
           {errorMessage && <InlineError>{errorMessage}</InlineError>}
         </>
       )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PageHeading } from "@/components/common/PageHeading";
 import { Card } from "@/components/common/Card";
@@ -12,6 +13,7 @@ import { useRequireLogin } from "@/lib/useRequireLogin";
 import { createPendingOrder } from "@/lib/wallet";
 import { getChargeOptions, ChargeOption } from "@/lib/chargeOptions";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { REFUND_POLICY } from "@/data/refundPolicy";
 import {
   initChargeWidgets,
   isTossPaymentsConfigured,
@@ -21,7 +23,7 @@ import {
 } from "@/lib/tossPayments";
 
 /** supabase/migrations/031_first_charge_bonus.sql의 v_first_bonus와 같은 값으로 유지 */
-const FIRST_CHARGE_BONUS = 300;
+const FIRST_CHARGE_BONUS = REFUND_POLICY.firstChargeBonus;
 
 export default function ChargePage() {
   const router = useRouter();
@@ -175,6 +177,19 @@ export default function ChargePage() {
           {status === "paying" ? "결제 요청 중…" : "결제하기"}
         </Button>
         {error && <InlineError>{error}</InlineError>}
+
+        <div className="mt-4 break-keep text-xs leading-relaxed text-muted">
+          <p>
+            결제일로부터 {REFUND_POLICY.windowDays}일 이내에 보석을 쓰지 않았다면 전액 환불할 수 있어요. 일부를
+            사용했거나 AI 콘텐츠 생성이 시작된 부분은 환불이 제한될 수 있어요.
+            {isFirstCharge && " 첫 결제 보너스는 환불 시 함께 회수돼요."}
+          </p>
+          <p className="mt-1">
+            결제를 진행하면{" "}
+            <Link href="/terms" className="underline underline-offset-2">이용약관</Link>과{" "}
+            <Link href="/refund" className="underline underline-offset-2">환불 안내</Link>에 동의한 것으로 봅니다.
+          </p>
+        </div>
       </Card>
     </div>
   );

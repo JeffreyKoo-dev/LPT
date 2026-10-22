@@ -23,6 +23,9 @@ export function SiteFooter() {
         <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">
           이용약관
         </Link>
+        <Link href="/refund" className="underline underline-offset-2 hover:text-foreground">
+          환불 안내
+        </Link>
       </nav>
 
       <div className="mx-auto mt-4 flex max-w-md flex-col gap-0.5 text-[11px] leading-relaxed text-muted/80">
