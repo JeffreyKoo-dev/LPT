@@ -1750,3 +1750,10 @@ pm2 restart lpt`로 재배포 필요 (package.json/package-lock.json 변경분
 **운영 메모**: 환불 요청 시 ① 토스 대시보드에서 결제 취소(전액) 또는 부분 취소(계산식 금액) → ② 웹훅이 오면
 전액 취소는 자동 회수, 부분 환불은 /admin 보석 조정으로 수동 반영. 7일 이후 정책은 약관 제8조 문구를 바꿔
 조정한다. 법률 자문이 아닌 초안이므로 시행 전 전문가 검토를 권장.
+
+## 59. 이벤트 계측 · 잔액 부족 충전 흐름 (2026-10-22)
+- `analytics_events` 테이블(033) + `/api/events` + `track()`: page_view, unlock_impression/confirm_open/insufficient/purchased, charge_select/pay_click/success, share_click, invite_share. 개인정보는 props에 넣지 않음. 허용 이벤트는 `src/lib/analyticsEvents.ts`.
+- 깔때기 확인: Supabase SQL Editor에서 `select * from analytics_funnel_30d;`
+- 보석 부족 시 PremiumUnlockCard가 부족분과 추천 충전액을 안내 → `/charge?amount=` 미리 선택 → 충전 후 원래 화면 복귀(sessionStorage).
+- 충전 3,000원 "추천" 배지. 네이버 서치어드바이저는 `NEXT_PUBLIC_NAVER_SITE_VERIFICATION` 환경변수(재빌드 필요).
+- 개인정보처리방침에 이용 행태 정보 항목 추가, 시행일 2026-10-29.

@@ -2,10 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
 import { InlineError } from "@/components/common/InlineError";
-import { purchaseProduct, getProductPrices, getProductPrice, ProductCode, ProductPrice } from "@/lib/wallet";
+import { purchaseProduct, getProductPrices, getProductPrice, getWalletBalances, ProductCode, ProductPrice } from "@/lib/wallet";
+import { getChargeOptions, ChargeOption } from "@/lib/chargeOptions";
+import { saveChargeReturn } from "@/lib/chargeReturn";
+import { track } from "@/lib/analytics";
 import {
   hasPurchased,
   hasPurchasedThisMonth,
@@ -14,7 +18,7 @@ import {
   generatePremiumContent,
   PremiumContent,
 } from "@/lib/premiumContent";
-import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { WITHDRAWAL_NOTICE } from "@/data/refundPolicy";
 
 interface PremiumUnlockCardProps {
@@ -64,6 +68,9 @@ export function PremiumUnlockCard({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // 결제 직전 청약철회 제한 안내를 확인하는 단계(전자상거래법상 철회 제한은 사전 표시가 전제)
   const [confirming, setConfirming] = useState(false);
+  // 보유 보석이 모자랄 때 채워야 하는 개수와 추천 충전 옵션 (null이면 부족하지 않음)
+  const [shortage, setShortage] = useState<{ amount: number; option: ChargeOption | null } | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
@@ -81,6 +88,7 @@ export function PremiumUnlockCard({
     Promise.all([checkPurchased, getProductPrices()]).then(([purchased, prices]) => {
       setPrice(getProductPrice(prices, productCode));
       if (!purchased) {
+        track("unlock_impression", { product: productCode });
         setStage("locked");
         return;
       }
@@ -99,6 +107,34 @@ export function PremiumUnlockCard({
     });
   }, [productCode, noCache, monthly, yearly]);
 
+  /** "열어보기"를 눌렀을 때: 보석이 모자라면 충전 안내를, 아니면 환불 고지 확인 단계를 연다. */
+  async function handleOpenConfirm() {
+    setErrorMessage(null);
+    if (!customPurchase && price) {
+      const balances = await getWalletBalances();
+      if (balances) {
+        // 광고로 해제 가능한 상품만 별조각을 쓸 수 있고, 나머지는 보석(cash)만 쓸 수 있다.
+        const spendable = price.ad_unlockable ? balances.totalBalance : balances.cashBalance;
+        const missing = price.cash_price - spendable;
+        if (missing > 0) {
+          const options = await getChargeOptions(getSupabaseClient()).catch(() => [] as ChargeOption[]);
+          const option = options.find((o) => o.cashAmount >= missing) ?? options[options.length - 1] ?? null;
+          setShortage({ amount: missing, option });
+          track("unlock_insufficient", { product: productCode, shortage: missing });
+          return;
+        }
+      }
+    }
+    setShortage(null);
+    setConfirming(true);
+    track("unlock_confirm_open", { product: productCode });
+  }
+
+  function handleGoCharge() {
+    saveChargeReturn(window.location.pathname + window.location.search);
+    router.push(shortage?.option ? `/charge?amount=${shortage.option.krwAmount}` : "/charge");
+  }
+
   async function handlePurchase() {
     setErrorMessage(null);
     setConfirming(false);
@@ -109,6 +145,7 @@ export function PremiumUnlockCard({
       } else {
         await purchaseProduct(productCode);
       }
+      track("unlock_purchased", { product: productCode });
       await handleGenerate();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "구매에 실패했어요.");
@@ -140,8 +177,27 @@ export function PremiumUnlockCard({
       {stage === "locked" && (
         <>
           <CardDescription className="mt-2">{teaser}</CardDescription>
-          {!confirming ? (
-            <Button className="mt-4 w-full" onClick={() => setConfirming(true)}>
+          {shortage ? (
+            <div className="mt-4 rounded-lg border border-border bg-surface-2 px-4 py-3">
+              <p className="break-keep text-sm font-medium text-foreground">
+                보석이 {shortage.amount.toLocaleString()}개 부족해요
+              </p>
+              <p className="mt-1 break-keep text-xs leading-relaxed text-muted">
+                {shortage.option
+                  ? `${shortage.option.krwAmount.toLocaleString()}원을 충전하면 보석 ${shortage.option.cashAmount.toLocaleString()}개를 받아요. 충전이 끝나면 이 화면으로 바로 돌아와요.`
+                  : "보석을 충전하면 바로 열어볼 수 있어요."}
+              </p>
+              <div className="mt-3 flex gap-2">
+                <Button className="flex-1" onClick={handleGoCharge}>
+                  {shortage.option ? `${shortage.option.krwAmount.toLocaleString()}원 충전하기` : "충전하러 가기"}
+                </Button>
+                <Button variant="ghost" onClick={() => setShortage(null)}>
+                  닫기
+                </Button>
+              </div>
+            </div>
+          ) : !confirming ? (
+            <Button className="mt-4 w-full" onClick={handleOpenConfirm}>
               {purchaseButtonLabel ?? (price ? `보석 ${price.cash_price.toLocaleString()}개로 열어보기` : "열어보기")}
             </Button>
           ) : (

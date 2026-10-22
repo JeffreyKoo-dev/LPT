@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@/lib/analytics";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/common/Button";
 import { Card, CardDescription, CardTitle } from "@/components/common/Card";
@@ -71,6 +72,7 @@ export default function FriendsPage() {
   }
 
   async function handleCopyInvite() {
+    track("invite_share", { method: "copy" });
     if (!inviteUrl) return;
     await navigator.clipboard.writeText(inviteUrl);
     setCopyStatus("copied");
@@ -78,6 +80,7 @@ export default function FriendsPage() {
   }
 
   async function handleShareInvite() {
+    track("invite_share", { method: "share" });
     if (!inviteUrl) return;
     if (navigator.share) {
       try {

@@ -14,6 +14,7 @@ import { createPendingOrder } from "@/lib/wallet";
 import { getChargeOptions, ChargeOption } from "@/lib/chargeOptions";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { REFUND_POLICY } from "@/data/refundPolicy";
+import { track } from "@/lib/analytics";
 import {
   initChargeWidgets,
   isTossPaymentsConfigured,
@@ -24,6 +25,9 @@ import {
 
 /** supabase/migrations/031_first_charge_bonus.sql의 v_first_bonus와 같은 값으로 유지 */
 const FIRST_CHARGE_BONUS = REFUND_POLICY.firstChargeBonus;
+
+/** 처음 충전하는 사람에게 권하는 금액. 보너스(+10%)가 붙고 상품 몇 개를 열어볼 수 있는 기본 단위다. */
+const RECOMMENDED_KRW = 3000;
 
 export default function ChargePage() {
   const router = useRouter();
@@ -42,7 +46,12 @@ export default function ChargePage() {
 
   useEffect(() => {
     getChargeOptions(getSupabaseClient())
-      .then(setChargeOptions)
+      .then((options) => {
+        setChargeOptions(options);
+        // 잔액 부족 안내에서 넘어온 경우 추천 금액을 미리 선택해 둔다 (?amount=3000)
+        const wanted = Number(new URLSearchParams(window.location.search).get("amount"));
+        if (wanted && options.some((o) => o.krwAmount === wanted)) setSelected(wanted);
+      })
       .catch((err) => setError(err instanceof Error ? err.message : "충전 옵션을 불러오지 못했어요."));
   }, []);
 
@@ -59,6 +68,7 @@ export default function ChargePage() {
   // 금액을 선택하면, 그 금액으로 결제수단·약관 UI를 새로 렌더링한다.
   useEffect(() => {
     if (!selected || !isTossPaymentsConfigured()) return;
+    track("charge_select", { krw: selected });
 
     let cancelled = false;
     setWidgetsReady(false);
@@ -107,6 +117,7 @@ export default function ChargePage() {
     if (!selected || !widgetsRef.current) return;
     setError(null);
     setStatus("paying");
+    track("charge_pay_click", { krw: selected });
     try {
       const order = await createPendingOrder(selected);
       if (!order) throw new Error("주문 생성에 실패했어요.");
@@ -148,7 +159,14 @@ export default function ChargePage() {
                     : "border-border bg-surface-2 hover:border-fate/40"
                 }`}
               >
-                <span className="font-medium text-foreground">{krwAmount.toLocaleString()}원</span>
+                <span className="font-medium text-foreground">
+                  {krwAmount.toLocaleString()}원
+                  {krwAmount === RECOMMENDED_KRW && (
+                    <span className="ml-2 rounded-full bg-growth-soft px-2 py-0.5 text-xs font-semibold text-growth">
+                      추천
+                    </span>
+                  )}
+                </span>
                 <span className="text-sm text-muted">
                   {cashAmount.toLocaleString()}개
                   {bonus > 0 && <span className="ml-1 text-growth">(+{bonus.toLocaleString()} 보너스)</span>}

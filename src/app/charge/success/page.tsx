@@ -4,6 +4,8 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
+import { track } from "@/lib/analytics";
+import { peekChargeReturn, clearChargeReturn } from "@/lib/chargeReturn";
 
 type Status = "confirming" | "success" | "error";
 
@@ -25,6 +27,8 @@ function ChargeSuccessContent() {
   const [status, setStatus] = useState<Status>("confirming");
   const [newBalance, setNewBalance] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // 잔액 부족으로 충전하러 온 경우, 원래 보던 화면 경로
+  const [returnPath, setReturnPath] = useState<string | null>(null);
 
   useEffect(() => {
     const paymentKey = searchParams.get("paymentKey");
@@ -46,6 +50,8 @@ function ChargeSuccessContent() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "결제 승인에 실패했어요.");
         setNewBalance(data.newBalance ?? null);
+        setReturnPath(peekChargeReturn());
+        track("charge_success", { krw: Number(amount) });
         setStatus("success");
       })
       .catch((err) => {
@@ -73,9 +79,33 @@ function ChargeSuccessContent() {
                 현재 보유 보석: {newBalance.toLocaleString()}개
               </CardDescription>
             )}
-            <Button className="mt-5 w-full" onClick={() => router.push("/dashboard")}>
-              대시보드로
-            </Button>
+            {returnPath ? (
+              <>
+                <Button
+                  className="mt-5 w-full"
+                  onClick={() => {
+                    clearChargeReturn();
+                    router.push(returnPath);
+                  }}
+                >
+                  보던 화면으로 돌아가기
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="mt-2 w-full"
+                  onClick={() => {
+                    clearChargeReturn();
+                    router.push("/dashboard");
+                  }}
+                >
+                  대시보드로
+                </Button>
+              </>
+            ) : (
+              <Button className="mt-5 w-full" onClick={() => router.push("/dashboard")}>
+                대시보드로
+              </Button>
+            )}
           </>
         )}
 

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: `${BUSINESS_INFO.serviceName} 개인정보처리방침`,
 };
 
-const EFFECTIVE_DATE = "2026-10-01";
+const EFFECTIVE_DATE = "2026-10-29";
 
 export default function PrivacyPage() {
   return (
@@ -59,6 +59,12 @@ export default function PrivacyPage() {
           <p className="mt-3 font-medium text-foreground">라. 자동으로 수집되는 정보</p>
           <ul className="list-disc pl-5">
             <li>접속 로그, 서비스 이용 기록, 쿠키, 접속 IP(부정 이용 방지·서비스 운영 목적)</li>
+            <li>
+              서비스 이용 행태 정보: 방문한 화면 경로, 결제 화면 조회·충전 금액 선택·공유 버튼 클릭
+              등의 이벤트와 브라우저에 저장된 임의의 익명 식별자. 로그인 상태에서는 계정과
+              연결될 수 있으며, 생년월일시·설문 응답·결과 내용은 포함하지 않습니다. 서비스
+              개선과 결제 흐름 개선 목적으로만 사용합니다.
+            </li>
             <li>
               비회원 상태에서 입력한 기본정보·설문 응답은 이용자 브라우저의 로컬 저장소
               (LocalStorage)에만 저장되며, 회원 전환 시에만 서버로 이전됩니다.

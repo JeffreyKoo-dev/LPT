@@ -8,6 +8,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/common/SiteHeader";
 import { SiteFooter } from "@/components/common/SiteFooter";
 import { AuthSync } from "@/components/common/AuthSync";
+import { PageViewTracker } from "@/components/common/PageViewTracker";
 
 /**
  * 본문은 Noto Sans KR, 제목/디스플레이는 Jua(동글동글하고 부드러운 인상의
@@ -42,7 +43,13 @@ export const metadata: Metadata = {
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "LPT — 사주로 찾는 나의 라이프 패턴" }],
   },
   // Google Search Console 소유권 확인 (<meta name="google-site-verification">)
-  verification: { google: "hT-0kLyBI-Cj8s7ZZsMW97YplcR43mEMntnvCPNdOUQ" },
+  // 네이버 서치어드바이저 소유확인은 NEXT_PUBLIC_NAVER_SITE_VERIFICATION 환경변수에 인증 코드를 넣으면 메타 태그로 출력된다.
+  verification: {
+    google: "hT-0kLyBI-Cj8s7ZZsMW97YplcR43mEMntnvCPNdOUQ",
+    ...(process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION
+      ? { other: { "naver-site-verification": process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION } }
+      : {}),
+  },
   appleWebApp: { capable: true, title: "QuestofMe", statusBarStyle: "default" },
   twitter: {
     card: "summary_large_image",
@@ -67,6 +74,7 @@ export default function RootLayout({
     <html lang="ko">
       <body className="min-h-screen flex flex-col font-sans antialiased">
         <AuthSync />
+        <PageViewTracker />
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />

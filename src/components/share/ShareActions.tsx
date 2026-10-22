@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@/lib/analytics";
 import { RefObject, useEffect, useState } from "react";
 import { toPng } from "html-to-image";
 import { Button } from "@/components/common/Button";
@@ -53,6 +54,7 @@ export function ShareActions({
   }
 
   async function handleSavePng() {
+    track("share_click", { method: "png" });
     if (!targetRef.current) return;
     setStatus("saving");
     try {
@@ -69,6 +71,7 @@ export function ShareActions({
   }
 
   async function handleCopyLink() {
+    track("share_click", { method: "copy" });
     try {
       await navigator.clipboard.writeText(getUrl());
       setCopyStatus("copied");
@@ -79,6 +82,7 @@ export function ShareActions({
   }
 
   async function handleKakaoShare() {
+    track("share_click", { method: "kakao" });
     setKakaoError(false);
     try {
       const imagePath = illustrationSlug
@@ -97,18 +101,22 @@ export function ShareActions({
   }
 
   function handleFacebookShare() {
+    track("share_click", { method: "facebook" });
     window.open(buildFacebookShareUrl(getUrl()), "_blank", "noopener,noreferrer");
   }
 
   function handleXShare() {
+    track("share_click", { method: "x" });
     window.open(buildXShareUrl(getUrl(), shareTitle), "_blank", "noopener,noreferrer");
   }
 
   function handleSmsShare() {
+    track("share_click", { method: "sms" });
     window.location.href = buildSmsShareUrl(getUrl(), shareTitle);
   }
 
   async function handleWebShare() {
+    track("share_click", { method: "web" });
     try {
       await navigator.share({ url: getUrl() });
     } catch (error) {
