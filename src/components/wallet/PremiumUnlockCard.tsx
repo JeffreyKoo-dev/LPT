@@ -208,6 +208,9 @@ export function PremiumUnlockCard({
           <Button className="mt-4 w-full" onClick={handleGenerate}>
             {noCache ? "결과 보기" : "다시 생성하기"}
           </Button>
+          {!noCache && (
+            <p className="mt-2 text-xs text-muted">이미 결제한 항목이라 추가 결제 없이 생성돼요.</p>
+          )}
           {errorMessage && <InlineError>{errorMessage}</InlineError>}
         </>
       )}

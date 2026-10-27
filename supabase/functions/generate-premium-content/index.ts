@@ -70,6 +70,11 @@ function getCurrentYear(): string {
   return String(getFortuneYear());
 }
 
+// 이번 달 운세 콘텐츠 버전 — 2: 달력월을 절기월 구간으로 나눠 계산한 데이터(src/lib/premiumContent.ts와 같은 값).
+// 버전이 없는(1) 이전 캐시는 달력월을 절기월에 잘못 대응시킨 데이터라 무효로 보고, 결제는 그대로 인정한 채
+// 새로 생성한다.
+const MONTHLY_CONTENT_VERSION = 2;
+
 Deno.serve(async (req: Request) => {
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -169,7 +174,8 @@ Deno.serve(async (req: Request) => {
       // monthly_fortune은 캐시가 이번 달 것일 때만 유효하다 (지난달 캐시 무시)
       const cacheIsValid =
         cached &&
-        (productCode !== "monthly_fortune" || cached.content?.yearMonth === getCurrentYearMonth()) &&
+        (productCode !== "monthly_fortune" ||
+          (cached.content?.yearMonth === getCurrentYearMonth() && cached.content?.version === MONTHLY_CONTENT_VERSION)) &&
         (productCode !== "yearly_fortune" || cached.content?.year === getCurrentYear());
 
       if (cacheIsValid) {
@@ -181,10 +187,11 @@ Deno.serve(async (req: Request) => {
 
     const prompt = buildPrompt(productCode, context);
     // 신년운세는 월별 12개 흐름까지 풀어 쓰므로 출력 한도를 넉넉하게 잡는다.
-    const generatedText = await callClaude(prompt, productCode === "yearly_fortune" ? 3500 : 1024);
+    const generatedText = await callClaude(prompt, productCode === "yearly_fortune" ? 3500 : productCode === "monthly_fortune" ? 1500 : 1024);
     const content: Record<string, unknown> = { text: generatedText, generatedAt: new Date().toISOString() };
     if (productCode === "monthly_fortune") {
       content.yearMonth = (context as { yearMonth?: string })?.yearMonth ?? getCurrentYearMonth();
+      content.version = MONTHLY_CONTENT_VERSION;
     }
     if (productCode === "yearly_fortune") {
       content.year = getCurrentYear();
@@ -243,10 +250,14 @@ function buildPrompt(productCode: string, context: Record<string, unknown>): str
   if (productCode === "monthly_fortune") {
     return (
       `${TONE_GUIDE}\n\n` +
-      `아래는 한 사람의 이번 달 월운(月運) 데이터입니다. 이번 달이 어떤 결의 흐름일 ` +
-      `수 있는지, 일과 관계와 컨디션 중 어느 쪽에 조금 더 마음 써보면 좋을지를 ` +
-      `5~8문장으로 자연스럽게 풀어주세요. 이번 달"에 한정된" 이야기라는 걸 은근히 ` +
-      `느끼게 해주세요(다음 달엔 또 다른 흐름일 수 있다는 뉘앙스).\n\n` +
+      `아래는 한 사람의 이번 달 월운(月運) 데이터입니다. 사주의 월은 달력이 아니라 절기로 나뉘기 때문에, ` +
+      `달력상 이번 달은 보통 두 개의 절기월로 이루어져 있습니다. 데이터의 segments에 구간별로(period, ` +
+      `monthName, 간지·십성·12운성) 들어 있고, transitionAt은 절기월이 바뀌는 시점입니다. ` +
+      `구간이 둘이면 "월초부터 transitionAt 무렵까지"와 "그 이후"로 나누어, 흐름의 결이 어떻게 달라질 수 있는지를 ` +
+      `각각의 데이터에 맞게 풀어주세요. 구간이 하나뿐이면 그 한 흐름으로 풀어주세요. ` +
+      `"월운", "절기월" 같은 용어는 어렵게 느껴질 수 있으니 자연스러운 말로 바꿔 쓰고, 일과 관계와 컨디션 중 ` +
+      `어느 쪽에 조금 더 마음 써보면 좋을지를 5~9문장으로 이어지는 글로 작성하세요. ` +
+      `이번 달"에 한정된" 이야기라는 걸 은근히 느끼게 해주세요(다음 달엔 또 다른 흐름일 수 있다는 뉘앙스).\n\n` +
       `데이터: ${JSON.stringify(context)}`
     );
   }

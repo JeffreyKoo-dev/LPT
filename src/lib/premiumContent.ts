@@ -9,7 +9,15 @@ export interface PremiumContent {
   yearMonth?: string;
   /** yearly_fortune 전용 — 이 콘텐츠가 어느 해 것인지("2026"). 다른 상품은 비워둠. */
   year?: string;
+  /** monthly_fortune 전용 — 콘텐츠 버전. 2부터 달력월을 절기월 구간으로 나눠 계산한 데이터를 쓴다. */
+  version?: number;
 }
+
+/**
+ * 이번 달 운세 콘텐츠 버전(supabase/functions/generate-premium-content/index.ts와 같은 값).
+ * 버전이 다른 이전 캐시는 보여주지 않고 새로 생성하게 한다(결제는 이번 달 것으로 그대로 인정).
+ */
+const MONTHLY_CONTENT_VERSION = 2;
 
 // 연·월 판정은 서버(Edge Function, UTC)와 같도록 한국 표준시(KST) 기준으로 한다 (lib/kst.ts 참고).
 function getCurrentYearMonth(): string {
@@ -114,7 +122,10 @@ export async function getCachedContent(productCode: ProductCode): Promise<Premiu
 
     // monthly_fortune / yearly_fortune은 콘텐츠가 이번 기간 것일 때만 유효하다
     // — 지난 기간 콘텐츠가 남아있어도 그대로 보여주면 안 된다(상품의 핵심 가치를 해침).
-    if (productCode === "monthly_fortune" && content.yearMonth !== getCurrentYearMonth()) {
+    if (
+      productCode === "monthly_fortune" &&
+      (content.yearMonth !== getCurrentYearMonth() || content.version !== MONTHLY_CONTENT_VERSION)
+    ) {
       return null;
     }
     if (productCode === "yearly_fortune" && content.year !== getCurrentYear()) {

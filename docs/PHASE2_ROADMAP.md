@@ -1761,3 +1761,6 @@ pm2 restart lpt`로 재배포 필요 (package.json/package-lock.json 변경분
 ## 60. 2027 신년운세 구현 (2026-10-27)
 - 기획: `docs/NEWYEAR_2027_PLAN.md`. 구현 내용과 켜는 법은 그 문서 9절.
 - 핵심: `src/lib/kst.ts`(KST·대상 연도·결제 인정 기간), Edge Function(`generate-premium-content`) 재배포 필요, 034 SQL.
+
+## 61. 이번 달 운세 절기월 보정 (2026-10-28)
+- 문제와 안: `docs/MONTHLY_FORTUNE_FIX_PLAN.md`. 달력월을 절기월 구간 2개로 나눠 데이터를 제공, 콘텐츠 version 2.

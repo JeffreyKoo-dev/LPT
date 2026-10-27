@@ -29,9 +29,10 @@
 
 import { calculateSaju as ssajuCalculateSaju, lunarToSolar, solarToLunar } from "@/lib/saju-engine/calculate";
 import { calculateWolun } from "@/lib/saju-engine/analyze";
+import { getSajuMonthSegments } from "@/lib/saju-engine/manse";
 import { getFortuneYear, getKstDate } from "@/lib/kst";
 import { BasicInfo } from "@/types/user";
-import { Element, EarthlyBranch, HeavenlyStem, Pillar, SajuChart, TenGod, DaeunSeyunData, MonthlyFortuneData, YearlyFortuneData, YearlyMonthFlow } from "@/types/saju";
+import { Element, EarthlyBranch, HeavenlyStem, Pillar, SajuChart, TenGod, DaeunSeyunData, MonthlyFortuneData, MonthlyFortuneSegment, YearlyFortuneData, YearlyMonthFlow } from "@/types/saju";
 
 const SEOUL_LONGITUDE = 126.9784;
 
@@ -286,28 +287,55 @@ export function calculateDaeunSeyun(basicInfo: BasicInfo): DaeunSeyunData {
  * 정밀 리포트/대운세운처럼 "한 번 사면 평생 안 사는" 문제를, 실제로
  * 달마다 내용이 바뀌는 이 데이터로 보완한다.
  */
-export function calculateMonthlyFortune(basicInfo: BasicInfo): MonthlyFortuneData {
+export function calculateMonthlyFortune(basicInfo: BasicInfo, now: Date = new Date()): MonthlyFortuneData {
   const { result } = runSsajuCalculation(basicInfo);
 
   // 서버(UTC)와 같은 기준을 쓰도록 한국 표준시로 연·월을 정한다.
-  const kst = getKstDate();
-  const currentMonth = kst.month;
-  const thisMonth = result.wolun.find((item) => item.month === currentMonth);
+  const kst = getKstDate(now);
 
-  if (!thisMonth) {
-    throw new Error("이번 달 월운 데이터를 찾을 수 없습니다.");
-  }
+  // 사주의 월은 절기로 나뉜다. 달력의 N월을 N번째 절기월에 그대로 대응시키면 약 한 달 어긋나므로,
+  // 그 달력월을 이루는 절기월 구간(보통 2개)을 각각 계산해 함께 전달한다.
+  const dayStem = result.dayStem;
+  const monthLabel = (day: number, hour: number, minute: number) =>
+    `${kst.month}월 ${day}일` + (hour === 0 && minute === 0 ? "" : ` ${hour}시${minute ? ` ${minute}분` : ""}`);
+
+  const rawSegments = getSajuMonthSegments(kst.year, kst.month);
+  const segments: MonthlyFortuneSegment[] = rawSegments.map((seg) => {
+    const wolun = calculateWolun(seg.sajuYear, dayStem)[seg.monthIndex];
+    const startLabel = seg.startKst.day === 1 && seg.startKst.hour === 0 ? `${kst.month}월 1일` : monthLabel(seg.startKst.day, seg.startKst.hour, seg.startKst.minute);
+    const endLabel = seg.endKst.endsAtMonthEnd ? `${kst.month}월 말` : monthLabel(seg.endKst.day, seg.endKst.hour, seg.endKst.minute);
+    return {
+      monthName: MONTH_BRANCH_NAMES[seg.monthIndex],
+      period: `${startLabel} ~ ${endLabel}`,
+      ganzhi: wolun.ganzhi,
+      tenGodStem: wolun.stemTenGod as TenGod,
+      tenGodBranch: wolun.branchTenGod as TenGod,
+      stage12: wolun.stage12,
+    };
+  });
+
+  // 대표값: 더 오래 차지하는 구간
+  let primaryIdx = 0;
+  rawSegments.forEach((seg, i) => {
+    if (seg.days > rawSegments[primaryIdx].days) primaryIdx = i;
+  });
+  const primaryRaw = rawSegments[primaryIdx];
+  const primary = calculateWolun(primaryRaw.sajuYear, dayStem)[primaryRaw.monthIndex];
+
+  const transition = rawSegments.length > 1 ? rawSegments[1].startKst : null;
 
   return {
-    yearMonth: `${kst.year}-${String(currentMonth).padStart(2, "0")}`,
+    yearMonth: `${kst.year}-${String(kst.month).padStart(2, "0")}`,
     year: kst.year,
-    month: currentMonth,
-    ganzhi: thisMonth.ganzhi,
-    stem: thisMonth.stem,
-    branch: thisMonth.branch,
-    tenGodStem: thisMonth.stemTenGod as TenGod,
-    tenGodBranch: thisMonth.branchTenGod as TenGod,
-    stage12: thisMonth.stage12,
+    month: kst.month,
+    ganzhi: primary.ganzhi,
+    stem: primary.stem,
+    branch: primary.branch,
+    tenGodStem: primary.stemTenGod as TenGod,
+    tenGodBranch: primary.branchTenGod as TenGod,
+    stage12: primary.stage12,
+    segments,
+    transitionAt: transition ? monthLabel(transition.day, transition.hour, transition.minute) : null,
   };
 }
 

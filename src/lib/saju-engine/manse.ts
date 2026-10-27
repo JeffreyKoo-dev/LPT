@@ -717,3 +717,77 @@ export function buildReferenceCodes(referenceDate: Date) {
     },
   };
 }
+
+// =============================
+// 달력월 ↔ 절기월 구간 (이번 달 운세용)
+// =============================
+
+export interface SajuMonthSegment {
+  /** 입춘 기준 사주 연도 (1월 초·입춘 전 구간은 전년도) */
+  sajuYear: number;
+  /** 절기월 번호: 0=寅 … 11=丑 (calculateWolun 결과의 인덱스와 같다) */
+  monthIndex: number;
+  /** 이 구간이 시작하는 KST 시각 — 첫 구간은 그 달 1일 0시, 둘째 구간은 절기 시각 */
+  startKst: { day: number; hour: number; minute: number };
+  /** 이 구간이 끝나는 KST 시각(다음 구간 시작 시각 / 그 달 말) */
+  endKst: { day: number; hour: number; minute: number; endsAtMonthEnd: boolean };
+  /** 이 구간이 그 달에서 차지하는 일수(소수) — 더 긴 구간을 고를 때 쓴다 */
+  days: number;
+}
+
+function toKstParts(date: Date): { day: number; hour: number; minute: number } {
+  const k = new Date(date.getTime() + BASE_KST_OFFSET_MINUTES * 60 * 1000);
+  return { day: k.getUTCDate(), hour: k.getUTCHours(), minute: k.getUTCMinutes() };
+}
+
+/**
+ * 달력의 (year, month)가 어떤 절기월들로 이루어져 있는지 돌려준다. 한 달에는 보통 절기(절)가
+ * 하나 들어 있어 구간이 2개이며, 절기가 월초에 걸려 있으면 구간이 1개일 수 있다.
+ * 사주의 월은 절기로 나뉘므로 달력월과 다르다 — 예) 2026년 10월은 10/8 15:30까지 유월(酉月), 이후 술월(戌月).
+ */
+export function getSajuMonthSegments(year: number, month: number): SajuMonthSegment[] {
+  const monthStart = toUTCFromKoreanLocal(year, month, 1, 0, 0);
+  const nextYear = month === 12 ? year + 1 : year;
+  const nextMonth = month === 12 ? 1 : month + 1;
+  const monthEnd = toUTCFromKoreanLocal(nextYear, nextMonth, 1, 0, 0);
+
+  const firstIndex = getSolarMonthIndex(year, month, 1, 0, 0);
+  const firstSajuYear = getAdjustedYearByLichun(year, month, 1, 0, 0);
+  const term = resolveNearestMajorSolarTermUTC(monthStart, true);
+  const totalDays = (monthEnd.getTime() - monthStart.getTime()) / DAY_IN_MS;
+
+  if (term.getTime() >= monthEnd.getTime()) {
+    return [
+      {
+        sajuYear: firstSajuYear,
+        monthIndex: firstIndex,
+        startKst: { day: 1, hour: 0, minute: 0 },
+        endKst: { ...toKstParts(new Date(monthEnd.getTime() - 60_000)), endsAtMonthEnd: true },
+        days: totalDays,
+      },
+    ];
+  }
+
+  const firstDays = (term.getTime() - monthStart.getTime()) / DAY_IN_MS;
+  const termParts = toKstParts(term);
+  // 입춘(인월 시작)을 지나면 사주 연도가 하나 올라간다 (축월 11 → 인월 0)
+  const secondIndex = (firstIndex + 1) % 12;
+  const secondSajuYear = firstIndex === 11 ? firstSajuYear + 1 : firstSajuYear;
+
+  return [
+    {
+      sajuYear: firstSajuYear,
+      monthIndex: firstIndex,
+      startKst: { day: 1, hour: 0, minute: 0 },
+      endKst: { ...termParts, endsAtMonthEnd: false },
+      days: firstDays,
+    },
+    {
+      sajuYear: secondSajuYear,
+      monthIndex: secondIndex,
+      startKst: termParts,
+      endKst: { ...toKstParts(new Date(monthEnd.getTime() - 60_000)), endsAtMonthEnd: true },
+      days: totalDays - firstDays,
+    },
+  ];
+}

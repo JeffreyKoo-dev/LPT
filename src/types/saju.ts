@@ -124,6 +124,25 @@ export interface MonthlyFortuneData {
   tenGodStem: TenGod | string;
   tenGodBranch: TenGod | string;
   stage12: string;
+  /**
+   * 사주의 월은 절기로 나뉘어 달력월과 다르다. 그 달력월을 이루는 절기월 구간들(보통 2개).
+   * 위의 ganzhi·십성·12운성은 이 중 더 긴 구간의 값이다.
+   */
+  segments?: MonthlyFortuneSegment[];
+  /** 절기월이 바뀌는 시점("10월 8일 15시 30분"). 한 달이 구간 하나면 null */
+  transitionAt?: string | null;
+}
+
+/** 달력월 안의 절기월 한 구간 */
+export interface MonthlyFortuneSegment {
+  /** "유월" 같은 절기월 이름 */
+  monthName: string;
+  /** "10월 1일 ~ 10월 8일 15시 30분" */
+  period: string;
+  ganzhi: string;
+  tenGodStem: TenGod | string;
+  tenGodBranch: TenGod | string;
+  stage12: string;
 }
 
 /**
