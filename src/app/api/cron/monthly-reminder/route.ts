@@ -15,6 +15,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
+import { getKstMonthStart } from "@/lib/kst";
 
 const REMINDER_TYPE = "monthly_fortune";
 
@@ -22,11 +23,9 @@ function getSupabaseAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 }
 
+// 서버 시간대와 상관없이 한국 표준시 기준 이번 달 1일 0시 (클라이언트·Edge Function과 동일 기준)
 function startOfMonthIso(): string {
-  const d = new Date();
-  d.setDate(1);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
+  return getKstMonthStart().toISOString();
 }
 
 export async function POST(req: NextRequest) {

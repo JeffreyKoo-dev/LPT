@@ -1,5 +1,6 @@
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { ProductCode } from "@/lib/wallet";
+import { getFortuneYear, getFortuneYearWindow, getKstMonthStart, getKstYearMonth } from "@/lib/kst";
 
 export interface PremiumContent {
   text: string;
@@ -10,13 +11,14 @@ export interface PremiumContent {
   year?: string;
 }
 
+// 연·월 판정은 서버(Edge Function, UTC)와 같도록 한국 표준시(KST) 기준으로 한다 (lib/kst.ts 참고).
 function getCurrentYearMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  return getKstYearMonth();
 }
 
+/** 신년운세의 대상 연도. 12월부터는 다음 해 운세를 가리킨다. */
 function getCurrentYear(): string {
-  return String(new Date().getFullYear());
+  return String(getFortuneYear());
 }
 
 /** 해당 상품을 이미 결제했는지 확인한다 (wallet_transactions의 차감 기록 존재 여부) */
@@ -50,9 +52,7 @@ export async function hasPurchasedThisMonth(productCode: ProductCode): Promise<b
 
   try {
     const supabase = getSupabaseClient();
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    const startOfMonth = getKstMonthStart();
 
     const { data, error } = await supabase
       .from("wallet_transactions")
@@ -69,20 +69,25 @@ export async function hasPurchasedThisMonth(productCode: ProductCode): Promise<b
   }
 }
 
-/** yearly_fortune 전용 — "올해" 결제한 적 있는지 확인한다 (hasPurchasedThisMonth와 동일한 원리, 연 단위). */
+/**
+ * yearly_fortune 전용 — 지금 파는 대상 연도의 운세를 이미 결제했는지 확인한다.
+ * 대상 연도 Y의 결제는 (Y-1)년 12/1 ~ Y년 11/30(KST)에 한 결제로 본다. 그래서 2026년에
+ * 산 사람도 12/1부터 2027년 운세를 다시 살 수 있다.
+ */
 export async function hasPurchasedThisYear(productCode: ProductCode): Promise<boolean> {
   if (!isSupabaseConfigured()) return false;
 
   try {
     const supabase = getSupabaseClient();
-    const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+    const { start, end } = getFortuneYearWindow(getFortuneYear());
 
     const { data, error } = await supabase
       .from("wallet_transactions")
       .select("id")
       .eq("product_code", productCode)
       .eq("type", "spend")
-      .gte("created_at", startOfYear.toISOString())
+      .gte("created_at", start.toISOString())
+      .lt("created_at", end.toISOString())
       .limit(1);
     if (error) throw error;
     return (data?.length ?? 0) > 0;

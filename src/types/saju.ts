@@ -139,4 +139,18 @@ export interface YearlyFortuneData {
   tenGodStem: TenGod | string;
   tenGodBranch: TenGod | string;
   stage12: string;
+  /** 그 해의 절기월 12개(인월~축월) 월운. 신년운세의 월별 흐름 근거 데이터. */
+  months?: YearlyMonthFlow[];
+}
+
+/** 신년운세용 절기월 한 달치 데이터 (사주의 월은 입춘 무렵 시작하는 인월이 첫 달이다) */
+export interface YearlyMonthFlow {
+  /** "인월" 같은 절기월 이름 */
+  monthName: string;
+  /** 대략 어느 시기인지 — "2월 초~" / "다음 해 1월 초~" */
+  approxPeriod: string;
+  ganzhi: string;
+  tenGodStem: TenGod | string;
+  tenGodBranch: TenGod | string;
+  stage12: string;
 }

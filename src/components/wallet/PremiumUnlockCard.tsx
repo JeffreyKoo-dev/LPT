@@ -2,13 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
 import { InlineError } from "@/components/common/InlineError";
-import { purchaseProduct, getProductPrices, getProductPrice, getWalletBalances, ProductCode, ProductPrice } from "@/lib/wallet";
-import { getChargeOptions, ChargeOption } from "@/lib/chargeOptions";
-import { saveChargeReturn } from "@/lib/chargeReturn";
+import { purchaseProduct, getProductPrices, getProductPrice, ProductCode, ProductPrice } from "@/lib/wallet";
+import { checkShortage, Shortage } from "@/lib/shortage";
+import { ShortageNotice } from "@/components/wallet/ShortageNotice";
 import { track } from "@/lib/analytics";
 import {
   hasPurchased,
@@ -18,7 +17,7 @@ import {
   generatePremiumContent,
   PremiumContent,
 } from "@/lib/premiumContent";
-import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { WITHDRAWAL_NOTICE } from "@/data/refundPolicy";
 
 interface PremiumUnlockCardProps {
@@ -47,6 +46,11 @@ interface PremiumUnlockCardProps {
   customPurchase?: () => Promise<void>;
   /** 있으면 "보석 N개로 열어보기" 대신 이 문구를 버튼에 쓴다 (예: 궁합권 보유 시 "궁합권으로 열어보기"). */
   purchaseButtonLabel?: string;
+  /**
+   * true면 이미 결제했는데 저장된 콘텐츠가 없는 상태로 열릴 때 곧바로 생성을 시작한다.
+   * (신년 패키지 구매 직후처럼 "결제 → 바로 결과" 흐름에 쓴다)
+   */
+  autoGenerateOnUnlock?: boolean;
 }
 
 type Stage = "checking" | "locked" | "unlockedNoContent" | "generating" | "content" | "error";
@@ -61,6 +65,7 @@ export function PremiumUnlockCard({
   yearly = false,
   customPurchase,
   purchaseButtonLabel,
+  autoGenerateOnUnlock = false,
 }: PremiumUnlockCardProps) {
   const [stage, setStage] = useState<Stage>("checking");
   const [content, setContent] = useState<PremiumContent | null>(null);
@@ -69,8 +74,7 @@ export function PremiumUnlockCard({
   // 결제 직전 청약철회 제한 안내를 확인하는 단계(전자상거래법상 철회 제한은 사전 표시가 전제)
   const [confirming, setConfirming] = useState(false);
   // 보유 보석이 모자랄 때 채워야 하는 개수와 추천 충전 옵션 (null이면 부족하지 않음)
-  const [shortage, setShortage] = useState<{ amount: number; option: ChargeOption | null } | null>(null);
-  const router = useRouter();
+  const [shortage, setShortage] = useState<Shortage | null>(null);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
@@ -102,6 +106,7 @@ export function PremiumUnlockCard({
           setStage("content");
         } else {
           setStage("unlockedNoContent");
+          if (autoGenerateOnUnlock) void handleGenerate();
         }
       });
     });
@@ -111,28 +116,17 @@ export function PremiumUnlockCard({
   async function handleOpenConfirm() {
     setErrorMessage(null);
     if (!customPurchase && price) {
-      const balances = await getWalletBalances();
-      if (balances) {
-        // 광고로 해제 가능한 상품만 별조각을 쓸 수 있고, 나머지는 보석(cash)만 쓸 수 있다.
-        const spendable = price.ad_unlockable ? balances.totalBalance : balances.cashBalance;
-        const missing = price.cash_price - spendable;
-        if (missing > 0) {
-          const options = await getChargeOptions(getSupabaseClient()).catch(() => [] as ChargeOption[]);
-          const option = options.find((o) => o.cashAmount >= missing) ?? options[options.length - 1] ?? null;
-          setShortage({ amount: missing, option });
-          track("unlock_insufficient", { product: productCode, shortage: missing });
-          return;
-        }
+      // 광고로 해제 가능한 상품만 별조각을 쓸 수 있고, 나머지는 보석(cash)만 쓸 수 있다.
+      const missing = await checkShortage(price.cash_price, price.ad_unlockable);
+      if (missing) {
+        setShortage(missing);
+        track("unlock_insufficient", { product: productCode, shortage: missing.amount });
+        return;
       }
     }
     setShortage(null);
     setConfirming(true);
     track("unlock_confirm_open", { product: productCode });
-  }
-
-  function handleGoCharge() {
-    saveChargeReturn(window.location.pathname + window.location.search);
-    router.push(shortage?.option ? `/charge?amount=${shortage.option.krwAmount}` : "/charge");
   }
 
   async function handlePurchase() {
@@ -178,24 +172,7 @@ export function PremiumUnlockCard({
         <>
           <CardDescription className="mt-2">{teaser}</CardDescription>
           {shortage ? (
-            <div className="mt-4 rounded-lg border border-border bg-surface-2 px-4 py-3">
-              <p className="break-keep text-sm font-medium text-foreground">
-                보석이 {shortage.amount.toLocaleString()}개 부족해요
-              </p>
-              <p className="mt-1 break-keep text-xs leading-relaxed text-muted">
-                {shortage.option
-                  ? `${shortage.option.krwAmount.toLocaleString()}원을 충전하면 보석 ${shortage.option.cashAmount.toLocaleString()}개를 받아요. 충전이 끝나면 이 화면으로 바로 돌아와요.`
-                  : "보석을 충전하면 바로 열어볼 수 있어요."}
-              </p>
-              <div className="mt-3 flex gap-2">
-                <Button className="flex-1" onClick={handleGoCharge}>
-                  {shortage.option ? `${shortage.option.krwAmount.toLocaleString()}원 충전하기` : "충전하러 가기"}
-                </Button>
-                <Button variant="ghost" onClick={() => setShortage(null)}>
-                  닫기
-                </Button>
-              </div>
-            </div>
+            <ShortageNotice shortage={shortage} onClose={() => setShortage(null)} />
           ) : !confirming ? (
             <Button className="mt-4 w-full" onClick={handleOpenConfirm}>
               {purchaseButtonLabel ?? (price ? `보석 ${price.cash_price.toLocaleString()}개로 열어보기` : "열어보기")}

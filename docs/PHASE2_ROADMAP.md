@@ -1757,3 +1757,7 @@ pm2 restart lpt`로 재배포 필요 (package.json/package-lock.json 변경분
 - 보석 부족 시 PremiumUnlockCard가 부족분과 추천 충전액을 안내 → `/charge?amount=` 미리 선택 → 충전 후 원래 화면 복귀(sessionStorage).
 - 충전 3,000원 "추천" 배지. 네이버 서치어드바이저는 `NEXT_PUBLIC_NAVER_SITE_VERIFICATION` 환경변수(재빌드 필요).
 - 개인정보처리방침에 이용 행태 정보 항목 추가, 시행일 2026-10-29.
+
+## 60. 2027 신년운세 구현 (2026-10-27)
+- 기획: `docs/NEWYEAR_2027_PLAN.md`. 구현 내용과 켜는 법은 그 문서 9절.
+- 핵심: `src/lib/kst.ts`(KST·대상 연도·결제 인정 기간), Edge Function(`generate-premium-content`) 재배포 필요, 034 SQL.

@@ -16,7 +16,8 @@ export type ProductCode =
   | "monthly_fortune"
   | "yearly_fortune"
   | "compatibility_bundle_3"
-  | "weekly_pass";
+  | "weekly_pass"
+  | "newyear_pack";
 
 export interface ProductPrice {
   product_code: ProductCode;
@@ -163,6 +164,21 @@ export async function purchaseProduct(
   if (error) throw new Error(error.message);
 
   return { newBalance: data?.[0]?.new_balance ?? 0 };
+}
+
+/**
+ * 신년 패키지(신년운세 + 궁합 심화 1회권)를 구매한다. 보석으로만 결제하며,
+ * 이번 해 신년운세를 이미 샀거나 상품이 비활성이면 서버가 거부한다.
+ */
+export async function purchaseNewYearPack(): Promise<{ newBalance: number; vouchers: number }> {
+  if (!isSupabaseConfigured()) throw new Error("결제 기능을 사용할 수 없는 환경입니다.");
+
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.rpc("purchase_newyear_pack");
+  if (error) throw new Error(error.message);
+
+  const row = data?.[0];
+  return { newBalance: row?.new_balance ?? 0, vouchers: row?.vouchers ?? 0 };
 }
 
 /** 오늘 이미 해당 상품을 해제했는지 확인한다 (일일 콘텐츠 재구매 방지 UI용) */

@@ -31,13 +31,43 @@ const TONE_GUIDE =
   "이어지는 문단(순수 텍스트)으로만 작성하세요. 강조하고 싶은 단어가 있어도 특수문자로 " +
   "감싸지 말고 문장 구조나 어순으로 자연스럽게 강조하세요.";
 
+// ── 한국 표준시(KST) 기준 연·월 판정 ──────────────────────────────────────────
+// 이 함수는 UTC로 도는데 사용자는 KST라, 로컬 시간을 쓰면 1/1 0~9시(KST) 같은 경계에서
+// 서버만 아직 작년·지난달로 판단해 결제 내역을 못 찾는다. 아래 헬퍼는 src/lib/kst.ts와
+// 같은 로직이므로 한쪽을 고치면 반드시 다른 쪽도 같이 고칠 것.
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+function getKstDate(now: Date = new Date()) {
+  const k = new Date(now.getTime() + KST_OFFSET_MS);
+  return { year: k.getUTCFullYear(), month: k.getUTCMonth() + 1 };
+}
+
 function getCurrentYearMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const { year, month } = getKstDate();
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+function getKstMonthStart(): Date {
+  const { year, month } = getKstDate();
+  return new Date(Date.UTC(year, month - 1, 1) - KST_OFFSET_MS);
+}
+
+/** 신년운세 대상 연도 — 12월부터는 다음 해 운세를 판다 (src/lib/kst.ts getFortuneYear와 동일) */
+function getFortuneYear(): number {
+  const { year, month } = getKstDate();
+  return month === 12 ? year + 1 : year;
+}
+
+/** 대상 연도 Y의 결제 인정 기간: (Y-1)년 12/1 00:00 KST ~ Y년 12/1 00:00 KST */
+function getFortuneYearWindow(targetYear: number): { start: Date; end: Date } {
+  return {
+    start: new Date(Date.UTC(targetYear - 1, 11, 1) - KST_OFFSET_MS),
+    end: new Date(Date.UTC(targetYear, 11, 1) - KST_OFFSET_MS),
+  };
 }
 
 function getCurrentYear(): string {
-  return String(new Date().getFullYear());
+  return String(getFortuneYear());
 }
 
 Deno.serve(async (req: Request) => {
@@ -100,14 +130,22 @@ Deno.serve(async (req: Request) => {
       .eq("type", "spend");
 
     if (productCode === "monthly_fortune") {
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
-      txQuery = txQuery.gte("created_at", startOfMonth.toISOString());
+      txQuery = txQuery.gte("created_at", getKstMonthStart().toISOString());
     }
     if (productCode === "yearly_fortune") {
-      const startOfYear = new Date(new Date().getFullYear(), 0, 1);
-      txQuery = txQuery.gte("created_at", startOfYear.toISOString());
+      // 대상 연도의 결제 인정 기간 안에서만 유효 (2026년 구매분으로 2027년 운세를 만들 수 없다)
+      const { start, end } = getFortuneYearWindow(getFortuneYear());
+      txQuery = txQuery.gte("created_at", start.toISOString()).lt("created_at", end.toISOString());
+
+      // 클라이언트가 계산한 대상 연도가 서버 기준과 다르면(기기 시계 오류, 배포 시차) 엉뚱한 해의 운세가
+      // 저장되지 않도록 막는다.
+      const clientYear = (context as { yearlyFortune?: { year?: number | string } })?.yearlyFortune?.year;
+      if (clientYear !== undefined && String(clientYear) !== getCurrentYear()) {
+        return new Response(
+          JSON.stringify({ error: "운세 연도 정보가 맞지 않아요. 페이지를 새로고침한 뒤 다시 시도해주세요." }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     const { data: txRows } = await txQuery.limit(1);
@@ -142,13 +180,14 @@ Deno.serve(async (req: Request) => {
     }
 
     const prompt = buildPrompt(productCode, context);
-    const generatedText = await callClaude(prompt);
+    // 신년운세는 월별 12개 흐름까지 풀어 쓰므로 출력 한도를 넉넉하게 잡는다.
+    const generatedText = await callClaude(prompt, productCode === "yearly_fortune" ? 3500 : 1024);
     const content: Record<string, unknown> = { text: generatedText, generatedAt: new Date().toISOString() };
     if (productCode === "monthly_fortune") {
       content.yearMonth = (context as { yearMonth?: string })?.yearMonth ?? getCurrentYearMonth();
     }
     if (productCode === "yearly_fortune") {
-      content.year = (context as { year?: string | number })?.year?.toString() ?? getCurrentYear();
+      content.year = getCurrentYear();
     }
 
     if (productCode !== "compatibility_deep") {
@@ -213,12 +252,22 @@ function buildPrompt(productCode: string, context: Record<string, unknown>): str
   }
 
   if (productCode === "yearly_fortune") {
+    const year = getFortuneYear();
     return (
       `${TONE_GUIDE}\n\n` +
-      `아래는 한 사람의 올해 세운(歲運) 데이터입니다. 올 한 해가 어떤 결의 흐름일 ` +
-      `수 있는지, 상반기와 하반기 중 어느 쪽에 조금 더 마음 써보면 좋을지를 ` +
-      `6~9문장으로 자연스럽게 풀어주세요. "올해에 한정된" 이야기라는 걸 은근히 ` +
-      `느끼게 해주세요(내년엔 또 다른 흐름일 수 있다는 뉘앙스).\n\n` +
+      `[신년운세 형식 — 위 형식 원칙의 예외] 이 글은 ${year}년 한 해의 흐름을 읽는 신년운세입니다. ` +
+      `마크다운 기호(#, **, -, 번호 목록)는 여전히 쓰지 마세요. 다만 읽기 쉽도록 문단 맨 앞에 ` +
+      `아래 이름표를 "이름표 · 본문" 형태의 일반 텍스트로 붙이고, 이름표 사이는 빈 줄로 나누세요.\n` +
+      `1) "총운 · " 한 해 전체의 결을 3~4문장.\n` +
+      `2) "상반기와 하반기 · " 어느 쪽에 조금 더 마음 써보면 좋을지 3~4문장.\n` +
+      `3) "월별 흐름 · " 줄을 바꿔 절기월 12개를 순서대로 한 줄씩. 형식은 "인월(2월 초~) · 한두 문장"처럼 ` +
+      `데이터의 monthName과 approxPeriod를 그대로 쓰고, 각 달의 ganzhi·십성·12운성 데이터에 맞는 내용으로 ` +
+      `쓰세요. 줄 앞에 -, 숫자를 붙이지 마세요.\n` +
+      `4) "일 · ", "관계 · ", "재충전 · " 각각 2문장씩 영역별 포인트.\n` +
+      `5) "조심하면 좋은 때 · ", "기회가 될 수 있는 때 · " 각각 2문장씩, 월별 흐름 데이터에 근거해 어느 달인지 짚어주세요.\n` +
+      `사주에서는 한 해가 입춘(2월 초) 무렵 시작한다고 본다는 점을 총운 끝에 한 문장으로 가볍게 안내하세요. ` +
+      `"${year}년 한 해에 한정된" 이야기라는 걸 은근히 느끼게 해주세요(내년엔 또 다른 흐름일 수 있다는 뉘앙스). ` +
+      `특정 사건을 예측하듯 단정하지 말고 참고할 수 있는 흐름 수준으로 쓰세요.\n\n` +
       `데이터: ${JSON.stringify(context)}`
     );
   }
@@ -226,7 +275,7 @@ function buildPrompt(productCode: string, context: Record<string, unknown>): str
   throw new Error(`알 수 없는 상품 코드: ${productCode}`);
 }
 
-async function callClaude(prompt: string): Promise<string> {
+async function callClaude(prompt: string, maxTokens = 1024): Promise<string> {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -236,7 +285,7 @@ async function callClaude(prompt: string): Promise<string> {
     },
     body: JSON.stringify({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 1024,
+      max_tokens: maxTokens,
       messages: [{ role: "user", content: prompt }],
     }),
   });

@@ -25,6 +25,9 @@ import { getRelatedTypes } from "@/lib/compatibility";
 import { RelatedTypesPanel } from "@/components/result/RelatedTypesPanel";
 import { PageHeading } from "@/components/common/PageHeading";
 import { PremiumUnlockCard } from "@/components/wallet/PremiumUnlockCard";
+import { NewYearPackCard } from "@/components/wallet/NewYearPackCard";
+import { getFortuneYear } from "@/lib/kst";
+import { getYearGanzhiName } from "@/lib/fortuneYear";
 import { PushOptInBanner } from "@/components/common/PushOptInBanner";
 import { CoupangRecommendation } from "@/components/common/CoupangRecommendation";
 import { getDailyShoppingItem } from "@/lib/dailyRecommendation";
@@ -38,6 +41,8 @@ export default function ResultPage() {
   const [gender, setGender] = useState<Gender>("male");
   const [lunarDate, setLunarDate] = useState<LunarDate | null>(null);
   const [state, setState] = useState<LoadState>("loading");
+  // 신년 패키지를 사면 신년운세 카드를 다시 열어(remount) 곧바로 생성하게 한다
+  const [yearlyKey, setYearlyKey] = useState(0);
 
   useEffect(() => {
     const basicInfo = getStorage().get<BasicInfo>(STORAGE_KEYS.basicInfo);
@@ -176,11 +181,15 @@ export default function ResultPage() {
 
         <PushOptInBanner variant="result" />
 
+        <NewYearPackCard onPurchased={() => setYearlyKey((k) => k + 1)} />
+
         <PremiumUnlockCard
+          key={`yearly-${yearlyKey}`}
           productCode="yearly_fortune"
-          title="올해의 운세"
-          teaser="올 한 해의 큰 흐름을 참고할 수 있는 이야기로 풀어드려요. 매년 새로 확인할 수 있어요."
+          title={`${getFortuneYear()}년 신년운세`}
+          teaser={`${getFortuneYear()}년(${getYearGanzhiName(getFortuneYear())}) 한 해의 흐름을 총운, 상·하반기, 월별로 풀어드려요. 사주에서는 입춘(2월 초) 무렵 한 해가 시작된다고 보기 때문에, 월별 흐름은 그 절기월 기준으로 안내해요. 매년 새로 확인할 수 있어요.`}
           yearly
+          autoGenerateOnUnlock={yearlyKey > 0}
           buildContext={() => ({
             yearlyFortune: calculateYearlyFortune(
               getStorage().get<BasicInfo>(STORAGE_KEYS.basicInfo)!

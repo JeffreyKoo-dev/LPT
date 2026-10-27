@@ -189,7 +189,21 @@ select migration, status, note from (
       and exists (select 1 from information_schema.tables
       where table_schema='public' and table_name='push_reminder_log')
       then '✅ 적용됨' else '❌ 누락' end,
-    'push_subscriptions / push_reminder_log 테이블(웹 푸시 리마인더)')
+    'push_subscriptions / push_reminder_log 테이블(웹 푸시 리마인더)'),
+
+  ('033_analytics_events',
+    case when exists (select 1 from information_schema.tables
+      where table_schema='public' and table_name='analytics_events')
+      then '✅ 적용됨' else '❌ 누락' end,
+    'analytics_events 테이블(자체 이벤트 계측)'),
+
+  ('034_newyear_pack',
+    case when exists (select 1 from product_prices where product_code='newyear_pack')
+      and exists (select 1 from func_defs where fn_name='purchase_newyear_pack')
+      and exists (select 1 from func_defs
+      where fn_name='purchase_product' and def like '%newyear_pack%')
+      then '✅ 적용됨' else '❌ 누락' end,
+    'newyear_pack 상품 행 + purchase_newyear_pack() + purchase_product 거부 목록(12/1에 is_active를 켠다)')
 
 ) as t(migration, status, note)
 order by migration;

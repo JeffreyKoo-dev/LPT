@@ -806,7 +806,7 @@ function calculateSeyun(centerYear: number, dayStem: string, count = 10): SeyunI
   return out;
 }
 
-function calculateWolun(year: number, dayStem: string): WolunItem[] {
+export function calculateWolun(year: number, dayStem: string): WolunItem[] {
   const yearStemIdx = mod(year - 4, 10);
   const startStem = YEAR_STEM_TO_MONTH_START_STEM_INDEX[yearStemIdx];
 

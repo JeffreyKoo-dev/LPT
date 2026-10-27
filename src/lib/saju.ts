@@ -28,8 +28,10 @@
  */
 
 import { calculateSaju as ssajuCalculateSaju, lunarToSolar, solarToLunar } from "@/lib/saju-engine/calculate";
+import { calculateWolun } from "@/lib/saju-engine/analyze";
+import { getFortuneYear, getKstDate } from "@/lib/kst";
 import { BasicInfo } from "@/types/user";
-import { Element, EarthlyBranch, HeavenlyStem, Pillar, SajuChart, TenGod, DaeunSeyunData, MonthlyFortuneData, YearlyFortuneData } from "@/types/saju";
+import { Element, EarthlyBranch, HeavenlyStem, Pillar, SajuChart, TenGod, DaeunSeyunData, MonthlyFortuneData, YearlyFortuneData, YearlyMonthFlow } from "@/types/saju";
 
 const SEOUL_LONGITUDE = 126.9784;
 
@@ -287,8 +289,9 @@ export function calculateDaeunSeyun(basicInfo: BasicInfo): DaeunSeyunData {
 export function calculateMonthlyFortune(basicInfo: BasicInfo): MonthlyFortuneData {
   const { result } = runSsajuCalculation(basicInfo);
 
-  const now = new Date();
-  const currentMonth = now.getMonth() + 1;
+  // 서버(UTC)와 같은 기준을 쓰도록 한국 표준시로 연·월을 정한다.
+  const kst = getKstDate();
+  const currentMonth = kst.month;
   const thisMonth = result.wolun.find((item) => item.month === currentMonth);
 
   if (!thisMonth) {
@@ -296,8 +299,8 @@ export function calculateMonthlyFortune(basicInfo: BasicInfo): MonthlyFortuneDat
   }
 
   return {
-    yearMonth: `${now.getFullYear()}-${String(currentMonth).padStart(2, "0")}`,
-    year: now.getFullYear(),
+    yearMonth: `${kst.year}-${String(currentMonth).padStart(2, "0")}`,
+    year: kst.year,
     month: currentMonth,
     ganzhi: thisMonth.ganzhi,
     stem: thisMonth.stem,
@@ -312,26 +315,44 @@ export function calculateMonthlyFortune(basicInfo: BasicInfo): MonthlyFortuneDat
  * 올해의 운세(세운)를 계산한다. 월운과 같은 원리로 매년 바뀌는 값이라,
  * "올해의 운세" 유료 콘텐츠가 매년(특히 새해 시즌) 재구매될 이유가 된다.
  */
-export function calculateYearlyFortune(basicInfo: BasicInfo): YearlyFortuneData {
+export function calculateYearlyFortune(
+  basicInfo: BasicInfo,
+  targetYear: number = getFortuneYear()
+): YearlyFortuneData {
   const { result } = runSsajuCalculation(basicInfo);
 
-  const currentYear = new Date().getFullYear();
-  const thisYear = result.seyun.find((item) => item.year === currentYear);
+  // seyun은 현재 연도 기준 앞뒤 10년 구간이라 대상 연도(올해 또는 신년 시즌의 내년)가 포함된다.
+  const target = result.seyun.find((item) => item.year === targetYear);
 
-  if (!thisYear) {
-    throw new Error("올해 세운 데이터를 찾을 수 없습니다.");
+  if (!target) {
+    throw new Error("해당 연도의 세운 데이터를 찾을 수 없습니다.");
   }
 
+  // 월별 흐름: 대상 연도의 절기월(인월~축월) 12개. 일간(日干)은 일주의 천간이다.
+  const dayStem = result.dayStem;
+  const months: YearlyMonthFlow[] = calculateWolun(targetYear, dayStem).map((item, i) => ({
+    monthName: MONTH_BRANCH_NAMES[i],
+    approxPeriod: i === 11 ? "다음 해 1월 초~" : `${i + 2}월 초~`,
+    ganzhi: item.ganzhi,
+    tenGodStem: item.stemTenGod as TenGod,
+    tenGodBranch: item.branchTenGod as TenGod,
+    stage12: item.stage12,
+  }));
+
   return {
-    year: currentYear,
-    ganzhi: thisYear.ganzhi,
-    stem: thisYear.stem,
-    branch: thisYear.branch,
-    tenGodStem: thisYear.tenGodStem as TenGod,
-    tenGodBranch: thisYear.tenGodBranch as TenGod,
-    stage12: thisYear.stage12,
+    year: targetYear,
+    ganzhi: target.ganzhi,
+    stem: target.stem,
+    branch: target.branch,
+    tenGodStem: target.tenGodStem as TenGod,
+    tenGodBranch: target.tenGodBranch as TenGod,
+    stage12: target.stage12,
+    months,
   };
 }
+
+/** 절기월 이름 — 입춘 무렵 시작하는 인월(寅月)부터 축월(丑月)까지 */
+const MONTH_BRANCH_NAMES = ["인월", "묘월", "진월", "사월", "오월", "미월", "신월", "유월", "술월", "해월", "자월", "축월"];
 
 export interface LunarDate {
   year: number;
