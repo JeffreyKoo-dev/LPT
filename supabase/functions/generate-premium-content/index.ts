@@ -203,7 +203,11 @@ Deno.serve(async (req: Request) => {
 
     const prompt = buildPrompt(productCode, context, userName);
     // 신년운세는 월별 12개 흐름까지 풀어 쓰므로 출력 한도를 넉넉하게 잡는다.
-    const generatedText = await callClaude(prompt, productCode === "yearly_fortune" ? 3500 : productCode === "monthly_fortune" ? 1500 : 1024);
+    const generatedText = await callClaude(
+      prompt,
+      productCode === "yearly_fortune" ? 4500 : productCode === "monthly_fortune" ? 1500 : 1024,
+      productCode === "yearly_fortune" // 신년운세는 길이 한도에 걸려 중간에서 잘린 글을 저장하지 않는다
+    );
     const content: Record<string, unknown> = { text: generatedText, generatedAt: new Date().toISOString() };
     if (productCode === "monthly_fortune") {
       content.yearMonth = (context as { yearMonth?: string })?.yearMonth ?? getCurrentYearMonth();
@@ -287,7 +291,7 @@ function buildPrompt(productCode: string, context: Record<string, unknown>, user
       `아래 이름표를 "이름표 · 본문" 형태의 일반 텍스트로 붙이고, 이름표 사이는 빈 줄로 나누세요.\n` +
       `1) "총운 · " 한 해 전체의 결을 3~4문장.\n` +
       `2) "상반기와 하반기 · " 어느 쪽에 조금 더 마음 써보면 좋을지 3~4문장.\n` +
-      `3) "월별 흐름 · " 줄을 바꿔 절기월 12개를 순서대로 한 줄씩. 형식은 "인월(2월 초~) · 한두 문장"처럼 ` +
+      `3) "월별 흐름 · " 줄을 바꿔 절기월 12개를 순서대로 한 줄씩. 형식은 "인월(2월 초~) · 한 문장(60자 안팎)"처럼 ` +
       `데이터의 monthName과 approxPeriod를 그대로 쓰고, 각 달의 ganzhi·십성·12운성 데이터에 맞는 내용으로 ` +
       `쓰세요. 줄 앞에 -, 숫자를 붙이지 마세요.\n` +
       `4) "일 · ", "관계 · ", "재충전 · " 각각 2문장씩 영역별 포인트.\n` +
@@ -302,7 +306,7 @@ function buildPrompt(productCode: string, context: Record<string, unknown>, user
   throw new Error(`알 수 없는 상품 코드: ${productCode}`);
 }
 
-async function callClaude(prompt: string, maxTokens = 1024): Promise<string> {
+async function callClaude(prompt: string, maxTokens = 1024, failOnTruncate = false): Promise<string> {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -322,6 +326,9 @@ async function callClaude(prompt: string, maxTokens = 1024): Promise<string> {
   }
 
   const data = await response.json();
+  if (failOnTruncate && data.stop_reason === "max_tokens") {
+    throw new Error("글이 너무 길어져 끝까지 만들지 못했어요. 결제는 유지되니 다시 시도해주세요.");
+  }
   const rawText = data.content?.[0]?.text ?? "";
   return stripMarkdown(rawText);
 }

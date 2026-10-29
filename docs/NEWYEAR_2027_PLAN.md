@@ -71,3 +71,24 @@
 - 켜는 법(12/1): `update product_prices set is_active = true, updated_at = now() where product_code = 'newyear_pack';` 끄는 법(2/15): false로.
 - 미구현: 신년 시즌 푸시(12/1, 12/28, 1/1), 휴면 사용자 안내, "나의 2027 키워드" 공유 카드.
 - 발견: 기존 "이번 달 운세"는 달력의 N월을 사주의 N번째 절기월(1번째=인월=2월 초 시작)에 그대로 대응시켜 약 한 달 어긋난다. 신년운세의 월별 흐름은 절기월로 올바르게 표기했다. 이번 달 운세 보정은 별도 결정 필요.
+
+## 10. 신년 시즌 푸시 캠페인 (구현됨)
+
+`POST /api/cron/monthly-reminder?campaign=<id>` — `src/lib/pushCampaigns.ts`에 정의. `campaign`을 생략하면 기존 "이번 달 운세" 리마인더와 같다.
+
+| campaign | 허용 날짜(KST) | 대상 | 중복 방지 키 |
+|---|---|---|---|
+| `newyear_open` | 12/1~12/7 | 푸시 구독자 중 대상 연도 신년운세 미구매 | `newyear_open_<연도>` |
+| `newyear_prep` | 12/28~12/31 | 같음 | `newyear_prep_<연도>` |
+| `newyear_day` | 1/1~1/3 | 같음 | `newyear_day_<연도>` |
+
+- 허용 날짜 밖에서 호출하면 `{"ok":true,"skipped":"outside_campaign_window"}`만 돌려주고 보내지 않는다.
+- 연도 키가 붙어 해마다 한 번씩 발송된다. 구매 여부는 대상 연도 구매 인정 기간(전년 12/1~당해 12/1)의 `yearly_fortune` 결제로 판단하므로 신년 패키지 구매자도 제외된다.
+- 푸시 구독자는 브라우저에서 알림을 직접 허용한 사람뿐이다(별도 마케팅 동의 문구 필요 여부는 법률 검토 때 함께 확인).
+- EC2 크론 예시(매일 10시 KST, 날짜 범위 밖이면 자동으로 건너뜀):
+
+```
+0 10 * * * curl -s -X POST -H "Authorization: Bearer $CRON_SECRET" "https://questofme.com/api/cron/monthly-reminder?campaign=newyear_open"
+0 10 * * * curl -s -X POST -H "Authorization: Bearer $CRON_SECRET" "https://questofme.com/api/cron/monthly-reminder?campaign=newyear_prep"
+0 10 * * * curl -s -X POST -H "Authorization: Bearer $CRON_SECRET" "https://questofme.com/api/cron/monthly-reminder?campaign=newyear_day"
+```

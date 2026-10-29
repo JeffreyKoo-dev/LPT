@@ -9,23 +9,20 @@
 //   0 10 * * * curl -s -X POST -H "Authorization: Bearer $CRON_SECRET" \
 //     https://questofme.com/api/cron/monthly-reminder
 //
+// 신년운세 캠페인은 같은 주소에 ?campaign=<id>를 붙여 호출한다(src/lib/pushCampaigns.ts):
+//   newyear_open (12/1~7), newyear_prep (12/28~31), newyear_day (1/1~3)
+// 허용 날짜 밖에서 호출하면 아무것도 보내지 않고 skipped를 돌려준다.
+//
 // CRON_SECRET이 설정 안 돼 있으면 이 라우트는 항상 403을 반환해, 실수로
 // 공개 엔드포인트가 열려버리는 걸 막는다.
 
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
-import { getKstMonthStart } from "@/lib/kst";
-
-const REMINDER_TYPE = "monthly_fortune";
+import { getPushCampaign, isPushCampaignId, PushCampaignId } from "@/lib/pushCampaigns";
 
 function getSupabaseAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-}
-
-// 서버 시간대와 상관없이 한국 표준시 기준 이번 달 1일 0시 (클라이언트·Edge Function과 동일 기준)
-function startOfMonthIso(): string {
-  return getKstMonthStart().toISOString();
 }
 
 export async function POST(req: NextRequest) {
@@ -49,23 +46,35 @@ export async function POST(req: NextRequest) {
     process.env.VAPID_PRIVATE_KEY
   );
 
+  // ?campaign 이 없으면 기존 "이번 달 운세" 리마인더(하위 호환)
+  const campaignParam = req.nextUrl.searchParams.get("campaign") ?? "monthly_fortune";
+  if (!isPushCampaignId(campaignParam)) {
+    return NextResponse.json({ error: "알 수 없는 캠페인입니다." }, { status: 400 });
+  }
+  const campaign = getPushCampaign(campaignParam as PushCampaignId);
+  if (!campaign) {
+    // 허용 날짜(KST) 밖이면 보내지 않는다 — 크론 설정 실수로 엉뚱한 날 발송되는 걸 막는다.
+    return NextResponse.json({ ok: true, skipped: "outside_campaign_window", campaign: campaignParam });
+  }
+
   const admin = getSupabaseAdmin();
-  const since = startOfMonthIso();
+
+  let purchaseQuery = admin
+    .from("wallet_transactions")
+    .select("user_id")
+    .eq("product_code", campaign.productCode)
+    .eq("type", "spend")
+    .gte("created_at", campaign.purchasedSince.toISOString());
+  if (campaign.purchasedBefore) purchaseQuery = purchaseQuery.lt("created_at", campaign.purchasedBefore.toISOString());
+
+  let remindedQuery = admin.from("push_reminder_log").select("user_id").eq("reminder_type", campaign.logType);
+  if (campaign.dedupeSince) remindedQuery = remindedQuery.gte("sent_at", campaign.dedupeSince.toISOString());
 
   const [{ data: subs, error: subsError }, { data: purchasedTx, error: purchaseError }, { data: reminded, error: remindedError }] =
     await Promise.all([
       admin.from("push_subscriptions").select("id, user_id, endpoint, p256dh, auth_key"),
-      admin
-        .from("wallet_transactions")
-        .select("user_id")
-        .eq("product_code", REMINDER_TYPE)
-        .eq("type", "spend")
-        .gte("created_at", since),
-      admin
-        .from("push_reminder_log")
-        .select("user_id")
-        .eq("reminder_type", REMINDER_TYPE)
-        .gte("sent_at", since),
+      purchaseQuery,
+      remindedQuery,
     ]);
 
   if (subsError || purchaseError || remindedError) {
@@ -80,11 +89,7 @@ export async function POST(req: NextRequest) {
     (s) => !purchasedUserIds.has(s.user_id) && !remindedUserIds.has(s.user_id)
   );
 
-  const payload = JSON.stringify({
-    title: "이번 달 운세, 아직 안 보셨네요",
-    body: "매달 새로 바뀌는 흐름이라, 지난달과는 또 다른 이야기가 기다리고 있을 수 있어요.",
-    url: "/result",
-  });
+  const payload = JSON.stringify(campaign.payload);
 
   let sent = 0;
   let removed = 0;
@@ -116,11 +121,12 @@ export async function POST(req: NextRequest) {
   if (sentUserIds.size > 0) {
     await admin
       .from("push_reminder_log")
-      .insert([...sentUserIds].map((user_id) => ({ user_id, reminder_type: REMINDER_TYPE })));
+      .insert([...sentUserIds].map((user_id) => ({ user_id, reminder_type: campaign.logType })));
   }
 
   return NextResponse.json({
     ok: true,
+    campaign: campaign.id,
     eligible: eligibleSubs.length,
     sent,
     uniqueUsersSent: sentUserIds.size,
