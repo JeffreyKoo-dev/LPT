@@ -12,6 +12,7 @@ import { checkShortage, Shortage } from "@/lib/shortage";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { getFortuneYear } from "@/lib/kst";
 import { track } from "@/lib/analytics";
+import { recordConsent } from "@/lib/consent";
 import { WITHDRAWAL_NOTICE } from "@/data/refundPolicy";
 
 /**
@@ -69,6 +70,7 @@ export function NewYearPackCard({ onPurchased }: { onPurchased: () => void }) {
     setBusy(true);
     setError(null);
     try {
+      await recordConsent("newyear_pack");
       await purchaseNewYearPack();
       track("unlock_purchased", { product: "newyear_pack" });
       setDone(true);

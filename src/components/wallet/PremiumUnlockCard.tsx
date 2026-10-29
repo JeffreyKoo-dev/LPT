@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Card, CardTitle, CardDescription } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
@@ -9,6 +9,7 @@ import { purchaseProduct, getProductPrices, getProductPrice, ProductCode, Produc
 import { checkShortage, Shortage } from "@/lib/shortage";
 import { ShortageNotice } from "@/components/wallet/ShortageNotice";
 import { track } from "@/lib/analytics";
+import { recordConsent, markGeneration } from "@/lib/consent";
 import {
   hasPurchased,
   hasPurchasedThisMonth,
@@ -75,6 +76,8 @@ export function PremiumUnlockCard({
   const [confirming, setConfirming] = useState(false);
   // 보유 보석이 모자랄 때 채워야 하는 개수와 추천 충전 옵션 (null이면 부족하지 않음)
   const [shortage, setShortage] = useState<Shortage | null>(null);
+  // 청약철회 제한 고지 확인 기록의 id. 이 카드에서 확인을 거친 뒤에만 채워진다.
+  const consentIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
@@ -133,6 +136,8 @@ export function PremiumUnlockCard({
     setErrorMessage(null);
     setConfirming(false);
     setStage("generating");
+    // 확인 버튼을 누른 사실을 먼저 남긴다. 실패해도 결제는 막지 않는다.
+    consentIdRef.current = await recordConsent(productCode);
     try {
       if (customPurchase) {
         await customPurchase();
@@ -150,11 +155,14 @@ export function PremiumUnlockCard({
   async function handleGenerate() {
     setErrorMessage(null);
     setStage("generating");
+    void markGeneration(consentIdRef.current, "requested");
     try {
       const result = await generatePremiumContent(productCode, buildContext());
       setContent(result);
       setStage("content");
+      void markGeneration(consentIdRef.current, "completed");
     } catch (error) {
+      void markGeneration(consentIdRef.current, "failed");
       setErrorMessage(
         error instanceof Error ? error.message : "콘텐츠 생성에 실패했어요. 결제는 유지되니 다시 시도해주세요."
       );

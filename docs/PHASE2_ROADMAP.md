@@ -1764,3 +1764,9 @@ pm2 restart lpt`로 재배포 필요 (package.json/package-lock.json 변경분
 
 ## 61. 이번 달 운세 절기월 보정 (2026-10-28)
 - 문제와 안: `docs/MONTHLY_FORTUNE_FIX_PLAN.md`. 달력월을 절기월 구간 2개로 나눠 데이터를 제공, 콘텐츠 version 2.
+
+## 62. 청약철회 제한 고지 확인 기록 (2026-10-29)
+- 035 SQL: `digital_content_consents`(동의 시각, 고지문 버전, 생성 요청·완료·실패 시각). RPC로만 기록, 본인 기록만 조회. IP는 저장하지 않음.
+- 클라이언트: `src/lib/consent.ts`(best-effort, 실패해도 결제·생성을 막지 않음), PremiumUnlockCard·NewYearPackCard에서 호출. 고지문을 바꾸면 `WITHDRAWAL_NOTICE_VERSION`을 올릴 것.
+- 보존 기간·파기 시점·IP 수집 여부는 법률 검토 뒤 확정(탈퇴 시 user_id만 비우고 행은 유지).
+
