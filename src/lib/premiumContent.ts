@@ -1,5 +1,7 @@
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { ProductCode } from "@/lib/wallet";
+import { getStorage, STORAGE_KEYS } from "@/lib/storage";
+import type { BasicInfo } from "@/types/user";
 import { getFortuneYear, getFortuneYearWindow, getKstMonthStart, getKstYearMonth } from "@/lib/kst";
 
 export interface PremiumContent {
@@ -152,7 +154,8 @@ export async function generatePremiumContent(
 
   const supabase = getSupabaseClient();
   const { data, error } = await supabase.functions.invoke("generate-premium-content", {
-    body: { productCode, context },
+    // 호칭용 이름(닉네임). 없으면 서버가 주어를 생략하는 문장으로 쓴다.
+    body: { productCode, context, userName: getStorage().get<BasicInfo>(STORAGE_KEYS.basicInfo)?.nickname ?? "" },
   });
   if (error) throw new Error(error.message);
   if (data?.error) throw new Error(data.error);

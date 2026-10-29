@@ -22,14 +22,29 @@ const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const TONE_GUIDE =
-  "말투 원칙: 모든 문장은 '~일 수 있어요', '~한 경향이 있어요'처럼 경향과 가능성으로 " +
-  "표현하세요. '반드시', '확실히', '~할 것이다'처럼 단정하는 표현은 쓰지 마세요. " +
-  "따뜻하고 존중하는 톤으로, 2인칭 존댓말('~님')을 사용하세요.\n" +
-  "형식 원칙: 마크다운 문법을 절대 쓰지 마세요 — #으로 시작하는 제목, **로 감싸는 " +
-  "굵은 글씨, 목록(-, 1. 등)을 전부 쓰지 마세요. 소제목이나 구분선 없이, 자연스럽게 " +
-  "이어지는 문단(순수 텍스트)으로만 작성하세요. 강조하고 싶은 단어가 있어도 특수문자로 " +
-  "감싸지 말고 문장 구조나 어순으로 자연스럽게 강조하세요.";
+/** 호칭에 쓸 이름을 안전하게 정리한다 — 줄바꿈·따옴표·특수문자를 제거하고 최대 12자로 제한(프롬프트 주입 방지). */
+function sanitizeUserName(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  return raw.replace(/[^0-9A-Za-z가-힣ㄱ-ㅎㅏ-ㅣ _-]/g, "").replace(/\s+/g, " ").trim().slice(0, 12);
+}
+
+function toneGuide(userName: string): string {
+  const address = userName
+    ? `호칭 원칙: 독자를 '${userName}님'이라고 부를 수 있어요. 다만 문단마다 한 번 이하로만 쓰고, ` +
+      "나머지 문장은 주어를 생략하세요. 이름 없이 '님'만 따로 쓰거나 '당신'이라고 부르지 마세요.\n"
+    : "호칭 원칙: 이름을 모르니 '님'이나 '당신'을 쓰지 말고, 주어를 생략하거나 '이번 달', '올해'처럼 " +
+      "시기를 나타내는 말로 문장을 시작하세요.\n";
+  return (
+    "말투 원칙: 모든 문장은 '~일 수 있어요', '~한 경향이 있어요'처럼 경향과 가능성으로 " +
+    "표현하세요. '반드시', '확실히', '~할 것이다'처럼 단정하는 표현은 쓰지 마세요. " +
+    "따뜻하고 존중하는 존댓말을 사용하세요.\n" +
+    address +
+    "형식 원칙: 마크다운 문법을 절대 쓰지 마세요 — #으로 시작하는 제목, **로 감싸는 " +
+    "굵은 글씨, 목록(-, 1. 등)을 전부 쓰지 마세요. 소제목이나 구분선 없이, 자연스럽게 " +
+    "이어지는 문단(순수 텍스트)으로만 작성하세요. 강조하고 싶은 단어가 있어도 특수문자로 " +
+    "감싸지 말고 문장 구조나 어순으로 자연스럽게 강조하세요."
+  );
+}
 
 // ── 한국 표준시(KST) 기준 연·월 판정 ──────────────────────────────────────────
 // 이 함수는 UTC로 도는데 사용자는 KST라, 로컬 시간을 쓰면 1/1 0~9시(KST) 같은 경계에서
@@ -114,7 +129,8 @@ Deno.serve(async (req: Request) => {
     // 문제로 500 에러가 발생했었다.)
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { productCode, context } = await req.json();
+    const { productCode, context, userName: rawUserName } = await req.json();
+    const userName = sanitizeUserName(rawUserName);
 
     if (!ANTHROPIC_API_KEY) {
       return new Response(JSON.stringify({ error: "AI 콘텐츠 생성 기능이 아직 설정되지 않았습니다." }), {
@@ -185,7 +201,7 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const prompt = buildPrompt(productCode, context);
+    const prompt = buildPrompt(productCode, context, userName);
     // 신년운세는 월별 12개 흐름까지 풀어 쓰므로 출력 한도를 넉넉하게 잡는다.
     const generatedText = await callClaude(prompt, productCode === "yearly_fortune" ? 3500 : productCode === "monthly_fortune" ? 1500 : 1024);
     const content: Record<string, unknown> = { text: generatedText, generatedAt: new Date().toISOString() };
@@ -213,10 +229,10 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-function buildPrompt(productCode: string, context: Record<string, unknown>): string {
+function buildPrompt(productCode: string, context: Record<string, unknown>, userName: string): string {
   if (productCode === "premium_report") {
     return (
-      `${TONE_GUIDE}\n\n` +
+      `${toneGuide(userName)}\n\n` +
       `아래는 한 사람의 사주 분석 데이터입니다. 이 데이터를 바탕으로, 무료 리포트보다 ` +
       `더 깊이 있는 정밀 해석을 8~12문장 분량으로 작성하세요. 오행 균형, 십성 조합이 ` +
       `보여주는 성향의 결, 삶에서 반복될 수 있는 주제, 강점과 성장 포인트를 자연스러운 ` +
@@ -227,7 +243,7 @@ function buildPrompt(productCode: string, context: Record<string, unknown>): str
 
   if (productCode === "compatibility_deep") {
     return (
-      `${TONE_GUIDE}\n\n` +
+      `${toneGuide(userName)}\n\n` +
       `아래는 두 사람의 사주 기반 궁합 데이터(기본 점수·헤드라인 포함)입니다. 이 데이터를 ` +
       `바탕으로, 두 사람의 일간(日干)과 오행이 어떻게 상호작용하는지, 서로 잘 맞을 수 있는 ` +
       `지점과 신경 쓰면 좋을 지점을 균형 있게 6~10문장으로 풀어주세요. 갈등을 단정하지 말고 ` +
@@ -238,7 +254,7 @@ function buildPrompt(productCode: string, context: Record<string, unknown>): str
 
   if (productCode === "daeun_seun") {
     return (
-      `${TONE_GUIDE}\n\n` +
+      `${toneGuide(userName)}\n\n` +
       `아래는 한 사람의 대운(10년 단위 흐름)과 최근 세운(연간 흐름) 데이터입니다. 현재 ` +
       `대운 시기와 올해·내년의 세운이 어떤 결의 시기일 수 있는지, 어떤 부분에 신경 쓰면 ` +
       `좋을지를 6~10문장으로 자연스럽게 풀어주세요. 특정 사건을 예측하듯 단정하지 말고, ` +
@@ -249,7 +265,7 @@ function buildPrompt(productCode: string, context: Record<string, unknown>): str
 
   if (productCode === "monthly_fortune") {
     return (
-      `${TONE_GUIDE}\n\n` +
+      `${toneGuide(userName)}\n\n` +
       `아래는 한 사람의 이번 달 월운(月運) 데이터입니다. 사주의 월은 달력이 아니라 절기로 나뉘기 때문에, ` +
       `달력상 이번 달은 보통 두 개의 절기월로 이루어져 있습니다. 데이터의 segments에 구간별로(period, ` +
       `monthName, 간지·십성·12운성) 들어 있고, transitionAt은 절기월이 바뀌는 시점입니다. ` +
@@ -265,7 +281,7 @@ function buildPrompt(productCode: string, context: Record<string, unknown>): str
   if (productCode === "yearly_fortune") {
     const year = getFortuneYear();
     return (
-      `${TONE_GUIDE}\n\n` +
+      `${toneGuide(userName)}\n\n` +
       `[신년운세 형식 — 위 형식 원칙의 예외] 이 글은 ${year}년 한 해의 흐름을 읽는 신년운세입니다. ` +
       `마크다운 기호(#, **, -, 번호 목록)는 여전히 쓰지 마세요. 다만 읽기 쉽도록 문단 맨 앞에 ` +
       `아래 이름표를 "이름표 · 본문" 형태의 일반 텍스트로 붙이고, 이름표 사이는 빈 줄로 나누세요.\n` +
