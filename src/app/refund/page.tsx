@@ -23,6 +23,18 @@ export default function RefundPage() {
       />
 
       <Card variant="ledger" className="flex flex-col gap-6 text-sm leading-relaxed">
+        <Block title="상품 제공(배송) 안내">
+          <ul className="list-disc pl-5">
+            <li>
+              QuestofMe는 실물 배송이 없는 온라인 서비스예요. 결제가 완료되면 <b>즉시</b> 보석이 계정에
+              지급돼요(카드사·결제대행사 사정으로 지연될 때도 보통 몇 분 안에 반영돼요).
+            </li>
+            <li>보석으로 &lsquo;열어보기&rsquo;를 누르면 AI 콘텐츠가 바로 생성돼 화면에서 확인할 수 있어요.</li>
+            <li>보석은 서비스 안에서만 쓸 수 있고, 현금으로 바꾸거나 다른 사람에게 줄 수 없어요.</li>
+            <li>결제 후 보석이 보이지 않으면 고객센터로 가입 계정과 결제일을 보내 주세요.</li>
+          </ul>
+        </Block>
+
         <Block title="환불 기준 한눈에 보기">
           <ul className="list-disc pl-5">
             <li>
