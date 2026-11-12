@@ -36,6 +36,9 @@ function LoginPageInner() {
   const redirectPath = getSafeRedirectPath(searchParams.get("redirect"));
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
+  // 결제 심사(PG) 담당자용 비밀번호 로그인. /login?review=1 로 접속할 때만 보인다.
+  const isReviewLogin = searchParams.get("review") === "1";
+  const [reviewPassword, setReviewPassword] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -123,6 +126,25 @@ function LoginPageInner() {
     }
   }
 
+  async function handleReviewLogin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim() || !reviewPassword) return;
+    setStatus("verifying");
+    setErrorMessage(null);
+    try {
+      const supabase = getSupabaseClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: reviewPassword,
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error("[login] 심사용 로그인 실패", error);
+      setErrorMessage("이메일 또는 비밀번호가 올바르지 않아요.");
+      setStatus("error");
+    }
+  }
+
   async function handleKakaoLogin() {
     try {
       const supabase = getSupabaseClient();
@@ -202,6 +224,23 @@ function LoginPageInner() {
               }}
             >
               다른 이메일로 다시 시도
+            </Button>
+          </form>
+        )}
+
+        {isReviewLogin && status !== "sent" && (
+          <form onSubmit={handleReviewLogin} className="mt-6 flex flex-col gap-3 border-t border-border pt-5">
+            <p className="text-xs text-muted">심사용 로그인 (이메일은 위 입력란에 적어 주세요)</p>
+            <TextField
+              label="비밀번호"
+              name="review-password"
+              type="password"
+              autoComplete="current-password"
+              value={reviewPassword}
+              onChange={(e) => setReviewPassword(e.target.value)}
+            />
+            <Button type="submit" disabled={status === "verifying" || !email.trim() || !reviewPassword}>
+              {status === "verifying" ? "확인 중…" : "비밀번호로 로그인"}
             </Button>
           </form>
         )}
