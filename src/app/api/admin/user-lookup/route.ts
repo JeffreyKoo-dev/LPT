@@ -19,16 +19,27 @@ export async function GET(req: NextRequest) {
   let userIds: string[];
 
   if (isEmailSearch) {
-    // auth.users는 PostgREST로 직접 조회할 수 없어, Admin API의 filter로 검색한다
-    // (이메일 부분/완전 일치 지원).
-    const { data: authData, error: authError } = await supabase.auth.admin.listUsers({
-      page: 1,
-      perPage: 5,
-      // @ts-expect-error - supabase-js 타입 선언에 filter가 아직 없지만 서버는 지원한다
-      filter: query,
-    });
-    if (authError) return NextResponse.json({ error: authError.message }, { status: 500 });
-    userIds = (authData?.users ?? []).map((u) => u.id);
+    // auth.users는 PostgREST로 직접 조회할 수 없다. Admin API의 listUsers는 이메일
+    // filter 파라미터를 지원하지 않아(무시되어 항상 첫 페이지가 돌아옴) 검색 결과가
+    // 늘 같은 사람으로 나오던 문제가 있었다. 그래서 페이지를 넘기며 직접 부분 일치로 거른다.
+    const needle = query.trim().toLowerCase();
+    const matched: string[] = [];
+    const PER_PAGE = 200;
+    const MAX_PAGES = 25; // 최대 5,000명까지 검색
+    for (let page = 1; page <= MAX_PAGES && matched.length < 5; page++) {
+      const { data: authData, error: authError } = await supabase.auth.admin.listUsers({
+        page,
+        perPage: PER_PAGE,
+      });
+      if (authError) return NextResponse.json({ error: authError.message }, { status: 500 });
+      const users = authData?.users ?? [];
+      for (const u of users) {
+        if ((u.email ?? "").toLowerCase().includes(needle)) matched.push(u.id);
+        if (matched.length >= 5) break;
+      }
+      if (users.length < PER_PAGE) break;
+    }
+    userIds = matched;
     if (userIds.length === 0) return NextResponse.json({ users: [] });
   }
 
