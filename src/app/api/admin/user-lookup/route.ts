@@ -16,17 +16,18 @@ export async function GET(req: NextRequest) {
   const supabase = getAdminDbClient();
   const isEmailSearch = query.includes("@");
 
-  let userIds: string[];
+  // 이메일 검색은 auth.users 기준으로 찾는다. 카카오 가입자는 auth.users.email이 비어
+  // 있고 이메일이 메타데이터/identities에만 있을 수 있으며, 닉네임·프로필이 아직 없는
+  // 가입자도 있으므로 프로필이 없어도 결과에 포함한다.
+  type AuthMatch = { id: string; email: string | null; created_at: string };
+  const authMatches: AuthMatch[] = [];
 
   if (isEmailSearch) {
-    // auth.users는 PostgREST로 직접 조회할 수 없다. Admin API의 listUsers는 이메일
-    // filter 파라미터를 지원하지 않아(무시되어 항상 첫 페이지가 돌아옴) 검색 결과가
-    // 늘 같은 사람으로 나오던 문제가 있었다. 그래서 페이지를 넘기며 직접 부분 일치로 거른다.
+    // Admin API의 listUsers는 이메일 filter를 지원하지 않아 페이지를 넘기며 직접 거른다.
     const needle = query.trim().toLowerCase();
-    const matched: string[] = [];
     const PER_PAGE = 200;
     const MAX_PAGES = 25; // 최대 5,000명까지 검색
-    for (let page = 1; page <= MAX_PAGES && matched.length < 5; page++) {
+    for (let page = 1; page <= MAX_PAGES && authMatches.length < 5; page++) {
       const { data: authData, error: authError } = await supabase.auth.admin.listUsers({
         page,
         perPage: PER_PAGE,
@@ -34,25 +35,51 @@ export async function GET(req: NextRequest) {
       if (authError) return NextResponse.json({ error: authError.message }, { status: 500 });
       const users = authData?.users ?? [];
       for (const u of users) {
-        if ((u.email ?? "").toLowerCase().includes(needle)) matched.push(u.id);
-        if (matched.length >= 5) break;
+        const meta = (u.user_metadata ?? {}) as { email?: string };
+        const candidates = [
+          u.email,
+          meta.email,
+          ...(u.identities ?? []).map((i) => (i.identity_data as { email?: string } | undefined)?.email),
+        ]
+          .filter((v): v is string => typeof v === "string" && v.length > 0)
+          .map((v) => v.toLowerCase());
+        if (candidates.some((c) => c.includes(needle))) {
+          authMatches.push({
+            id: u.id,
+            email: u.email ?? meta.email ?? candidates[0] ?? null,
+            created_at: u.created_at,
+          });
+        }
+        if (authMatches.length >= 5) break;
       }
       if (users.length < PER_PAGE) break;
     }
-    userIds = matched;
-    if (userIds.length === 0) return NextResponse.json({ users: [] });
+    if (authMatches.length === 0) return NextResponse.json({ users: [] });
   }
 
   const profileQuery = supabase
     .from("user_profiles")
     .select("user_id, nickname, lpt_type_id, xp, created_at");
 
-  const { data: profile, error: profileError } = isEmailSearch
-    ? await profileQuery.in("user_id", userIds!).limit(5)
+  const { data: profileRows, error: profileError } = isEmailSearch
+    ? await profileQuery.in("user_id", authMatches.map((m) => m.id))
     : await profileQuery.ilike("nickname", `%${query}%`).limit(5);
 
   if (profileError) return NextResponse.json({ error: profileError.message }, { status: 500 });
-  if (!profile || profile.length === 0) return NextResponse.json({ users: [] });
+
+  const profile = isEmailSearch
+    ? authMatches.map((m) => {
+        const pr = profileRows?.find((r) => r.user_id === m.id);
+        return {
+          user_id: m.id,
+          nickname: pr?.nickname ?? `(닉네임 없음) ${m.email ?? ""}`.trim(),
+          lpt_type_id: pr?.lpt_type_id ?? null,
+          xp: pr?.xp ?? 0,
+          created_at: pr?.created_at ?? m.created_at,
+        };
+      })
+    : (profileRows ?? []);
+  if (profile.length === 0) return NextResponse.json({ users: [] });
 
   const foundUserIds = profile.map((p) => p.user_id);
   const [{ data: wallets }, { data: transactions }] = await Promise.all([
