@@ -19,6 +19,7 @@ export function SiteHeader() {
           {session.configured && session.user && <NavLink href="/friends">친구</NavLink>}
           {session.configured && session.user && <NavLink href="/missions">미션</NavLink>}
           <NavLink href="/start">시작하기</NavLink>
+          <NavLink href="/charge">보석 충전</NavLink>
           {session.configured && (
             <NavLink href={session.user ? "/account" : "/login"}>
               {session.user ? "내 계정" : "로그인"}
@@ -35,7 +36,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
     <Link
       href={href}
       className={cn(
-        "rounded-full px-4 py-2 text-muted transition-colors hover:bg-surface hover:text-foreground"
+        "rounded-full px-2.5 py-2 text-muted sm:px-4 transition-colors hover:bg-surface hover:text-foreground"
       )}
     >
       {children}
