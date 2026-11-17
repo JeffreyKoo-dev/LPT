@@ -198,8 +198,9 @@ export default function ChargePage() {
 
         <div className="mt-4 break-keep text-xs leading-relaxed text-muted">
           <p>
-            결제일로부터 {REFUND_POLICY.windowDays}일 이내에 보석을 쓰지 않았다면 전액 환불할 수 있어요. 일부를
-            사용했거나 AI 콘텐츠 생성이 시작된 부분은 환불이 제한될 수 있어요.
+            결제일로부터 {REFUND_POLICY.periodYears}년 이내에 보석을 쓰지 않았다면 결제하신 수단으로 전액 환불할 수 있어요.
+            일부를 사용했거나 AI 콘텐츠 생성이 시작된 부분은 환불이 제한될 수 있어요. 보석의 이용기간은 결제일로부터
+            {REFUND_POLICY.periodYears}년이며, 다른 회원에게 양도할 수 없어요.
             {isFirstCharge && " 첫 결제 보너스는 환불 시 함께 회수돼요."}
           </p>
           <p className="mt-1">

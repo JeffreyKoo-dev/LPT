@@ -38,7 +38,7 @@ export default function RefundPage() {
         <Block title="환불 기준 한눈에 보기">
           <ul className="list-disc pl-5">
             <li>
-              <b>결제 후 {REFUND_POLICY.windowDays}일 이내 + 보석을 하나도 쓰지 않았다면</b> 결제 금액 전액을 환불해
+              <b>결제 후 {REFUND_POLICY.periodYears}년 이내 + 보석을 하나도 쓰지 않았다면</b> 결제 금액 전액을 환불해
               드려요.
             </li>
             <li>
@@ -46,12 +46,23 @@ export default function RefundPage() {
               환불해 드려요.
             </li>
             <li>
-              <b>{REFUND_POLICY.windowDays}일이 지난 미사용 보석</b>은 환불되지 않아요. 다만 서비스 오류처럼
+              <b>결제 후 {REFUND_POLICY.periodYears}년이 지난 보석</b>은 이용과 환불이 모두 제한되고 소멸돼요. 다만 서비스 오류처럼
               회사 책임이 있거나 법령이 환불을 요구하는 경우에는 예외예요.
             </li>
             <li>
               <b>별조각</b>(미션·광고 시청·가입 등으로 받는 무료 재화)은 환불되지 않아요.
             </li>
+          </ul>
+        </Block>
+
+        <Block title="보석의 이용기간·환불가능기간">
+          <ul className="list-disc pl-5">
+            <li>
+              충전한 보석의 <b>이용기간과 환불가능기간은 결제시점으로부터 {REFUND_POLICY.periodYears}년 이내</b>로
+              제한돼요. 보너스로 받은 보석도 같은 결제의 기간을 따라요.
+            </li>
+            <li>환불은 <b>결제하셨던 수단으로</b> 진행돼요. 다른 계좌나 수단으로는 환불해 드릴 수 없어요.</li>
+            <li>보석은 <b>회원 간 양도가 불가능</b>하고, 현금으로 바꿀 수 없어요.</li>
           </ul>
         </Block>
 
@@ -105,7 +116,7 @@ export default function RefundPage() {
               고객센터({contact || "준비 중"})로 가입 계정, 결제일, 환불 사유를 보내 주세요.
             </li>
             <li>
-              요청을 확인한 날부터 {REFUND_POLICY.processBusinessDays}영업일 이내에 결제 취소 또는 환급을 진행해요.
+              요청을 확인한 날부터 {REFUND_POLICY.processBusinessDays}영업일 이내에 결제하셨던 수단으로 결제 취소 또는 환급을 진행해요.
               카드 결제는 카드사에 따라 취소 반영까지 {REFUND_POLICY.cardExtraBusinessDays}영업일이 더 걸릴 수 있어요.
             </li>
             <li>환불 수수료는 없어요. 환불이 끝나면 그 결제로 받은 재화는 회수돼요.</li>
