@@ -17,6 +17,7 @@ import { REFUND_POLICY } from "@/data/refundPolicy";
 import { track } from "@/lib/analytics";
 import {
   initChargeWidgets,
+  updateChargeAmount,
   isTossPaymentsConfigured,
   PAYMENT_METHOD_SELECTOR,
   AGREEMENT_SELECTOR,
@@ -41,6 +42,8 @@ export default function ChargePage() {
   const [isFirstCharge, setIsFirstCharge] = useState<boolean | null>(null);
 
   const widgetsRef = useRef<TossWidgets | null>(null);
+  // 위젯 초기화(렌더링)는 화면당 한 번만 한다. 금액을 바꿀 때는 setAmount만 호출한다.
+  const initPromiseRef = useRef<Promise<TossWidgets> | null>(null);
   const orderIdRef = useRef<string | null>(null);
   const customerKeyRef = useRef<string>(crypto.randomUUID());
 
@@ -65,7 +68,7 @@ export default function ChargePage() {
       });
   }, []);
 
-  // 금액을 선택하면, 그 금액으로 결제수단·약관 UI를 새로 렌더링한다.
+  // 처음 금액을 고르면 결제수단·약관 UI를 한 번 렌더링하고, 이후 금액이 바뀌면 금액만 갱신한다.
   useEffect(() => {
     if (!selected || !isTossPaymentsConfigured()) return;
     track("charge_select", { krw: selected });
@@ -75,8 +78,18 @@ export default function ChargePage() {
     setStatus("rendering");
     setError(null);
 
-    initChargeWidgets({ customerKey: customerKeyRef.current, amount: selected })
-      .then((widgets) => {
+    if (!initPromiseRef.current) {
+      initPromiseRef.current = initChargeWidgets({ customerKey: customerKeyRef.current, amount: selected });
+      // 초기화에 실패하면 다음 선택 때 다시 시도할 수 있게 비워 둔다.
+      initPromiseRef.current.catch(() => {
+        initPromiseRef.current = null;
+      });
+    }
+
+    const amount = selected;
+    initPromiseRef.current
+      .then(async (widgets) => {
+        await updateChargeAmount(widgets, amount);
         if (cancelled) return;
         widgetsRef.current = widgets;
         setWidgetsReady(true);

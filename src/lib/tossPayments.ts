@@ -91,5 +91,14 @@ export async function initChargeWidgets(params: {
   return widgets;
 }
 
+/**
+ * 이미 렌더링된 위젯의 결제 금액만 바꾼다. 금액을 바꿀 때마다 widgets()를 새로 만들어
+ * renderPaymentMethods를 다시 호출하면 토스가 "하나의 결제수단 위젯만을 사용할 수 있어요"
+ * 오류를 내므로, 금액 변경은 반드시 이 함수(setAmount)로만 처리한다.
+ */
+export async function updateChargeAmount(widgets: TossWidgets, amount: number): Promise<void> {
+  await widgets.setAmount({ value: amount, currency: "KRW" });
+}
+
 export { PAYMENT_METHOD_SELECTOR, AGREEMENT_SELECTOR };
 export type { TossWidgets };
